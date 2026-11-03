@@ -1,0 +1,38 @@
+id,name,category,qty,material,process,dimsMm,supplier,sku,url,unitCost,totalCost,currency
+tensioner,Brazo del rodillo tensor con resorte de extensión,mechanical,1,,print3d,,,,,,,
+coupling-5-8,Cople flexible D19L25 de aluminio 5 × 8 mm,mechanical,1,,buy,,UNIT Electronics,D19L25-5x8,,33,33,MXN
+shaft-8mm,Eje de acero Ø8 × 90 mm,mechanical,4,,buy,8x8x90,ferretería (varilla rectificada),,,60,240,MXN
+printed-supports,"Piezas impresas: cuna de la lente, poste de la cabeza del LED, brazo del sensor y alojamiento del segundo 608 del motriz",mechanical,1,,print3d,,,,,,,
+bearing-608,Rodamiento 608ZZ 8 × 22 × 7 mm,mechanical,8,,buy,22x22x7,UNIT Electronics,608ZZ-7,https://uelectronics.com/producto/608zz-7-rodamiento-tipo-balero-de-8-x-22-x-7-mm/,8,64,MXN
+rollers,Rodillo Ø103.13 × 50 mm con pestañas guía,mechanical,4,pla o petg,print3d,109.13x109.13x50,,,,,,
+base-box,"Caja base 288 × 244 × 125 mm: cubierta de MDF 9 mm con barrenos de rodillos y paso de cables, paredes y piso de MDF 6 mm",structural,1,mdf-9,laser,288x244.26x125,,,,,,
+control-box,"Caja de control de acrílico transparente 3 mm, 190 × 140 × 48 mm, con tapa",structural,1,acrilico-3,laser,190x140x48,,,,,,
+standoffs,Separador hexagonal de latón M3 × 40 mm (macho-hembra),structural,8,,buy,,UNIT Electronics,SEP-M3-40,,7,56,MXN
+bracket-nema17,Soporte de acero para motor Nema 17,structural,1,,buy,,UNIT Electronics,SOP-N17,https://uelectronics.com/producto/soporte-de-acero-para-motor-nema-17/,25,25,MXN
+led-caps,Capacitor electrolítico 1000 µF 50 V,electronic,3,,buy,,UNIT Electronics,CAP-1000U-50V,https://uelectronics.com/producto/capacitor-electrolitico-50v/,6,18,MXN
+ceramic-caps,Capacitores 100 nF cerámico y 10 µF 50 V,electronic,2,,buy,,UNIT Electronics,CAP-100N + CAP-10U,,3,6,MXN
+led-heatsink,Disipador de aluminio 40 × 40 × 20 mm,electronic,1,,buy,,UNIT Electronics,DIS-40X40,,35,35,MXN
+led-gate-driver,Driver de compuerta IR2101 DIP-8,electronic,1,,buy,,UNIT Electronics,IR2101PBF,https://uelectronics.com/producto/ir2101-driver-dip-8-ir2101pbf/,50,50,MXN
+driver-dm542,"Driver DM542 20–50 V 4,2 A",electronic,1,,buy,,UNIT Electronics,DM542,,219,219,MXN
+esp32,ESP32 DevKitC V4 WROOM-32D,electronic,1,,buy,,UNIT Electronics,ESP32-DevKitC-V4,https://uelectronics.com/producto/esp32-devkitc-v4-esp32-wroom-32d-32u/,145,145,MXN
+psu-24v-5a,Fuente conmutada 24 V 5 A 120 W,electronic,1,,buy,,UNIT Electronics,UE-120-24,https://uelectronics.com/producto/fuente-conmutada-24v-5a/,210,210,MXN
+led-fuse,"Fusible rápido de 500 mA con portafusible, antes de los capacitores",electronic,1,,buy,,,,,,,
+breadboard-kit,Kit protoboard 830 puntos + fuente MB102 + 65 jumpers macho-macho,electronic,1,,buy,,UNIT Electronics,KIT-PROTO-830-MB102,https://uelectronics.com/producto/kit-protoboard-830-puntos-fuente-mb102-65-cables-dupont-m-m/,150,150,MXN
+led-10w,"LED blanco frío de potencia 10 W, emisor 10,8 × 10,8 mm",electronic,3,,buy,,UNIT Electronics,LED-10W-BF,https://uelectronics.com/producto/led-blanco-frio-de-potencia-10w-50w-y-100w/,26,78,MXN
+led-mosfet,MOSFET IRLZ44N 55 V 47 A,electronic,2,,buy,,UNIT Electronics,IRLZ44N,https://uelectronics.com/producto/transistor-irlz44/,12,24,MXN
+motor-17hs8401,"Motor NEMA 17 17HS8401 42 × 48 mm, 1,8 A",electronic,1,,buy,42.3x42.3x48,UNIT Electronics,17HS8401,https://uelectronics.com/producto/nema-17-motor-a-pasos-17hs8401/,225,225,MXN
+buck-lm2596,Regulador LM2596 step down 3 A (uno a 5 V y otro a 12 V),electronic,2,,buy,,UNIT Electronics,AR0150,https://uelectronics.com/producto/modulo-regulador-ajustable-lm2596-dc-dc-step-down-3a-1-25-30v/,36,72,MXN
+led-resistor,"Resistencia de aluminio 10 W, 3,3 Ω (confirmar valor disponible)",electronic,1,,buy,,UNIT Electronics,RES-AL-10W,https://uelectronics.com/producto/resistencia-de-aluminio-10w/,32,32,MXN
+small-resistors,"Resistencias 1/4 W: 3 × 1 kΩ, 1 × 10 Ω, 2 × 10 kΩ",electronic,6,,buy,,UNIT Electronics,RES-1/4W,,1,6,MXN
+sensor-f249,"Sensor de barrera F249 3,3–5 V (la marca negra interrumpe el haz)",electronic,2,,buy,,UNIT Electronics,F249,https://uelectronics.com/producto/sensor-de-velocidad-f249-3-3v-5v/,20,40,MXN
+npn-s8050,"Transistor NPN S8050 (PUL y DIR de 3,3 V a las entradas de 5 V del driver)",electronic,3,,buy,,UNIT Electronics,S8050,https://uelectronics.com/producto/transistor-npn-500ma-25v-s8050/,2,6,MXN
+esp32-expansion,UNIT Placa de expansión para ESP32 de 38 pines,electronic,1,,buy,,UNIT Electronics,UNIT-EXP-ESP32-38,https://uelectronics.com/producto/unit-placa-de-expansion-para-esp32-38-pines/,89,89,MXN
+condenser,Condensador: par de lentes plano-convexas Ø40 mm f≈50 mm en tubo impreso,optical,1,,buy,,óptica / AliExpress,,,300,300,MXN
+lens-50mm,"Lente de 50 mm f/1.8 para réflex de 35 mm, con montura de enfoque (no sirve una CCTV C-mount)",optical,1,,buy,,segunda mano,,,800,800,MXN
+gate-plate,"Placa de ventana 32 × 20 mm en aluminio negro 1,5 mm con guías",optical,1,aluminio-1.5,laser,72x70x1.5,,,,,,
+splice-tape,"Cinta de empalme transparente (poliéster, 19 mm) o cinta Scotch Magic",material,1,,buy,,papelería,,,60,60,MXN
+film-sheets-inkjet-transparency,Hojas transparentes A4 (210 × 297) para inyección de tinta (paquete),material,1,,buy,,papelería / Office Depot,,,320,320,MXN
+screen,Pantalla blanca mate ≥ 730 × 456 mm (foam board o tela),material,1,,buy,,papelería,,,120,120,MXN
+wire-18awg,Cable 18 AWG rojo y negro (por metro),wiring,4,,buy,,UNIT Electronics,CAB-18AWG,,15,60,MXN
+ac-cable,"Cable de alimentación universal AC 1,8 m",wiring,1,,buy,,UNIT Electronics,AC-1.8,,93,93,MXN
+jumpers-hm,Jumpers dupont hembra-macho 20 cm (40 piezas),wiring,1,,buy,,UNIT Electronics,JMP-HM-40,,45,45,MXN
