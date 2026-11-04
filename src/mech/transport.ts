@@ -122,6 +122,27 @@ export interface TorqueReport {
   warnings: string[];
 }
 
+/** módulo de Young supuesto de la película (N/mm²): PVC rígido ~3000, PET ~4000–4500 */
+const FILM_MODULUS_NMM2 = 3000;
+
+export interface BendingReport {
+  thicknessMm: number;
+  /** estiramiento de la cara exterior sobre el rodillo (%) */
+  strainPct: number;
+  /** momento para curvarla al radio del rodillo frente al que le da la tensión: EI / (T·R²) */
+  stiffnessRatio: number;
+}
+
+/**
+ * Cuánto se resiste la película a abrazar los rodillos. Pegada, la laminada se comporta como una hoja del grosor total y
+ * su rigidez EI = E·b·t³/12 crece con el cubo del grosor. Con `stiffnessRatio` por debajo de ~0,1 la tensión la asienta
+ * sobre el rodillo; por encima se despega a la entrada y a la salida, y el empalme golpea.
+ */
+export function filmBending(thicknessMm: number, stripWidthMm: number, rollerRadiusMm: number, tensionN: number): BendingReport {
+  const EI = (FILM_MODULUS_NMM2 * stripWidthMm * thicknessMm ** 3) / 12;
+  return { thicknessMm, strainPct: (100 * thicknessMm) / (2 * rollerRadiusMm), stiffnessRatio: EI / (Math.max(1e-6, tensionN) * rollerRadiusMm ** 2) };
+}
+
 /** fricción supuesta por rodamiento 608 (N·mm): estimación alta, sin dato de fabricante; hay que medirla */
 const BEARING_DRAG_NMM = 3;
 /** coeficiente de fricción supuesto película–goma y arco abrazado por el motriz (rad) */
@@ -129,14 +150,16 @@ const GRIP_MU = 0.5;
 const GRIP_WRAP_RAD = Math.PI / 2;
 
 /**
- * Par de arrastre: la película tira de tres rodillos libres (dos rodamientos cada uno) y roza en la ventana; eso es el
+ * Par de arrastre: la película tira de los rodillos libres (tres en el rectángulo; dos rodamientos cada uno) y roza en la ventana; eso es el
  * salto de tensión ΔT que da el motriz. La tensión mínima sale de la ecuación del cabrestante, T₁/T₂ = e^(μθ).
  */
-export function torqueReport(spec: TransportSpec, rollerRadiusMm: number, requiredMotorRpm?: number): TorqueReport {
+export function torqueReport(spec: TransportSpec, rollerRadiusMm: number, requiredMotorRpm?: number, path: { freeRollers?: number; wrapRad?: number } = {}): TorqueReport {
   const m = motorOf(spec);
-  const deltaT = (3 * 2 * BEARING_DRAG_NMM) / Math.max(1e-6, rollerRadiusMm) + spec.friction * spec.tensionN;
+  const free = path.freeRollers ?? 3;
+  const wrap = path.wrapRad ?? GRIP_WRAP_RAD;
+  const deltaT = (free * 2 * BEARING_DRAG_NMM) / Math.max(1e-6, rollerRadiusMm) + spec.friction * spec.tensionN;
   const rollerTorque = (deltaT * rollerRadiusMm + 2 * BEARING_DRAG_NMM) / 10; // N·mm → N·cm
-  const minTensionN = deltaT / (Math.exp(GRIP_MU * GRIP_WRAP_RAD) - 1);
+  const minTensionN = deltaT / (Math.exp(GRIP_MU * wrap) - 1);
   const eff = spec.gearRatio > 1 ? 0.85 : 1;
   const motorTorque = rollerTorque / Math.max(1e-6, spec.gearRatio) / eff;
   const rpm = requiredMotorRpm ?? spec.motorRpm;

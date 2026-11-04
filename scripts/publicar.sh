@@ -6,11 +6,15 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 remote="$(git -C "$root" remote get-url origin)"
 rev="$(git -C "$root" rev-parse --short HEAD)"
+# el sitio sale de la copia de trabajo: si tiene cambios sin commit, el mensaje lo dice
+if [[ -n "$(git -C "$root" status --porcelain)" ]]; then rev="$rev con cambios sin commit"; fi
 cd "$root"
 npm run build
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 cp -R dist/. "$tmp/"
+# los videos importados son material de terceros: no se publican salvo que se pida (--con-videos)
+if [[ "${1:-}" != "--con-videos" ]]; then rm -rf "$tmp/videos"; fi
 touch "$tmp/.nojekyll" # sin Jekyll: sirve tal cual las carpetas y archivos
 cd "$tmp"
 git init -q -b gh-pages

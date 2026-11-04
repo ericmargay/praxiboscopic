@@ -19,6 +19,18 @@ export interface ExportContext {
   toJpeg?: (canvas: CanvasLike, quality: number) => Promise<Uint8Array>;
   /** data URL PNG de un canvas (para SVG con imágenes embebidas) */
   toDataUrl?: (canvas: CanvasLike) => string;
+  /** compresor zlib: si está, el PDF guarda las imágenes sin pérdida (Flate) en vez de JPEG */
+  deflate?: (data: Uint8Array) => Uint8Array;
+}
+
+/** extras de la plantilla impresa: perfil de color y página de paleta para igualar colores */
+export interface StripPdfExtras {
+  /** perfil ICC de las imágenes (sRGB): sin él, visores e impresoras interpretan el RGB cada uno a su manera */
+  iccProfile?: Uint8Array;
+  /** colores del material con su proporción, para una página de muestras */
+  palette?: { hex: string; rgb: [number, number, number]; share: number }[];
+  /** solo las primeras N páginas de tira (prueba de color) */
+  maxStripPages?: number;
 }
 
 export interface ExportFile {
@@ -129,7 +141,7 @@ export function exportStripSvg(layout: FilmLayout, doc: AnimationDoc, frames: Fr
  * marcas de corte en las esquinas de cada segmento, marcas de alineación en los solapes, rótulo del segmento y una
  * portada con el resumen (medio, ruta, dimensiones, PPI).
  */
-export async function exportStripPdf(layout: FilmLayout, frames: StripRenderOptions['frames'], spec: PrintSpec, ctx: ExportContext, projectName: string, baseName = 'plantilla-pelicula'): Promise<{ file: ExportFile; plan: TilePlan }> {
+export async function exportStripPdf(layout: FilmLayout, frames: StripRenderOptions['frames'], spec: PrintSpec, ctx: ExportContext, projectName: string, baseName = 'plantilla-pelicula', extras: StripPdfExtras = {}): Promise<{ file: ExportFile; plan: TilePlan }> {
   const plan = tilePlan(layout, spec);
   const page = pageOf(spec);
   const compat = compatibility(spec, layout);
@@ -150,19 +162,31 @@ export async function exportStripPdf(layout: FilmLayout, frames: StripRenderOpti
   line(`Tira: ${layout.totalLengthMm.toFixed(1)} × ${stripW} mm · ${layout.frames.length} fotogramas (${layout.frameCount} por ciclo × ${layout.spec.repeats}) · paso ${layout.spec.pitchMm} mm · imagen ${layout.frameAlongMm} × ${layout.frameAcrossMm} mm`);
   line(`Loop: ${layout.loopLengthMm.toFixed(1)} mm · empalme ${layout.spec.spliceType} con ${layout.spec.spliceOverlapMm} mm de solape · cabecera ${layout.spec.leaderMm} mm · cola ${layout.spec.trailerMm} mm`);
   line(`Impresión: ${spec.ppi} ppi · ${page.label} ${spec.landscape ? 'horizontal' : 'vertical'} · margen ${m} mm · solape entre segmentos ${spec.overlapMm} mm · ${plan.segments.length} segmentos en ${plan.pages} páginas`);
-  line(`Medio: ${compat.medium.label} (${compat.quality === 'optical' ? 'calidad óptica' : 'prueba de escritorio'}) · ruta: ${spec.route} · perfil de color: ${spec.colorProfile}`);
+  line(`Medio: ${compat.medium.label} (${compat.quality === 'optical' ? 'calidad óptica' : 'prueba de escritorio'}) · ruta: ${spec.route} · perfil de color: ${spec.colorProfile}${extras.iccProfile ? ' (incrustado en las imágenes)' : ' (declarado, no incrustado)'}`);
   line(`Espejo: ${spec.mirror ? 'sí (impresión por el reverso)' : 'no'} · tinta/emulsión: ${spec.emulsion === 'toward-lens' ? 'hacia la lente' : 'hacia la lámpara'}`);
   y += 2;
-  line('Ensamblaje: corta cada segmento por las marcas rojas, superpón el solape sobre las marcas azules del segmento siguiente y une con cinta transparente sin cubrir ningún fotograma. El último segmento se une al primero para cerrar el loop.', 8);
+  const para = (text: string, size: number, bullet = false) => {
+    const max = Math.floor(((page.widthMm - 2 * m) / (size * 0.18)) * 1.0);
+    wrap(text, max).forEach((w, i) => line(`${bullet ? (i === 0 ? '• ' : '   ') : ''}${w}`, size));
+  };
+  para('Imprimir: abre el PDF en Vista Previa o Acrobat y elige «Tamaño real» o escala 100 % (nunca «Ajustar a la página»). Tipo de papel: transparencia; calidad máxima; sin corrección automática de color. Comprueba la regla de 50 mm con una regla antes de seguir.', 8);
+  y += 1;
+  para('Ensamblaje: corta cada segmento por las marcas rojas, superpón el solape sobre las marcas azules del segmento siguiente y une con cinta transparente sin cubrir ningún fotograma. El último segmento se une al primero para cerrar el loop.', 8);
   y += 2;
-  for (const msg of compat.messages.slice(0, 8)) {
-    const wrapped = wrap(msg, 110);
-    for (const w of wrapped) line(`• ${w}`, 7.5);
-  }
+  for (const msg of compat.messages.slice(0, 8)) para(msg, 7.5, true);
   pages.push({ widthMm: page.widthMm, heightMm: page.heightMm, ops: cover });
+  if (extras.palette?.length) {
+    // cada muestra es una imagen de 1 × 1 px: así lleva el mismo perfil de color que la tira
+    const swatch = (rgb: [number, number, number]) => {
+      images.push({ data: new Uint8Array(rgb), width: 1, height: 1, format: 'rgb' });
+      return images.length - 1;
+    };
+    pages.push({ widthMm: page.widthMm, heightMm: page.heightMm, ops: paletteOps(extras.palette, page, m, swatch) });
+  }
 
   const rows = plan.rowsPerPage;
-  for (let pi = 0; pi < plan.pages; pi++) {
+  const stripPages = Math.min(plan.pages, extras.maxStripPages ?? Infinity);
+  for (let pi = 0; pi < stripPages; pi++) {
     const ops: PdfOp[] = [];
     for (let r = 0; r < rows; r++) {
       const seg = plan.segments[pi * rows + r];
@@ -175,7 +199,7 @@ export async function exportStripPdf(layout: FilmLayout, frames: StripRenderOpti
       const canvas = ctx.canvases.create(size.width, size.height);
       renderStrip(canvas.getContext('2d')!, layout, { pxPerMm: plan.pxPerMm, frames, fromMm: seg.fromMm, toMm: seg.fromMm + len, mirror: spec.mirror, background: 'white', cutMarks: false, labels: spec.segmentLabels });
       let image: PdfDoc['images'][number];
-      if (ctx.toJpeg) image = { data: await ctx.toJpeg(canvas, 0.95), width: size.width, height: size.height, format: 'jpeg' };
+      if (ctx.toJpeg && !ctx.deflate) image = { data: await ctx.toJpeg(canvas, 0.95), width: size.width, height: size.height, format: 'jpeg' };
       else {
         const data = canvas.getContext('2d')!.getImageData(0, 0, size.width, size.height).data;
         const rgb = new Uint8Array(size.width * size.height * 3);
@@ -184,7 +208,7 @@ export async function exportStripPdf(layout: FilmLayout, frames: StripRenderOpti
           rgb[j + 1] = data[i + 1];
           rgb[j + 2] = data[i + 2];
         }
-        image = { data: rgb, width: size.width, height: size.height, format: 'rgb' };
+        image = ctx.deflate ? { data: ctx.deflate(rgb), width: size.width, height: size.height, format: 'rgb-flate' } : { data: rgb, width: size.width, height: size.height, format: 'rgb' };
       }
       ctx.canvases.dispose?.(canvas);
       images.push(image);
@@ -224,8 +248,40 @@ export async function exportStripPdf(layout: FilmLayout, frames: StripRenderOpti
     }
     pages.push({ widthMm: page.widthMm, heightMm: page.heightMm, ops });
   }
-  const pdf = buildPdf({ title: `Plantilla de película · ${projectName}`, pages, images });
+  const pdf = buildPdf({ title: `Plantilla de película · ${projectName}`, pages, images, iccProfile: extras.iccProfile });
   return { file: { name: `${baseName}.pdf`, data: pdf, type: 'application/pdf' }, plan };
+}
+
+/**
+ * Página de muestras: cada color del material (k-medias sobre todos los fotogramas) en un cuadro de 30 × 22 mm con su
+ * valor sRGB y su proporción. Se imprime en el mismo acetato que la tira y se compara contra la pantalla y, encendida la
+ * linterna, contra la proyección.
+ */
+function paletteOps(palette: NonNullable<StripPdfExtras['palette']>, page: { widthMm: number; heightMm: number }, m: number, swatch: (rgb: [number, number, number]) => number): PdfOp[] {
+  const ops: PdfOp[] = [];
+  ops.push({ op: 'text', xMm: m, yMm: m + 6, text: 'Colores del material (sRGB) · imprime esta página en el mismo acetato y con los mismos ajustes que la tira', sizePt: 11 });
+  ops.push({ op: 'text', xMm: m, yMm: m + 12, text: 'Compárala con la pantalla y con la proyección. Si un color se corre, corrige el ajuste de la impresora, no los fotogramas.', sizePt: 8 });
+  const w = 30;
+  const h = 22;
+  const gap = 6;
+  const perRow = Math.max(1, Math.floor((page.widthMm - 2 * m + gap) / (w + gap)));
+  palette.forEach((c, i) => {
+    const x = m + (i % perRow) * (w + gap);
+    const y = m + 20 + Math.floor(i / perRow) * (h + 16);
+    ops.push({ op: 'image', image: swatch(c.rgb), rect: { xMm: x, yMm: y, wMm: w, hMm: h } });
+    ops.push({ op: 'rect', rect: { xMm: x, yMm: y, wMm: w, hMm: h }, stroke: [0.6, 0.6, 0.6], lineMm: 0.1 });
+    ops.push({ op: 'text', xMm: x, yMm: y + h + 4, text: `${c.hex.toUpperCase()} · ${(c.share * 100).toFixed(1)} %`, sizePt: 7 });
+    ops.push({ op: 'text', xMm: x, yMm: y + h + 8, text: `R ${c.rgb[0]}  G ${c.rgb[1]}  B ${c.rgb[2]}`, sizePt: 6 });
+  });
+  const yNote = m + 20 + Math.ceil(palette.length / perRow) * (h + 16) + 6;
+  const notes = [
+    'Las muestras y la tira llevan el mismo perfil sRGB incrustado: si aquí el color sale bien, en la tira también.',
+    'Una impresora de tintas CMYK no alcanza el azul ni el rojo puros de una pantalla: saldrán más apagados. Es el límite del medio.',
+    'En acetato para inyección, el negro deja pasar algo de luz (Dmax ≈ 1,6–2): en la proyección se verá gris muy oscuro.',
+    'Imprime por la cara rugosa (la que absorbe la tinta), con el tipo de papel "transparencia" y la calidad más alta, sin ajustes automáticos de color.',
+  ];
+  notes.forEach((t, i) => ops.push({ op: 'text', xMm: m, yMm: yNote + i * 5, text: `• ${t}`, sizePt: 7.5 }));
+  return ops;
 }
 
 function wrap(text: string, max: number): string[] {

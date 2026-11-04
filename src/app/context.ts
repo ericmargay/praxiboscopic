@@ -45,11 +45,15 @@ export class AppContext {
     this.resources = new BrowserResources();
     this.generator = new FrameGenerator(canvases, this.resources);
     this.store = createStore<Project>(initial ?? loadProject() ?? demoProject());
+    // una imagen nueva: el hash de cada fotograma incluye qué imágenes ya cargaron, así que basta con regenerar el
+    // conjunto (solo se repintan los fotogramas afectados). Se agrupan las llegadas: un video trae cientos de cuadros
+    let readyTimer = 0;
     this.resources.onReady = () => {
-      // una imagen nueva: invalida los fotogramas (el hash no cambia, así que se fuerza)
-      this.generator.clear();
-      this.framesCache = null;
-      this.store.update((p) => ({ ...p }));
+      clearTimeout(readyTimer);
+      readyTimer = window.setTimeout(() => {
+        this.framesCache = null;
+        this.store.update((p) => ({ ...p }));
+      }, 120);
     };
     this.store.onChange((p) => saveProject(p));
   }
@@ -167,6 +171,14 @@ export class AppContext {
     const p = parseProject(JSON.parse(text));
     this.generator.clear();
     this.framesCache = null;
+    this.store.set(p);
+  }
+
+  /** sustituye el proyecto entero (p. ej. al cargar un video) y vacía las cachés de fotogramas */
+  replaceProject(p: Project): void {
+    this.generator.clear();
+    this.framesCache = null;
+    this.printedCache = null;
     this.store.set(p);
   }
 

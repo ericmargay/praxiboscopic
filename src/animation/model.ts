@@ -100,6 +100,19 @@ export interface Deform {
   taper?: Track;
 }
 
+export interface ImageSequence {
+  base: string;
+  count: number;
+  digits: number;
+  ext: string;
+}
+
+/** archivo del cuadro k de una secuencia */
+export function sequenceSrc(seq: ImageSequence, k: number): string {
+  const i = ((Math.floor(k) % seq.count) + seq.count) % seq.count;
+  return `${seq.base}${String(i).padStart(seq.digits, '0')}${seq.ext}`;
+}
+
 interface ItemBase {
   id: string;
   name: string;
@@ -117,7 +130,11 @@ export type Item =
   | (ItemBase & { type: 'line'; x1: Track; y1: Track; x2: Track; y2: Track })
   /** trazado Bézier cúbico: [p0, c1, c2, p1, c1, c2, p2, …] (3n+1 puntos abiertos; 3n cerrado) */
   | (ItemBase & { type: 'path'; points: PointsTrack; closed: boolean })
-  | (ItemBase & { type: 'image'; src: string; w: Track; h: Track; smoothing?: boolean })
+  /**
+   * imagen fija o, con `sequence`, una secuencia de cuadros (un video extraído a archivos) repartida en toda la duración:
+   * el cuadro k de `count` sale en t ∈ [k·D/count, (k+1)·D/count). Archivo: base + número con `digits` cifras + ext
+   */
+  | (ItemBase & { type: 'image'; src: string; w: Track; h: Track; smoothing?: boolean; sequence?: ImageSequence })
   | (ItemBase & { type: 'text'; text: string; fontSize: Track; font?: string; align?: CanvasTextAlign; baseline?: CanvasTextBaseline })
   | (ItemBase & { type: 'group'; children: Item[] })
   /** modelo o escena 3D (glTF/GLB) renderizado por el host con three.js y compuesto como imagen */
@@ -247,7 +264,7 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
     z.object({ ...itemBase, type: z.literal('polygon'), points: PointsTrackSchema, closed: z.boolean() }),
     z.object({ ...itemBase, type: z.literal('line'), x1: TrackSchema, y1: TrackSchema, x2: TrackSchema, y2: TrackSchema }),
     z.object({ ...itemBase, type: z.literal('path'), points: PointsTrackSchema, closed: z.boolean() }),
-    z.object({ ...itemBase, type: z.literal('image'), src: z.string(), w: TrackSchema, h: TrackSchema, smoothing: z.boolean().optional() }),
+    z.object({ ...itemBase, type: z.literal('image'), src: z.string(), w: TrackSchema, h: TrackSchema, smoothing: z.boolean().optional(), sequence: z.object({ base: z.string(), count: z.number().int().min(1), digits: z.number().int().min(1).max(8), ext: z.string() }).optional() }),
     z.object({ ...itemBase, type: z.literal('text'), text: z.string(), fontSize: TrackSchema, font: z.string().optional(), align: z.string().optional(), baseline: z.string().optional() }),
     z.object({ ...itemBase, type: z.literal('group'), children: z.array(ItemSchema) }),
     z.object({

@@ -45,7 +45,15 @@ export interface FilmSpec {
   travel: 'forward' | 'reverse';
   /** borde opaco a lo largo de la tira (mm), para enmascarar luz parásita alrededor del fotograma */
   edgeMaskMm: number;
+  /**
+   * película laminada (ADR-0010): una cubierta transparente pegada sobre la cara de la tinta. Los rodillos de esa cara
+   * tocan la cubierta y no la pintura. Grosores en mm; la cubierta incluye su adhesivo
+   */
+  laminate?: { baseMm: number; coverMm: number };
 }
+
+/** base de calibre 5 (0,127 mm) y laminado en frío de 75–80 µm con su adhesivo: 0,22 mm en total */
+export const DEFAULT_LAMINATE = { baseMm: 0.127, coverMm: 0.09 } as const;
 
 export const FilmSpecSchema = z.object({
   stripWidthMm: z.number().gt(0).max(500),
@@ -60,6 +68,7 @@ export const FilmSpecSchema = z.object({
   syncMarks: z.object({ enabled: z.boolean(), alongMm: z.number().gt(0), acrossMm: z.number().gt(0), edge: z.enum(['top', 'bottom']), perCycle: z.boolean() }),
   travel: z.enum(['forward', 'reverse']),
   edgeMaskMm: z.number().min(0),
+  laminate: z.object({ baseMm: z.number().gt(0).max(2), coverMm: z.number().gt(0).max(2) }).optional(),
 });
 
 export function defaultFilmSpec(over: Partial<FilmSpec> = {}): FilmSpec {

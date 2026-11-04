@@ -9,6 +9,7 @@ import { browserCanvases } from './host/browserCanvas';
 import { createModel3dRenderer } from './three';
 import { mountShell } from './ui/shell';
 import { demoProject, type Project } from './core/project';
+import { laminatedDemoProject } from './core/video';
 
 declare global {
   interface Window {
@@ -36,8 +37,9 @@ window.__praxi = {
 
 try {
   const app = document.querySelector<HTMLElement>('#app')!;
-  // ?demo=1 ignora el proyecto guardado y arranca con la demostración
-  const ctx = new AppContext(browserCanvases, q.get('demo') === '1' ? demoProject() : undefined);
+  // ?demo=1 ignora el proyecto guardado y arranca con la demostración; ?demo=laminada, con la de película laminada
+  const demo = q.get('demo');
+  const ctx = new AppContext(browserCanvases, demo === '1' ? demoProject() : demo === 'laminada' ? laminatedDemoProject() : undefined);
   // render de elementos 3D (glTF) dentro de la animación
   const model3d = createModel3dRenderer();
   model3d.onLoaded = () => {

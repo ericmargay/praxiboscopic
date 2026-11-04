@@ -44,6 +44,10 @@ export interface SyncState {
 export interface SyncOptions {
   /** desenfoque admisible (mm sobre la película) */
   maxBlurMm?: number;
+  /** rodillos libres que arrastra la película (3 en el rectángulo) */
+  freeRollers?: number;
+  /** arco que la película abraza el rodillo motriz (rad) */
+  driveWrapRad?: number;
 }
 
 export function syncTargets(fps: number, layout: FilmLayout, transport: TransportSpec, rollerRadiusMm: number, strobe: StrobeSpec): SyncTargets {
@@ -72,7 +76,7 @@ export function syncState(fps: number, layout: FilmLayout, transport: TransportS
   if (!transport.running) warnings.push(sensorDriven ? 'Motor parado: sin marcas que pasen por el sensor no hay destellos y la pantalla queda negra.' : 'Motor parado: la película no avanza y el estroboscopio proyecta siempre el mismo fotograma.');
   if (strobe.kind === 'drum' && strobe.slotWidthMm > strobe.apertureWidthMm * 3) warnings.push('Ranura del tambor mucho más ancha que la abertura: el destello es largo y la imagen se emborrona.');
   if (strobe.kind === 'led' && strobe.pulseUs > 2000) warnings.push('Pulsos de más de 2 ms en LED: pierdes la ventaja del destello corto.');
-  const torque = torqueReport(transport, rollerRadiusMm, targets.motorRpm);
+  const torque = torqueReport(transport, rollerRadiusMm, targets.motorRpm, { freeRollers: options.freeRollers, wrapRad: options.driveWrapRad });
   warnings.push(...torque.warnings);
   return {
     targets,

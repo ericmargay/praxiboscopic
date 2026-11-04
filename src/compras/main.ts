@@ -9,6 +9,7 @@ import { bomCsv } from '@aminoacid/omega/fabricate';
 import { bomFromParts } from '@aminoacid/omega/parts';
 import { loadProject } from '../app/context';
 import { demoProject, deriveProject, type Project } from '../core/project';
+import { laminatedDemoProject } from '../core/video';
 import { buildParts } from '../fabricate/bom';
 import { OFFERS, UNIT_SHIPPING, type Offer } from '../fabricate/offers';
 import { BOM_KIND } from '../three/parts';
@@ -22,8 +23,8 @@ const mxn = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionDigi
 // --- proyecto ---------------------------------------------------------------------------------------------------------
 const q = new URLSearchParams(location.search);
 function load(): { project: Project; fromDemo: boolean } {
-  const saved = q.get('demo') === '1' ? null : loadProject();
-  return saved ? { project: saved, fromDemo: false } : { project: demoProject(), fromDemo: true };
+  const saved = q.get('demo') ? null : loadProject();
+  return saved ? { project: saved, fromDemo: false } : { project: q.get('demo') === 'laminada' ? laminatedDemoProject() : demoProject(), fromDemo: true };
 }
 const { project, fromDemo } = load();
 const derived = deriveProject(project);

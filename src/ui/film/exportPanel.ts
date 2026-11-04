@@ -6,6 +6,24 @@ import { calibrationDoc, CALIBRATION_LABELS, type CalibrationKind } from '../../
 import { compatibility, PAGE_SIZES, ROUTE_LABELS, tilePlan, type PrintSpec } from '../../film/print';
 import { MEDIA, mediumReport } from '../../optics/medium';
 import { exportPngSequence, exportSpritesheet, exportStripPdf, exportStripPng, exportStripSvg, exportSvgSequence, type ExportFile } from '../../export/exporters';
+import { srgbIccProfile } from '../../export/icc';
+import { walkItems, type AnimationDoc } from '../../animation/model';
+import type { VideoManifest } from '../../core/video';
+
+/** paleta del video que usa la animación (de su manifest.json), para la página de colores del PDF */
+async function videoPalette(doc: AnimationDoc): Promise<VideoManifest['palette'] | undefined> {
+  for (const l of doc.layers)
+    for (const it of walkItems(l.items))
+      if (it.type === 'image' && it.sequence) {
+        try {
+          const dir = it.sequence.base.slice(0, it.sequence.base.lastIndexOf('/') + 1);
+          return ((await (await fetch(`./${dir}manifest.json`)).json()) as VideoManifest).palette;
+        } catch {
+          return undefined;
+        }
+      }
+  return undefined;
+}
 import { canvasToDataUrl, canvasToJpeg } from '../../host/browserCanvas';
 import { isVectorOnly } from '../../animation/model';
 import { buildBom } from '../../fabricate/bom';
@@ -98,7 +116,7 @@ export function mountExportPanel(ctx: AppContext, root: HTMLElement): { dispose(
           button(`PNG de la tira a ${s.ppi} ppi`, () => run('Tira PNG', () => exportStripPng(ctx.derived().layout, ctx.frames().frames, exportCtx(), { pxPerMm: ctx.project.print.ppi / 25.4, mirror: ctx.project.print.mirror, background: 'white', opaqueMask: false, labels: true }, `${slug()}-pelicula`)), { kind: 'primary' }),
           button('PNG de la tira (fotogramas impresos simulados)', () => run('Tira PNG (medio)', () => exportStripPng(ctx.derived().layout, ctx.printedFrames().frames, exportCtx(), { pxPerMm: ctx.project.print.ppi / 25.4, mirror: ctx.project.print.mirror, background: 'white', opaqueMask: false, labels: true }, `${slug()}-pelicula-simulada`))),
           button(vector ? 'SVG de la tira (vectorial)' : 'SVG de la tira (PNG embebidos)', () => run('Tira SVG', async () => exportStripSvg(ctx.derived().layout, ctx.project.animation, ctx.frames(), exportCtx(), { mirror: ctx.project.print.mirror, labels: true, opaqueMask: false, preferVector: true }, `${slug()}-pelicula`))),
-          button('PDF imprimible por segmentos', () => run('PDF', async () => (await exportStripPdf(ctx.derived().layout, ctx.frames().frames, ctx.project.print, exportCtx(), ctx.project.name, `${slug()}-plantilla`)).file), { kind: 'primary' }),
+          button('PDF imprimible por segmentos', () => run('PDF', async () => (await exportStripPdf(ctx.derived().layout, ctx.frames().frames, ctx.project.print, exportCtx(), ctx.project.name, `${slug()}-plantilla`, { iccProfile: srgbIccProfile(), palette: await videoPalette(ctx.project.animation) })).file), { kind: 'primary' }),
         ]),
         card('Calibración', 'Cartas para evaluar contraste, nitidez, enfoque, registro y tamaño de imagen con el mismo pipeline', [
           ...(Object.keys(CALIBRATION_LABELS) as CalibrationKind[]).map((k) => button(CALIBRATION_LABELS[k], () => loadCalibration(k), { kind: 'ghost' })),

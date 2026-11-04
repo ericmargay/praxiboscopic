@@ -28,7 +28,7 @@ export function mountTimeline(ctx: AppContext, es: EditorStore, root: HTMLElemen
   const prev = button('◀|', () => step(-1), { kind: 'ghost', title: 'Fotograma anterior (←)' });
   const next = button('|▶', () => step(1), { kind: 'ghost', title: 'Fotograma siguiente (→)' });
   const timeRo = el('span', { class: 'tl-time mono' });
-  const fpsCtl = numberControl({ label: 'FPS', value: ctx.project.animation.fps, min: 1, max: 60, step: 1, noSlider: true, onChange: (v) => setFps(v) });
+  const fpsCtl = numberControl({ label: 'FPS', value: ctx.project.animation.fps, min: 1, max: 60, step: 0.1, decimals: 1, noSlider: true, onChange: (v) => setFps(v) });
   const durCtl = numberControl({ label: 'Duración', value: ctx.project.animation.duration, min: 0.05, max: 60, step: 0.01, unit: 's', decimals: 3, noSlider: true, onChange: (v) => setDuration(v) });
   const framesCtl = numberControl({ label: 'Fotogramas', value: 24, min: 1, max: 1000, step: 1, noSlider: true, onChange: (v) => setFrames(v) });
   const scaleCtl = numberControl({ label: 'Velocidad', value: ctx.project.ui.timeScale, min: 0.1, max: 2, step: 0.1, unit: '×', decimals: 1, onChange: (v) => ctx.store.update((p) => ({ ...p, ui: { ...p.ui, timeScale: v } })) });

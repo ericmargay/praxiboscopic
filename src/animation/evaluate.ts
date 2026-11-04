@@ -4,6 +4,7 @@
 import { ease } from './easing';
 import type { AnimationDoc, Deform, Expr, FrameOverride, Item, Keyframe, Layer, PointsTrack, Style, Track, Transform, Vec2 } from './model';
 import { mod } from '../core/math';
+import { sequenceSrc } from './model';
 
 /** matriz afín 2D [a b c d e f] como CanvasRenderingContext2D.transform */
 export type Mat2D = [number, number, number, number, number, number];
@@ -424,7 +425,9 @@ function geometryOf(item: Item, ctx: EvalContext): Geometry | null {
     case 'image': {
       const w = evalTrack(item.w, ctx, 100);
       const h = evalTrack(item.h, ctx, 100);
-      return { kind: 'image', src: item.src, x: -w / 2, y: -h / 2, w, h, smoothing: item.smoothing ?? true };
+      // secuencia: el cuadro sale de la fase del ciclo (semiabierta, como los fotogramas: el último no repite el primero)
+      const src = item.sequence ? sequenceSrc(item.sequence, Math.floor((ctx.duration > 0 ? (((ctx.t / ctx.duration) % 1) + 1) % 1 : 0) * item.sequence.count + 1e-6)) : item.src;
+      return { kind: 'image', src, x: -w / 2, y: -h / 2, w, h, smoothing: item.smoothing ?? true };
     }
     case 'text':
       return { kind: 'text', text: item.text, x: 0, y: 0, fontSize: evalTrack(item.fontSize, ctx, 24), font: item.font ?? 'sans-serif', align: item.align ?? 'center', baseline: item.baseline ?? 'middle' };

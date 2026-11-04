@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "captura": "node scripts/captura.mjs",
-    "publicar": "bash scripts/publicar.sh"
+    "publicar": "bash scripts/publicar.sh",
+    "video": "node scripts/video.mjs",
+    "imprimir": "node scripts/imprimir.mjs"
   },
   "dependencies": {
     "@aminoacid/omega": "file:../omega",

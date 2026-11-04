@@ -98,3 +98,5 @@
 @media (max-width: 1100px) {
   .studio-root { grid-template-columns: 220px 1fr 260px; }
 }
+.video-card { cursor: default; gap: 5px; }
+.video-card .ctl { grid-template-columns: 80px 1fr; }

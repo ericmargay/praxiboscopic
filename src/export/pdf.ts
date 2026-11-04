@@ -39,11 +39,33 @@ export interface PdfDoc {
   title: string;
   pages: PdfPage[];
   images: PdfImage[];
+  /** perfil ICC RGB: si está, las imágenes se declaran ICCBased (p. ej. sRGB) en vez de DeviceRGB */
+  iccProfile?: Uint8Array;
 }
 
 const f = (n: number) => (Math.round(n * 1000) / 1000).toString();
 const col = (c: [number, number, number]) => `${f(c[0])} ${f(c[1])} ${f(c[2])}`;
-const pdfStr = (s: string) => `(${s.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/[^\x20-\x7e]/g, '?')})`;
+/** caracteres fuera de Latin-1 que sí tiene WinAnsi (la codificación de la fuente Helvetica del PDF) */
+const WIN_ANSI: Record<string, number> = { '€': 0x80, '‚': 0x82, '„': 0x84, '…': 0x85, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97, '™': 0x99 };
+/** sustitutos legibles para lo que WinAnsi no tiene */
+const FALLBACK: Record<string, string> = { '→': '->', '←': '<-', '≈': '~', '≤': '<=', '≥': '>=', '−': '-', '✓': 'ok', 'φ': 'phi', 'σ': 'sigma' };
+/** cadena PDF en WinAnsi: acentos, eñes, «·», «×», «µ» y rayas se escriben como octales; lo demás, sustituto o «?» */
+const pdfStr = (s: string) => {
+  let out = '';
+  for (const ch of s) {
+    const fb = FALLBACK[ch];
+    const c = fb !== undefined && fb !== ch ? fb : ch;
+    for (const cc of c) {
+      const code = cc.codePointAt(0)!;
+      if (cc === '\\' || cc === '(' || cc === ')') out += `\\${cc}`;
+      else if (code >= 0x20 && code <= 0x7e) out += cc;
+      else if (WIN_ANSI[cc] !== undefined) out += `\\${WIN_ANSI[cc].toString(8).padStart(3, '0')}`;
+      else if (code >= 0xa0 && code <= 0xff) out += `\\${code.toString(8).padStart(3, '0')}`;
+      else out += '?';
+    }
+  }
+  return `(${out})`;
+};
 
 /** y de PDF crece hacia arriba: convertimos desde mm con origen arriba a la izquierda */
 function content(page: PdfPage): string {
@@ -123,13 +145,15 @@ export function buildPdf(doc: PdfDoc): Uint8Array {
   // 1: catálogo, 2: páginas, 3: fuente
   objects.push(new Uint8Array(0), new Uint8Array(0), new Uint8Array(0));
   const imageIds: number[] = [];
+  const iccId = doc.iccProfile ? add([`<< /N 3 /Alternate /DeviceRGB /Length ${doc.iccProfile.length} >>\nstream\n`, doc.iccProfile, '\nendstream']) : 0;
+  const rgbSpace = iccId ? `[/ICCBased ${iccId} 0 R]` : '/DeviceRGB';
   for (const img of doc.images) {
     let smaskId: number | undefined;
     if (img.smask) {
       smaskId = add([`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /DeviceGray /BitsPerComponent 8 ${img.smaskFlate ? '/Filter /FlateDecode ' : ''}/Length ${img.smask.length} >>\nstream\n`, img.smask, '\nendstream']);
     }
     const filter = img.format === 'jpeg' ? '/Filter /DCTDecode ' : img.format === 'rgb-flate' ? '/Filter /FlateDecode ' : '';
-    imageIds.push(add([`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 ${filter}${smaskId ? `/SMask ${smaskId} 0 R ` : ''}/Length ${img.data.length} >>\nstream\n`, img.data, '\nendstream']));
+    imageIds.push(add([`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace ${rgbSpace} /BitsPerComponent 8 ${filter}${smaskId ? `/SMask ${smaskId} 0 R ` : ''}/Length ${img.data.length} >>\nstream\n`, img.data, '\nendstream']));
   }
   const pageIds: number[] = [];
   for (const page of doc.pages) {

@@ -128,5 +128,14 @@ export function assemblyProblems(a: Assembly, d: Derived): string[] {
   if (a.box.y <= rollerTop) out.push(`la caja de control (y = ${a.box.y} mm) toca los ejes de los rodillos (${rollerTop} mm)`);
   for (const s of a.standoffs)
     for (const r of d.pathSpec.rollers) if (Math.hypot(s.x - r.x, s.y - r.y) < a.R + 2 + 3) out.push(`un separador de la caja toca el rodillo en (${r.x.toFixed(0)}, ${r.y.toFixed(0)})`);
+  // en el festón la película cruza el interior: ningún separador puede quedar sobre un tramo
+  for (const s of a.standoffs)
+    for (const seg of d.path.segments) {
+      if (seg.kind !== 'line') continue;
+      const ex = seg.b.x - seg.a.x;
+      const ey = seg.b.y - seg.a.y;
+      const u = Math.max(0, Math.min(1, ((s.x - seg.a.x) * ex + (s.y - seg.a.y) * ey) / (ex * ex + ey * ey || 1)));
+      if (Math.hypot(seg.a.x + ex * u - s.x, seg.a.y + ey * u - s.y) < 3 + 2) out.push(`un separador de la caja corta la película en (${s.x.toFixed(0)}, ${s.y.toFixed(0)})`);
+    }
   return out;
 }

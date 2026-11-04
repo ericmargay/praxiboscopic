@@ -29,7 +29,7 @@ export function mountFramesPanel(ctx: AppContext, root: HTMLElement): { dispose(
     side.append(
       group('Tiempo', [
         selectControl({ label: 'Al cambiar FPS', value: s.fpsMode, options: [{ value: 'keep-duration', label: 'Conservar duración (recalcula fotogramas)' }, { value: 'keep-count', label: 'Conservar fotogramas (recalcula duración)' }], onChange: (v) => setFrames({ fpsMode: v }) }).root,
-        numberControl({ label: 'FPS de la animación', value: p.animation.fps, min: 1, max: 60, step: 1, onChange: (v) => (p.animation.generator ? ctx.setGeneratorParams({ fps: v }) : ctx.setAnimation({ ...ctx.project.animation, fps: v })) }).root,
+        numberControl({ label: 'FPS de la animación', value: p.animation.fps, min: 1, max: 60, step: 0.1, decimals: 1, onChange: (v) => (p.animation.generator ? ctx.setGeneratorParams({ fps: v }) : ctx.setAnimation({ ...ctx.project.animation, fps: v })) }).root,
         numberControl({ label: 'Duración del ciclo', value: p.animation.duration, min: 0.05, max: 60, step: 0.05, unit: 's', decimals: 3, onChange: (v) => (p.animation.generator ? ctx.setGeneratorParams({ frames: Math.max(2, Math.round(v * ctx.project.animation.fps)) }) : ctx.setAnimation({ ...ctx.project.animation, duration: v })), disabled: s.fpsMode === 'keep-count' }).root,
         numberControl({ label: 'Fotogramas fijos', value: s.fixedCount, min: 1, max: 1024, step: 1, onChange: (v) => setFrames({ fixedCount: Math.round(v) }), disabled: s.fpsMode !== 'keep-count' }).root,
         readout('Fotogramas resultantes', `${d.frameCount} (${fmtNum(d.duration, 3)} s)`).root,

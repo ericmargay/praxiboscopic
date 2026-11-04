@@ -81,3 +81,25 @@ pasar durante cada destello. Prueba el desfase del LED, la escala de tiempo a 0,
 - **Instalación física**: lista de compras en el formato SHOPPING.md de OMEGA (motor, driver, rodillos, rodamientos,
   ejes, acoplamiento, base, ventana, lente, condensador, LED y driver de pulso o tambor y lámpara, ESP32, sensor,
   fuente, hojas o laboratorio, cinta de empalme, pantalla) y BOM en CSV. Ver `docs/COMPRAS.md`.
+
+## 13. Video de 5 s a 24 fps sin rozar la tinta (ADR-0008, ADR-0009 y ADR-0010)
+
+1. Importa el video: `npm run video -- "archivo.mp4" --nombre=cried-out`. Escribe los cuadros con el color BT.709
+   bien convertido y la paleta en `public/videos/cried-out/`.
+2. En *Animation Studio → Biblioteca → Videos*, elige la duración (5 s), la proyección (24 fps), el encuadre y la
+   película, y pulsa «Usar en el proyecto». También sirve abrir `?video=cried-out&segundos=5&fps=24`. Salen 120
+   fotogramas: se saltan 97 de los 217 cuadros. Con «Uno por cuadro del video» y 10 s salen los 217 a 21,7 fps.
+3. En *Mechanical Simulation*, con la película laminada (por omisión), el recorrido es el festón de 7 rodillos: 4,32 m
+   de película en una mesa de rodillos de 520 × 656 mm. En *Recorrido*, «Tinta» dice que 2 rodillos tocan la cubierta,
+   y «Grosor y rigidez» da 0,217 mm y el 1,9 % de la tensión. Sube la base a 0,381 mm y la cubierta a 0,381 mm para
+   ver el aviso de rigidez. Con `&pelicula=sencilla` sale el rectángulo de 4 rodillos (base de 1288 × 972 mm), donde
+   ningún rodillo toca la tinta; en él, cambia la forma a festón para ver el aviso de la tinta.
+4. En *Projection Laboratory* mira el brillo: el video es oscuro. Acerca la pantalla (distancia de proyección 600 mm)
+   para verlo mejor.
+5. Imprime: `npm run imprimir -- --video=cried-out --segundos=5 --fps=24`. Primero imprime
+   `impresion/cried-out-5s-24fps-prueba-de-color.pdf` (portada, colores y la primera hoja) y luego
+   `impresion/cried-out-5s-24fps-tira-letter.pdf`, siempre al 100 %. `impresion/cried-out-5s-24fps.mp4` muestra los
+   fotogramas tal como se imprimen.
+6. Sin el video: `?demo=laminada&section=mechanical` arma la misma máquina
+   con la pelota repetida 5 veces. Son los mismos 4,32 m de película laminada en festón de 7 rodillos, a 160 rpm y con
+   115 µs, sin avisos.

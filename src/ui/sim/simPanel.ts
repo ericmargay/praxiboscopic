@@ -9,6 +9,8 @@ import { CATEGORY_LABEL, type PartCategory } from '../../three/parts';
 import { buildParts } from '../../fabricate/bom';
 import { OFFERS } from '../../fabricate/offers';
 import { MOTORS, type TransportSpec } from '../../mech/transport';
+import { festoonPasses } from '../../core/video';
+import { DEFAULT_LAMINATE } from '../../film/layout';
 import { autoSync } from '../../mech/sync';
 import type { DrumStrobe, LedStrobe } from '../../mech/strobe';
 import type { OpticsSpec } from '../../optics/projector';
@@ -244,7 +246,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
   function buildSide(): void {
     const p = ctx.project;
     const d = ctx.derived();
-    const k = JSON.stringify({ t: p.transport, path: p.path.rollerRadiusMm, aspect: p.pathAspect, auto: p.autoPath, gate: p.path.gateMm, kind: p.strobeKind, drum: p.drum, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps });
+    const k = JSON.stringify({ t: p.transport, path: p.path.rollerRadiusMm, aspect: p.pathAspect, layout: p.pathLayout, festoon: p.festoon, lam: p.film.laminate ?? null, auto: p.autoPath, gate: p.path.gateMm, kind: p.strobeKind, drum: p.drum, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps });
     if (k === sideKey) {
       updateReadouts();
       return;
@@ -261,7 +263,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
           button('Reiniciar (fotograma 0 en ventana)', () => sim.reset(), { kind: 'ghost' }),
         ),
         numberControl({ label: 'Escala de tiempo', value: p.ui.timeScale, min: 0.01, max: 2, step: 0.01, onChange: (v) => ctx.store.update((q) => ({ ...q, ui: { ...q.ui, timeScale: v } })), help: '0,05 = cámara lenta para ver cada destello' }).root,
-        numberControl({ label: 'FPS de proyección objetivo', value: p.targetFps, min: 1, max: 60, step: 1, onChange: (v) => ctx.store.update((q) => ({ ...q, targetFps: v })), help: 'Normalmente igual a los FPS de la animación' }).root,
+        numberControl({ label: 'FPS de proyección objetivo', value: p.targetFps, min: 1, max: 60, step: 0.1, decimals: 1, onChange: (v) => ctx.store.update((q) => ({ ...q, targetFps: v })), help: 'Normalmente igual a los FPS de la animación' }).root,
         button('Sincronizar motor y estroboscopio con los FPS', () => ctx.store.update((q) => {
           const dd = ctx.derived();
           const r = autoSync(q.targetFps, dd.layout, q.transport, dd.pathSpec.rollerRadiusMm, q.strobeKind === 'drum' ? q.drum : q.led);
@@ -280,7 +282,24 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
       ]),
       group('Recorrido', [
         checkbox('Diseñar el recorrido automáticamente para la película', p.autoPath, (v) => ctx.store.update((q) => ({ ...q, autoPath: v }))).root,
-        numberControl({ label: 'Proporción del rectángulo (a/b)', value: p.pathAspect, min: 1, max: 6, step: 0.1, decimals: 2, onChange: (v) => ctx.store.update((q) => ({ ...q, pathAspect: v })), disabled: !p.autoPath }).root,
+        selectControl({ label: 'Película', value: p.film.laminate ? 'laminated' : 'single', options: [{ value: 'laminated', label: 'Laminada: una cubierta tapa la tinta' }, { value: 'single', label: 'Sencilla: la tinta queda expuesta' }], onChange: (v) => ctx.store.update((q) => ({ ...q, film: { ...q.film, laminate: v === 'laminated' ? { ...DEFAULT_LAMINATE } : undefined } })), help: 'Laminada, los rodillos pueden tocar las dos caras y cabe el festón (ADR-0010)' }).root,
+        ...(p.film.laminate
+          ? [
+              numberControl({ label: 'Base', value: p.film.laminate.baseMm, min: 0.05, max: 1, step: 0.001, unit: 'mm', decimals: 3, onChange: (v) => ctx.store.update((q) => ({ ...q, film: { ...q.film, laminate: { coverMm: q.film.laminate?.coverMm ?? DEFAULT_LAMINATE.coverMm, baseMm: v } } })), help: 'Calibre 5 = 0,127 mm · 7,5 = 0,19 mm · 10 = 0,254 mm (milésimas de pulgada)' }).root,
+              numberControl({ label: 'Cubierta', value: p.film.laminate.coverMm, min: 0.02, max: 1, step: 0.005, unit: 'mm', decimals: 3, onChange: (v) => ctx.store.update((q) => ({ ...q, film: { ...q.film, laminate: { baseMm: q.film.laminate?.baseMm ?? DEFAULT_LAMINATE.baseMm, coverMm: v } } })), help: 'Laminado en frío brillante de 75–80 µm con su adhesivo: unos 0,09 mm' }).root,
+              readout('Grosor y rigidez', d.bending ? `${fmtNum(d.bending.thicknessMm, 3)} mm · doblarla pide ${fmtNum(100 * d.bending.stiffnessRatio, 1)} % de la tensión` : '—').root,
+            ]
+          : []),
+        selectControl({ label: 'Forma', value: p.pathLayout ?? 'rectangle', options: [{ value: 'rectangle', label: 'Rectángulo de 4 rodillos (toca una cara)' }, { value: 'festoon', label: 'Festón (zigzag): compacto, toca las dos caras' }], onChange: (v) => ctx.store.update((q) => ({ ...q, pathLayout: v as 'rectangle' | 'festoon', festoon: q.festoon ?? { passes: festoonPasses(ctx.derived().layout.loopLengthMm, q.path.rollerRadiusMm), frontGapMm: 90 } })) }).root,
+        ...(p.pathLayout === 'festoon'
+          ? [
+              numberControl({ label: 'Pasadas del festón', value: p.festoon?.passes ?? 4, min: 1, max: 12, step: 1, onChange: (v) => ctx.store.update((q) => ({ ...q, festoon: { passes: Math.round(v), frontGapMm: q.festoon?.frontGapMm ?? 90 } })), disabled: !p.autoPath, help: 'Rodillos de la fila cercana a la ventana: más pasadas = mesa más ancha y menos profunda' }).root,
+              numberControl({ label: 'Hueco para el LED', value: p.festoon?.frontGapMm ?? 90, min: 60, max: 200, step: 5, unit: 'mm', onChange: (v) => ctx.store.update((q) => ({ ...q, festoon: { passes: q.festoon?.passes ?? 4, frontGapMm: v } })), disabled: !p.autoPath, help: 'Entre el tramo de la ventana y la fila de rodillos más cercana' }).root,
+            ]
+          : [numberControl({ label: 'Proporción del rectángulo (a/b)', value: p.pathAspect, min: 1, max: 6, step: 0.1, decimals: 2, onChange: (v) => ctx.store.update((q) => ({ ...q, pathAspect: v })), disabled: !p.autoPath }).root]),
+        readout('Mesa (rodillos)', rollerFootprint(d)).root,
+        readout('Rodillos por cara', `${d.faces.lampSide} lámpara · ${d.faces.lensSide} lente`).root,
+        readout('Tinta', `hacia la ${d.faces.ink === 'lens' ? 'lente' : 'lámpara'} · ${!d.faces.inkTouched ? 'no la toca ningún rodillo' : d.faces.covered ? `cubierta: ${d.faces.inkTouched} rodillos tocan la cubierta` : `la rozan ${d.faces.inkTouched} rodillos`}`).root,
         numberControl({ label: 'Posición de la ventana', value: d.pathSpec.gateMm, min: 0, max: Math.max(1, d.path.lengthMm), step: 1, unit: 'mm', onChange: (v) => ctx.store.update((q) => ({ ...q, autoPath: false, path: { ...ctx.derived().pathSpec, gateMm: v } })), help: 'A lo largo del recorrido; debe caer en un tramo recto' }).root,
         readout('Longitud del recorrido', `${fmtNum(d.path.lengthMm, 1)} mm (recto ${fmtNum(d.path.straightMm, 1)} mm)`).root,
         readout('Rodillos', d.pathSpec.rollers.map((r) => `(${fmtNum(r.x, 0)}, ${fmtNum(r.y, 0)})`).join(' ')).root,
@@ -426,4 +445,12 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
       }
     },
   };
+}
+
+/** tamaño que ocupan los rodillos (ancho × fondo, con pestañas) */
+function rollerFootprint(d: ReturnType<AppContext['derived']>): string {
+  const R = d.pathSpec.rollerRadiusMm + 2;
+  const xs = d.pathSpec.rollers.map((r) => r.x);
+  const ys = d.pathSpec.rollers.map((r) => r.y);
+  return `${fmtNum(Math.max(...xs) - Math.min(...xs) + 2 * R, 0)} × ${fmtNum(Math.max(...ys) - Math.min(...ys) + 2 * R, 0)} mm · ${d.pathSpec.rollers.length} rodillos`;
 }

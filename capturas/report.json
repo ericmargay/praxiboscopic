@@ -1,27 +1,27 @@
 {
   "url": "http://localhost:4188/",
-  "generated": "2026-11-03T04:19:56.224Z",
+  "generated": "2026-11-04T05:58:48.541Z",
   "views": {
     "studio": {
       "file": "capturas/studio.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 2.383199999999998,
-        "phi": 859.5185984382283,
-        "flashes": 56,
+        "warnings": 1,
+        "t": 2.3331999999999997,
+        "phi": 816.3185984382262,
+        "flashes": 54,
         "gate": {
-          "phiMm": 859.5185984382283,
-          "slot": 9,
-          "frameIndex": 9,
-          "offsetMm": -7.08480000000236,
-          "offsetFraction": -0.19680000000006556,
+          "phiMm": 816.3185984382262,
+          "slot": 8,
+          "frameIndex": 8,
+          "offsetMm": 0.11519999999973152,
+          "offsetFraction": 0.003199999999992542,
           "speedMmS": 863.9999999999998
         }
       }
@@ -30,22 +30,22 @@
       "file": "capturas/frames.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 4.4831,
-        "phi": 81.83219843822906,
-        "flashes": 106,
+        "warnings": 1,
+        "t": 4.416499999999999,
+        "phi": 24.289798438226285,
+        "flashes": 104,
         "gate": {
-          "phiMm": 81.83219843822906,
-          "slot": 12,
-          "frameIndex": 12,
-          "offsetMm": 14.601599999996836,
-          "offsetFraction": 0.4055999999999121,
+          "phiMm": 24.289798438226285,
+          "slot": 10,
+          "frameIndex": 10,
+          "offsetMm": 0.14399999999960755,
+          "offsetFraction": 0.003999999999989099,
           "speedMmS": 863.9999999999998
         }
       }
@@ -54,22 +54,22 @@
       "file": "capturas/film.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 6.466300000000024,
-        "phi": 67.3169984382281,
-        "flashes": 154,
+        "warnings": 1,
+        "t": 6.416400000000023,
+        "phi": 24.203398438224667,
+        "flashes": 152,
         "gate": {
-          "phiMm": 67.3169984382281,
-          "slot": 11,
-          "frameIndex": 11,
-          "offsetMm": -6.883200000002205,
-          "offsetFraction": -0.19120000000006124,
+          "phiMm": 24.203398438224667,
+          "slot": 10,
+          "frameIndex": 10,
+          "offsetMm": 0.23040000000122518,
+          "offsetFraction": 0.006400000000034033,
           "speedMmS": 863.9999999999998
         }
       }
@@ -78,22 +78,22 @@
       "file": "capturas/export.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 8.466300000000036,
-        "phi": 67.31699843822537,
-        "flashes": 202,
+        "warnings": 1,
+        "t": 8.416300000000039,
+        "phi": 24.116998438224755,
+        "flashes": 200,
         "gate": {
-          "phiMm": 67.31699843822537,
-          "slot": 11,
-          "frameIndex": 11,
-          "offsetMm": -6.883199999999476,
-          "offsetFraction": -0.19119999999998546,
+          "phiMm": 24.116998438224755,
+          "slot": 10,
+          "frameIndex": 10,
+          "offsetMm": 0.3168000000011375,
+          "offsetFraction": 0.008800000000031597,
           "speedMmS": 863.9999999999998
         }
       }
@@ -102,22 +102,22 @@
       "file": "capturas/mechanical.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 11.549499999999982,
-        "phi": 139.20179843822177,
-        "flashes": 276,
+        "warnings": 1,
+        "t": 11.4995,
+        "phi": 96.00179843821957,
+        "flashes": 274,
         "gate": {
-          "phiMm": 139.20179843822177,
-          "slot": 13,
-          "frameIndex": 13,
-          "offsetMm": -6.7679999999958795,
-          "offsetFraction": -0.18799999999988554,
+          "phiMm": 96.00179843821957,
+          "slot": 12,
+          "frameIndex": 12,
+          "offsetMm": 0.432000000006326,
+          "offsetFraction": 0.012000000000175723,
           "speedMmS": 863.9999999999998
         }
       }
@@ -126,22 +126,22 @@
       "file": "capturas/mechanical-motor.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 14.599399999999932,
-        "phi": 182.31539843821747,
-        "flashes": 349,
+        "warnings": 1,
+        "t": 14.56609999999995,
+        "phi": 153.54419843821438,
+        "flashes": 348,
         "gate": {
-          "phiMm": 182.31539843821747,
+          "phiMm": 153.54419843821438,
           "slot": 14,
           "frameIndex": 14,
-          "offsetMm": -13.881599999991522,
-          "offsetFraction": -0.3855999999997645,
+          "offsetMm": 14.889600000011512,
+          "offsetFraction": 0.41360000000031977,
           "speedMmS": 863.9999999999998
         }
       }
@@ -150,22 +150,22 @@
       "file": "capturas/mechanical-electronics.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 17.665999999999844,
-        "phi": 239.85779843821228,
-        "flashes": 422,
+        "warnings": 1,
+        "t": 17.765899999999917,
+        "phi": 326.17139843820564,
+        "flashes": 425,
         "gate": {
-          "phiMm": 239.85779843821228,
-          "slot": 16,
-          "frameIndex": 16,
-          "offsetMm": 0.5760000000136642,
-          "offsetFraction": 0.01600000000037956,
+          "phiMm": 326.17139843820564,
+          "slot": 18,
+          "frameIndex": 18,
+          "offsetMm": -13.737599999979693,
+          "offsetFraction": -0.38159999999943595,
           "speedMmS": 863.9999999999998
         }
       }
@@ -174,22 +174,22 @@
       "file": "capturas/mechanical-interior.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 20.715799999999785,
-        "phi": 282.8849984382032,
-        "flashes": 496,
+        "warnings": 1,
+        "t": 20.865799999999822,
+        "phi": 412.4849984381949,
+        "flashes": 499,
         "gate": {
-          "phiMm": 282.8849984382032,
-          "slot": 17,
-          "frameIndex": 17,
-          "offsetMm": -6.451199999977234,
-          "offsetFraction": -0.17919999999936762,
+          "phiMm": 412.4849984381949,
+          "slot": 21,
+          "frameIndex": 21,
+          "offsetMm": 7.948800000031042,
+          "offsetFraction": 0.22080000000086228,
           "speedMmS": 863.9999999999998
         }
       }
@@ -198,22 +198,22 @@
       "file": "capturas/mechanical-gate.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 23.832299999999698,
-        "phi": 383.54099843819404,
-        "flashes": 570,
+        "warnings": 1,
+        "t": 23.898999999999766,
+        "phi": 441.16979843818626,
+        "flashes": 572,
         "gate": {
-          "phiMm": 383.54099843819404,
-          "slot": 20,
-          "frameIndex": 20,
-          "offsetMm": 0.8928000000319116,
-          "offsetFraction": 0.024800000000886432,
+          "phiMm": 441.16979843818626,
+          "slot": 22,
+          "frameIndex": 22,
+          "offsetMm": 15.264000000039687,
+          "offsetFraction": 0.4240000000011024,
           "speedMmS": 863.9999999999998
         }
       }
@@ -222,22 +222,22 @@
       "file": "capturas/mechanical-screen.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 26.848899999999595,
-        "phi": 397.8833984381836,
-        "flashes": 643,
+        "warnings": 1,
+        "t": 26.89889999999972,
+        "phi": 441.0833984381784,
+        "flashes": 644,
         "gate": {
-          "phiMm": 397.8833984381836,
-          "slot": 20,
-          "frameIndex": 20,
-          "offsetMm": -13.449599999957627,
-          "offsetFraction": -0.373599999998823,
+          "phiMm": 441.0833984381784,
+          "slot": 22,
+          "frameIndex": 22,
+          "offsetMm": 15.350400000047557,
+          "offsetFraction": 0.42640000000132106,
           "speedMmS": 863.9999999999998
         }
       }
@@ -246,22 +246,22 @@
       "file": "capturas/laboratory.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
-        "warnings": 2,
-        "t": 28.8487999999996,
-        "phi": 397.79699843817934,
-        "flashes": 691,
+        "warnings": 1,
+        "t": 28.915499999999646,
+        "phi": 455.42579843817157,
+        "flashes": 692,
         "gate": {
-          "phiMm": 397.79699843817934,
-          "slot": 20,
-          "frameIndex": 20,
-          "offsetMm": -13.363199999953395,
-          "offsetFraction": -0.3711999999987054,
+          "phiMm": 455.42579843817157,
+          "slot": 22,
+          "frameIndex": 22,
+          "offsetMm": 1.0080000000543805,
+          "offsetFraction": 0.02800000000151057,
           "speedMmS": 863.9999999999998
         }
       }
@@ -270,28 +270,196 @@
       "file": "capturas/laboratory-drum.png",
       "stats": {
         "frames": 24,
-        "frameHash": "b35336694a570b3f",
+        "frameHash": "900e3d4793f0a845",
         "filmMm": 864,
         "pathMm": 864,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 24,
         "warnings": 3,
-        "t": 30.84869999999953,
-        "phi": 397.7105984381715,
-        "flashes": 739,
+        "t": 30.89879999999964,
+        "phi": 440.9969984381655,
+        "flashes": 740,
         "gate": {
-          "phiMm": 397.7105984381715,
-          "slot": 20,
-          "frameIndex": 20,
-          "offsetMm": -13.276799999945524,
-          "offsetFraction": -0.3687999999984868,
+          "phiMm": 440.9969984381655,
+          "slot": 22,
+          "frameIndex": 22,
+          "offsetMm": 15.43680000006043,
+          "offsetFraction": 0.4288000000016786,
           "speedMmS": 863.9999999999998
         }
       }
     },
     "compras": {
       "file": "capturas/compras.png"
+    },
+    "laminada": {
+      "file": "capturas/laminada.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 4319.999999999999,
+        "coherent": true,
+        "transportFps": 23.999999999999993,
+        "flashHz": 23.999999999999993,
+        "warnings": 2,
+        "t": 4.466399999999999,
+        "phi": 3589.704793752846,
+        "flashes": 108,
+        "gate": {
+          "phiMm": 3589.704793752846,
+          "slot": 107,
+          "frameIndex": 11,
+          "offsetMm": -6.969599999943057,
+          "offsetFraction": -0.19359999999841826,
+          "speedMmS": 863.9999999999998
+        }
+      }
+    },
+    "laminada-top": {
+      "file": "capturas/laminada-top.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 4319.999999999999,
+        "coherent": true,
+        "transportFps": 23.999999999999993,
+        "flashHz": 23.999999999999993,
+        "warnings": 2,
+        "t": 4.416600000000002,
+        "phi": 3546.67759375287,
+        "flashes": 105,
+        "gate": {
+          "phiMm": 3546.67759375287,
+          "slot": 106,
+          "frameIndex": 10,
+          "offsetMm": 0.05760000003283494,
+          "offsetFraction": 0.0016000000009120817,
+          "speedMmS": 863.9999999999998
+        }
+      }
+    },
+    "video-frames": {
+      "file": "capturas/video-frames.png",
+      "stats": {
+        "frames": 120,
+        "frameHash": "4187accc721dc797",
+        "filmMm": 4320,
+        "pathMm": 4319.999999999999,
+        "coherent": true,
+        "transportFps": 23.999999999999993,
+        "flashHz": 23.999999999999993,
+        "warnings": 2,
+        "t": 6.150300000071541,
+        "phi": 1522.292998500001,
+        "flashes": 147,
+        "gate": {
+          "phiMm": 1522.292998500001,
+          "slot": 50,
+          "frameIndex": 50,
+          "offsetMm": 8.44219525290191,
+          "offsetFraction": 0.23450542369171976,
+          "speedMmS": 863.9999999999998
+        }
+      }
+    },
+    "video-mechanical": {
+      "file": "capturas/video-mechanical.png",
+      "stats": {
+        "frames": 120,
+        "frameHash": "f4b72d72adb83fd8",
+        "filmMm": 4320,
+        "pathMm": 4319.999999999999,
+        "coherent": true,
+        "transportFps": 23.999999999999993,
+        "flashHz": 23.999999999999993,
+        "warnings": 2,
+        "t": 7.533100000000033,
+        "phi": 2717.032198438217,
+        "flashes": 179,
+        "gate": {
+          "phiMm": 2717.032198438217,
+          "slot": 83,
+          "frameIndex": 83,
+          "offsetMm": 1.7029953146857224,
+          "offsetFraction": 0.04730542540793673,
+          "speedMmS": 863.9999999999998
+        }
+      }
+    },
+    "video-top": {
+      "file": "capturas/video-top.png",
+      "stats": {
+        "frames": 120,
+        "frameHash": "fd04cfdd423ff1d5",
+        "filmMm": 4320,
+        "pathMm": 4319.999999999999,
+        "coherent": true,
+        "transportFps": 23.999999999999993,
+        "flashHz": 23.999999999999993,
+        "warnings": 2,
+        "t": 7.791000000047718,
+        "phi": 2939.857798479393,
+        "flashes": 186,
+        "gate": {
+          "phiMm": 2939.857798479393,
+          "slot": 89,
+          "frameIndex": 89,
+          "offsetMm": -5.1226047264899535,
+          "offsetFraction": -0.14229457573583204,
+          "speedMmS": 863.9999999999998
+        }
+      }
+    },
+    "video-gate": {
+      "file": "capturas/video-gate.png",
+      "stats": {
+        "frames": 120,
+        "frameHash": "fbfb0cc0ca64d22c",
+        "filmMm": 4320,
+        "pathMm": 4319.999999999999,
+        "coherent": true,
+        "transportFps": 23.999999999999993,
+        "flashHz": 23.999999999999993,
+        "warnings": 2,
+        "t": 6.533100000000018,
+        "phi": 1853.0321984382072,
+        "flashes": 155,
+        "gate": {
+          "phiMm": 1853.0321984382072,
+          "slot": 59,
+          "frameIndex": 59,
+          "offsetMm": 1.7029953146957268,
+          "offsetFraction": 0.047305425408214634,
+          "speedMmS": 863.9999999999998
+        }
+      }
+    },
+    "video-laboratory": {
+      "file": "capturas/video-laboratory.png",
+      "stats": {
+        "frames": 120,
+        "frameHash": "b20f8dafc3081a40",
+        "filmMm": 4320,
+        "pathMm": 4319.999999999999,
+        "coherent": true,
+        "transportFps": 23.999999999999993,
+        "flashHz": 23.999999999999993,
+        "warnings": 2,
+        "t": 6.3330000000000215,
+        "phi": 1680.1457984382178,
+        "flashes": 151,
+        "gate": {
+          "phiMm": 1680.1457984382178,
+          "slot": 54,
+          "frameIndex": 54,
+          "offsetMm": -5.4106046853148655,
+          "offsetFraction": -0.1502945745920796,
+          "speedMmS": 863.9999999999998
+        }
+      }
     }
   },
   "consoleErrors": []

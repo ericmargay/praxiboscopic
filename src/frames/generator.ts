@@ -5,7 +5,18 @@
 // @napi-rs/canvas en Node).
 import { evaluate } from '../animation/evaluate';
 import { frameTimes } from '../animation/loop';
-import type { AnimationDoc } from '../animation/model';
+import { walkItems, type AnimationDoc } from '../animation/model';
+
+/** ¿el documento tiene imágenes raster (fijas o secuencias)? se memoriza por documento */
+const imageDocs = new WeakMap<AnimationDoc, boolean>();
+function hasImages(doc: AnimationDoc): boolean {
+  let v = imageDocs.get(doc);
+  if (v === undefined) {
+    v = doc.layers.some((l) => [...walkItems(l.items)].some((it) => it.type === 'image'));
+    imageDocs.set(doc, v);
+  }
+  return v;
+}
 import { renderDisplayList, type Ctx2D, type ResourceProvider } from '../animation/render2d';
 import { hashValue } from '../core/hash';
 import { applyColorAdjust } from './adjust';
@@ -93,7 +104,9 @@ export class FrameGenerator {
       const t = times[i];
       const overrides = doc.frameOverrides[String(i)] ?? [];
       const replacement = doc.frameReplacements?.[String(i)];
-      const hash = hashValue({ docHash, globalKey, t, i, overrides, replacement: replacement ? hashValue(replacement) : null, hasImg: replacement ? !!this.resources.getImage(replacement) : null });
+      // las imágenes que aún cargan entran en el hash: al llegar, solo se repinta el fotograma que las usa
+      const images = replacement ? null : this.imagesReady(effectiveDoc, t, i);
+      const hash = hashValue({ docHash, globalKey, t, i, overrides, replacement: replacement ? hashValue(replacement) : null, hasImg: replacement ? !!this.resources.getImage(replacement) : null, images });
       used.add(hash);
       let canvas = this.cache.get(hash);
       if (!canvas) {
@@ -116,6 +129,14 @@ export class FrameGenerator {
     this.lastHashes = hashes;
     const mm = settings.orientation === 90 || settings.orientation === 270 ? { widthMm: settings.heightMm, heightMm: settings.widthMm } : { widthMm: settings.widthMm, heightMm: settings.heightMm };
     return { count, widthPx: size.width, heightPx: size.height, ...mm, fps: doc.fps, duration, frames: out, hash: hashValue({ hashes, globalKey, direction: settings.direction }), regenerated, cached };
+  }
+
+  /** estado de carga de las imágenes que usa un fotograma (null si no usa ninguna); también dispara su carga */
+  private imagesReady(doc: AnimationDoc, t: number, frameIndex: number): string | null {
+    if (!hasImages(doc)) return null;
+    let out = '';
+    for (const n of evaluate(doc, t, { frameIndex }).nodes) if (n.geometry.kind === 'image') out += this.resources.getImage(n.geometry.src) ? '1' : '0';
+    return out || null;
   }
 
   /** pinta un fotograma: supermuestreo → ajustes de color → orientación */

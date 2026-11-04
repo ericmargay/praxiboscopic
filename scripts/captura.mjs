@@ -3,6 +3,7 @@
 // secciones (y las pestañas del estudio) en capturas/<nombre>.png, más capturas/report.json con las estadísticas
 // que publica window.__praxi. Termina con error si la app no arranca o hay errores de consola.
 //   node scripts/captura.mjs [--skip-build] [--vistas=studio,frames,film,export,mechanical,laboratory]
+import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +12,8 @@ import { chromium } from 'playwright';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Map(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? '1']));
-const views = (args.get('vistas') ?? 'studio,frames,film,export,mechanical,mechanical-motor,mechanical-electronics,mechanical-interior,mechanical-gate,mechanical-screen,laboratory,laboratory-drum,compras').split(',');
+const hasVideo = existsSync(path.join(root, 'public', 'videos', 'cried-out', 'manifest.json'));
+const views = (args.get('vistas') ?? `studio,frames,film,export,mechanical,mechanical-motor,mechanical-electronics,mechanical-interior,mechanical-gate,mechanical-screen,laboratory,laboratory-drum,compras,laminada,laminada-top${hasVideo ? ',video-frames,video-mechanical,video-top,video-gate,video-laboratory' : ''}`).split(',');
 const outDir = path.join(root, 'capturas');
 await mkdir(outDir, { recursive: true });
 
@@ -51,6 +53,22 @@ try {
   const err = await page.evaluate(() => window.__praxi.error);
   if (err) throw new Error(`La app no arrancó: ${err}`);
   for (const v of views) {
+    if (v.startsWith('video-')) {
+      // proyecto del video (no versionado): se carga desde la biblioteca con ?video= (5 s a 24 fps, ADR-0009)
+      const target = { 'video-frames': 'section=studio&tab=frames', 'video-mechanical': 'section=mechanical', 'video-top': 'section=mechanical', 'video-gate': 'section=mechanical', 'video-laboratory': 'section=laboratory' }[v];
+      await page.goto(`${url}?demo=1&video=cried-out&segundos=5&fps=24&${target}`, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => window.__praxi?.ready && window.__praxi.ctx.project.animation.layers.some((l) => l.items.some((it) => it.sequence)), null, { timeout: 30_000 });
+      await page.waitForTimeout(6000);
+      if (v === 'video-top') await page.evaluate(() => window.__praxiScene?.setView('top'));
+      if (v === 'video-mechanical') await page.evaluate(() => window.__praxiScene?.setView('home'));
+      if (v === 'video-gate') await page.evaluate(() => { window.__praxiScene?.select('sensor'); window.__praxiScene?.setView('gate'); });
+      await page.waitForTimeout(1500);
+      const file = path.join(outDir, `${v}.png`);
+      await page.screenshot({ path: file });
+      report.views[v] = { file: path.relative(root, file), stats: await page.evaluate(() => window.__praxi.stats()) };
+      console.log(`✓ ${v} → ${path.relative(root, file)}`);
+      continue;
+    }
     if (v === 'compras') {
       await page.goto(`${url}compras.html?demo=1&row=motor-17hs8401`, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 30_000 });
@@ -58,6 +76,19 @@ try {
       const file = path.join(outDir, 'compras.png');
       await page.screenshot({ path: file });
       report.views[v] = { file: path.relative(root, file) };
+      console.log(`✓ ${v} → ${path.relative(root, file)}`);
+      continue;
+    }
+    if (v.startsWith('laminada')) {
+      // película laminada de 5 s con la pelota (?demo=laminada): la máquina que se publica sin el video (ADR-0010)
+      await page.goto(`${url}?demo=laminada&section=mechanical`, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => window.__praxi?.ready, null, { timeout: 30_000 });
+      await page.waitForTimeout(2500);
+      await page.evaluate((top) => { window.__praxiScene?.select(null); window.__praxiScene?.setView(top ? 'top' : 'home'); }, v === 'laminada-top');
+      await page.waitForTimeout(1500);
+      const file = path.join(outDir, `${v}.png`);
+      await page.screenshot({ path: file });
+      report.views[v] = { file: path.relative(root, file), stats: await page.evaluate(() => window.__praxi.stats()) };
       console.log(`✓ ${v} → ${path.relative(root, file)}`);
       continue;
     }

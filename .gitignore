@@ -6,3 +6,9 @@ dist/
 *.local
 private/
 capturas/*.tmp
+# material de terceros: videos de origen, sus cuadros extraídos y los PDF de impresión hechos con ellos
+*.mp4
+*.mov
+public/videos/
+impresion/
+capturas/video-*.png

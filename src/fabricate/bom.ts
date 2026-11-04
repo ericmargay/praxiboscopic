@@ -123,9 +123,10 @@ export function buildParts(p: Project, d: Derived): { parts: PartMeta[]; notes: 
   const R = d.pathSpec.rollerRadiusMm;
   const rollerH = p.film.stripWidthMm + 10;
   const n = d.pathSpec.rollers.length;
+  const onCover = d.faces.covered ? d.faces.inkTouched : 0;
   add(
-    { id: 'rollers', name: `Rodillo Ø${(2 * R).toFixed(2)} × ${rollerH.toFixed(0)} mm con pestañas guía`, category: 'mechanical', qty: n, material: 'pla o petg', process: 'print3d', dimsMm: { x: 2 * R + 6, y: 2 * R + 6, z: rollerH }, fabricate: { profile: 'mesh' }, notes: 'Pestañas que guían la película sin tocar los fotogramas; el motriz con superficie de goma y cubo metálico con prisionero' },
-    { why: `Uno motriz, uno tensor y dos libres; definen el recorrido de ${d.path.lengthMm.toFixed(0)} mm`, forWhat: 'Recorrido de la película', alternative: 'Torneados en nylon o aluminio si la impresión queda con más de 0,1 mm de excentricidad', evidence: 'estimated', need: 'taller' },
+    { id: 'rollers', name: `Rodillo Ø${(2 * R).toFixed(2)} × ${rollerH.toFixed(0)} mm con pestañas guía`, category: 'mechanical', qty: n, material: 'pla o petg', process: 'print3d', dimsMm: { x: 2 * R + 6, y: 2 * R + 6, z: rollerH }, fabricate: { profile: 'mesh' }, notes: `Pestañas que guían la película sin tocar los fotogramas; el motriz con superficie de goma y cubo metálico con prisionero${onCover ? `. Los ${onCover} que tocan la cubierta, con el centro rebajado: apoyan solo en los márgenes, fuera de la imagen` : ''}` },
+    { why: `Uno motriz, uno tensor y ${n - 2 === 2 ? 'dos' : n - 2} libres; definen el recorrido de ${d.path.lengthMm.toFixed(0)} mm`, forWhat: 'Recorrido de la película', alternative: 'Torneados en nylon o aluminio si la impresión queda con más de 0,1 mm de excentricidad', evidence: 'estimated', need: 'taller' },
   );
   const bearing = BEARINGS.find((b) => b.id === '608') ?? BEARINGS[0];
   add(
@@ -166,7 +167,7 @@ export function buildParts(p: Project, d: Derived): { parts: PartMeta[]; notes: 
 
   // ventana y linterna
   add(
-    { id: 'gate-plate', name: `Placa de ventana ${p.optics.gateWidthMm} × ${p.optics.gateHeightMm} mm en aluminio negro 1,5 mm con guías`, category: 'optical', qty: 1, material: 'aluminio-1.5', process: 'laser', dimsMm: { x: p.optics.gateWidthMm + 40, y: p.film.stripWidthMm + 30, z: 1.5 }, fabricate: { profile: 'outline', thicknessMm: 1.5 } },
+    { id: 'gate-plate', name: `Placa de ventana ${p.optics.gateWidthMm} × ${p.optics.gateHeightMm} mm en aluminio negro 1,5 mm con guías`, category: 'optical', qty: 1, material: 'aluminio-1.5', process: 'laser', dimsMm: { x: p.optics.gateWidthMm + 40, y: p.film.stripWidthMm + 30, z: 1.5 }, fabricate: { profile: 'outline', thicknessMm: 1.5 }, notes: 'Del lado de la lámpara: sus guías apoyan en los márgenes de la cara limpia. Del lado de la lente nada toca la película: ahí va la tinta' },
     { why: 'Máscara del fotograma: solo pasa luz por la imagen; las guías mantienen la película plana en el plano focal', forWhat: 'Óptica', alternative: 'Acrílico negro 2 mm (menos resistente al calor de la lámpara)', evidence: 'estimated', need: 'taller' },
   );
   const orep = opticsReport(p.optics);
@@ -287,6 +288,19 @@ export function buildParts(p: Project, d: Derived): { parts: PartMeta[]; notes: 
     add(
       { id: `film-lab-${medium.id}`, name: `Servicio de laboratorio: ${medium.label}, tira de ${d.layout.totalLengthMm.toFixed(0)} × ${p.film.stripWidthMm} mm`, category: 'material', qty: 1, process: 'buy' },
       { why: 'Tono continuo, Dmax alto y estabilidad dimensional del poliéster', forWhat: 'Película final', alternative: 'Prueba previa en acetato de escritorio para validar movimiento y registro', evidence: 'unverified', need: 'requerido' },
+    );
+  }
+  const lam = p.film.laminate;
+  if (lam) {
+    // largo de la tira más medio metro para el empalme y las pruebas
+    const meters = (d.layout.totalLengthMm / 1000 + 0.5).toFixed(1);
+    add(
+      { id: 'film-base-roll', name: `Rollo de PET cristal de ${(lam.baseMm * 1000).toFixed(0)} µm (o PVC rígido cristal calibre ${(lam.baseMm / 0.0254).toFixed(1).replace(/\.0$/, '')}) de al menos ${meters} m`, category: 'material', qty: 1, process: 'buy', supplier: { name: 'distribuidor de películas plásticas (PET cristal por micras)' } },
+      { why: 'Base continua de la tira, sin empalmes intermedios. Rígido: el "plástico cristal" flexible se estira y su plastificante ataca la pintura y el adhesivo', forWhat: 'Película laminada', alternative: 'Las hojas transparentes empalmadas a tope: la cubierta une los tramos', evidence: 'unverified', need: 'requerido' },
+    );
+    add(
+      { id: 'film-cover', name: `Laminado en frío brillante de 75–80 µm con adhesivo acrílico, ${meters} m, pasado en laminadora de rodillos`, category: 'material', qty: 1, process: 'buy', supplier: { name: 'tienda de rotulación o gran formato' } },
+      { why: 'Tapa la tinta: los rodillos de la cara de la lente tocan la cubierta y no la pintura. Brillante, no mate: el mate vela la imagen. Pinta en una tira de unos 6 cm, deja curar, lamina y corta a la medida al final', forWhat: 'Película laminada', alternative: 'Segunda capa de la misma base pegada con adhesivo de transferencia acrílico transparente', evidence: 'unverified', need: 'requerido' },
     );
   }
   add(

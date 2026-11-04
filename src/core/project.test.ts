@@ -33,6 +33,9 @@ describe('proyecto de demostración', () => {
     expect(d.sync.actual.flashHz).toBeCloseTo(24, 6);
     expect(d.clearance.ok).toBe(true);
     expect(d.warnings.filter((w) => w.level === 'error').length).toBe(0);
+    // ni avisos: el destello de 115 µs deja el desenfoque en 0,1 mm
+    expect(d.warnings.filter((w) => w.level !== 'info')).toEqual([]);
+    expect(d.sync.actual.blurMm).toBeLessThanOrEqual(0.1);
     expect(() => parseProject(JSON.parse(JSON.stringify(p)))).not.toThrow();
   });
 

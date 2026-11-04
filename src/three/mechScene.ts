@@ -313,15 +313,16 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
 
     // suelo: cuadrícula de 10 mm sobre la mesa de trabajo
     const floorY = B.bottom - 4;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.ShadowMaterial({ opacity: 0.18 }));
+    const gridSize = Math.max(900, Math.ceil((Math.max(W, D) + 400) / 100) * 100);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(gridSize, gridSize), new THREE.ShadowMaterial({ opacity: 0.18 }));
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(cx, floorY, cz);
     ground.receiveShadow = true;
     ground.raycast = () => {};
-    const grid = new THREE.GridHelper(900, 90, 0x9fb2ba, 0xc2d0d5);
+    const grid = new THREE.GridHelper(gridSize, gridSize / 10, 0x9fb2ba, 0xc2d0d5);
     grid.position.set(cx, floorY + 0.1, cz);
     grid.raycast = () => {};
-    const gridMajor = new THREE.GridHelper(900, 9, 0x7f949c, 0x7f949c);
+    const gridMajor = new THREE.GridHelper(gridSize, gridSize / 100, 0x7f949c, 0x7f949c);
     gridMajor.position.set(cx, floorY + 0.15, cz);
     gridMajor.raycast = () => {};
     staticGroup.add(ground, grid, gridMajor);
@@ -330,6 +331,9 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const polyC = new THREE.Vector2(rollers.reduce((s, r) => s + r.x, 0) / rollers.length, rollers.reduce((s, r) => s + r.y, 0) / rollers.length);
     const motor = motorOf(p.transport);
     const ratio = p.transport.gearRatio;
+    // un rodillo abrazado en sentido horario (festón) gira al revés que uno abrazado en antihorario
+    const sideOf = (i: number) => d.pathSpec.sides?.[i] ?? 1;
+    const driveSide = sideOf(d.pathSpec.driveRoller);
     rollers.forEach((r, i) => {
       const isDrive = i === d.pathSpec.driveRoller;
       const isTensioner = i === d.pathSpec.tensionerRoller;
@@ -352,7 +356,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       roller.position.y = 1;
       spin.add(roller);
       g.add(spin);
-      spinners.push({ obj: spin, ratio: 1 });
+      spinners.push({ obj: spin, ratio: sideOf(i) });
       const shaftTop = 1 + bodyH + 12;
       const bearing = (y: number, id: string, parentObj: THREE.Object3D) => {
         const b = tag(buildKind('bearing'), { id, name: 'Rodamiento 608ZZ', category: 'transporte', kind: 'bearing', bomId: 'bearing-608' });
@@ -429,7 +433,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
         bomId: `motor-${motor.id}`,
         notes: [`${p.transport.motorRpm.toFixed(0)} rpm con acoplamiento directo${Math.abs(ratio - 1) > 1e-6 ? ` · reducción ${ratio.toFixed(2)}:1 en el modelo de transporte (la correa no se dibuja)` : ''}`, 'Cuelga bajo la cubierta, dentro de la base'],
       });
-      if (motorObj.userData.spin) spinners.push({ obj: motorObj.userData.spin as THREE.Object3D, ratio });
+      if (motorObj.userData.spin) spinners.push({ obj: motorObj.userData.spin as THREE.Object3D, ratio: ratio * driveSide });
       mg.add(motorObj);
       const bracket = tag(buildKind('bracket'), { id: 'bracket', name: 'Soporte en L del motor', category: 'transporte', kind: 'bracket', bomId: 'bracket-nema17' });
       bracket.position.y = a.motor.faceY;
@@ -437,7 +441,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       mg.add(bracket);
       const cpl = tag(buildKind('coupling'), { id: 'coupling', name: 'Cople flexible 5 × 8 mm', category: 'transporte', kind: 'coupling', bomId: 'coupling-5-8' });
       cpl.position.y = a.motor.couplingY;
-      spinners.push({ obj: cpl, ratio: 1 });
+      spinners.push({ obj: cpl, ratio: driveSide });
       mg.add(cpl);
       staticGroup.add(mg);
     }
@@ -527,16 +531,17 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const gw = o.gateWidthMm;
     const gh = o.gateHeightMm;
     const strip = p.film.stripWidthMm;
-    // placa de la ventana
-    const plate = tag(new THREE.Group(), { id: 'gate-plate', name: 'Placa de la ventana', category: 'optica', bomId: 'gate-plate', notes: [`Hueco de ${gh} × ${gw} mm en aluminio negro de 1,5 mm`, 'Guías que mantienen la película plana en el plano focal'] });
+    // placa de la ventana: del lado de la lámpara, como los rodillos; del lado de la lente nada toca la tinta (ADR-0009)
+    const plate = tag(new THREE.Group(), { id: 'gate-plate', name: 'Placa de la ventana', category: 'optica', bomId: 'gate-plate', notes: [`Hueco de ${gh} × ${gw} mm en aluminio negro de 1,5 mm, del lado de la lámpara`, 'Sus guías apoyan en los márgenes de la cara limpia y mantienen la película plana en el plano focal; del lado de la lente no la toca nada'] });
     const plateW = Math.max(gh + 30, 60);
     const plateH = strip + 24;
     const sideW = (plateW - gh) / 2;
     const topH = (plateH - gw) / 2;
     const pm = mat('anod');
-    plate.add(box(sideW, plateH, 1.5, pm, -(gh / 2 + sideW / 2), 0, 2), box(sideW, plateH, 1.5, pm, gh / 2 + sideW / 2, 0, 2), box(gh, topH, 1.5, pm, 0, gw / 2 + topH / 2, 2), box(gh, topH, 1.5, pm, 0, -(gw / 2 + topH / 2), 2));
-    plate.add(box(8, a.filmMid - plateH / 2, 8, pm, plateW / 2 - 4, -a.filmMid + (a.filmMid - plateH / 2) / 2, 2));
-    const ol = new THREE.BufferGeometry().setFromPoints([[-1, -1], [1, -1], [1, -1], [1, 1], [1, 1], [-1, 1], [-1, 1], [-1, -1]].map(([x, y]) => new THREE.Vector3((x * gh) / 2, (y * gw) / 2, 2.9)));
+    const plateZ = -2;
+    plate.add(box(sideW, plateH, 1.5, pm, -(gh / 2 + sideW / 2), 0, plateZ), box(sideW, plateH, 1.5, pm, gh / 2 + sideW / 2, 0, plateZ), box(gh, topH, 1.5, pm, 0, gw / 2 + topH / 2, plateZ), box(gh, topH, 1.5, pm, 0, -(gw / 2 + topH / 2), plateZ));
+    plate.add(box(8, a.filmMid - plateH / 2, 8, pm, plateW / 2 - 4, -a.filmMid + (a.filmMid - plateH / 2) / 2, plateZ - 3.25));
+    const ol = new THREE.BufferGeometry().setFromPoints([[-1, -1], [1, -1], [1, -1], [1, 1], [1, 1], [-1, 1], [-1, 1], [-1, -1]].map(([x, y]) => new THREE.Vector3((x * gh) / 2, (y * gw) / 2, plateZ + 0.9)));
     gateOutline = new THREE.LineSegments(ol, new THREE.LineBasicMaterial({ color: ACCENT }));
     gateOutline.raycast = () => {};
     plate.add(gateOutline);
@@ -721,6 +726,12 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const center = new THREE.Vector3(cx * MM, 0, cz * MM);
     key.target.position.copy(center);
     key.position.copy(center).add(new THREE.Vector3(0.35, 0.9, 0.45));
+    const half = Math.max(0.45, Math.max(W, D) * MM * 0.75);
+    sc.left = -half;
+    sc.right = half;
+    sc.top = half;
+    sc.bottom = -half;
+    sc.updateProjectionMatrix();
 
     for (const id of hidden) applyVisibility(id);
     if (isolated && !registry.has(isolated)) isolated = null;
@@ -999,7 +1010,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       case 'right':
         return lookFrom(s.center, new THREE.Vector3(1, 0.0001, 0), s.radius);
       case 'top':
-        return lookFrom(s.center, new THREE.Vector3(0.0001, 1, 0.0002), s.radius);
+        return lookFrom(s.center, new THREE.Vector3(0, 1, 0.0001), s.radius);
       case 'gate':
         return lookFrom(gate, gz.clone().multiplyScalar(1).add(gx.clone().multiplyScalar(0.8)).add(new THREE.Vector3(0, 0.6, 0)), 0.07);
       case 'drive':
