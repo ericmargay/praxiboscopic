@@ -9,6 +9,8 @@ rev="$(git -C "$root" rev-parse --short HEAD)"
 # el sitio sale de la copia de trabajo: si tiene cambios sin commit, el mensaje lo dice
 if [[ -n "$(git -C "$root" status --porcelain)" ]]; then rev="$rev con cambios sin commit"; fi
 cd "$root"
+# el ZIP del paquete para los talleres no va en git: se arma si falta
+if [[ ! -f public/fabricacion/tambores/mesa-tambores-taller.zip ]]; then node scripts/fabricar.mjs; fi
 npm run build
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT

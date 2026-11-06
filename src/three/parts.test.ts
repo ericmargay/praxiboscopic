@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { demoProject, deriveProject } from '../core/project';
+import { reelsDemoProject } from '../core/video';
 import { buildParts } from '../fabricate/bom';
-import { BOM_KIND, BREADBOARD, breadboardHole, buildKind, buildRoller, KINDS, localBox } from './parts';
+import { BOM_KIND, BREADBOARD, breadboardHole, buildKind, buildReel, buildRoller, KINDS, localBox } from './parts';
 
 const size = (kind: string) => {
   const b = localBox(buildKind(kind));
@@ -38,12 +39,26 @@ describe('catálogo de piezas a escala real', () => {
     expect(b.max.x - b.min.x).toBeCloseTo(2 * R + 4, 1);
   });
 
-  it('cada renglón con forma 3D existe en el catálogo y en la lista de compras', () => {
-    const p = demoProject();
-    const ids = new Set(buildParts(p, deriveProject(p)).parts.map((x) => x.id));
+  it('cada renglón con forma 3D existe en el catálogo y en la lista de compras del loop o de los dos tambores', () => {
+    const loop = demoProject();
+    const reels = reelsDemoProject();
+    const ids = new Set([...buildParts(loop, deriveProject(loop)).parts, ...buildParts(reels, deriveProject(reels)).parts].map((x) => x.id));
     for (const [row, kind] of Object.entries(BOM_KIND)) {
-      if (kind !== 'roller') expect(KINDS[kind], kind).toBeDefined();
+      // el rodillo y el tambor dependen del proyecto: se construyen con sus medidas
+      if (kind !== 'roller' && kind !== 'reel') expect(KINDS[kind], kind).toBeDefined();
       expect(ids.has(row), row).toBe(true);
     }
+  });
+
+  it('tambor de dos tambores: bridas de Ø130 mm y 42 mm de luz entre ellas', () => {
+    const b = localBox(buildReel((9 * 36) / (2 * Math.PI), 65, 42, 2));
+    expect(b.max.x - b.min.x).toBeCloseTo(130, 1);
+    // dos bridas de 2 mm y 42 mm de luz, más la marca de giro de 0,6 mm
+    expect(b.max.y - b.min.y).toBeCloseTo(46.6, 1);
+  });
+
+  it('el rodillo chico del brazo tensor (Ø40) se construye sin aligeramientos que choquen con el cubo', () => {
+    const b = localBox(buildRoller(20, 50));
+    expect(b.max.x - b.min.x).toBeCloseTo(44, 1);
   });
 });

@@ -7,14 +7,15 @@
 // Las medidas marcadas `approx` no vienen de una hoja de datos: hay que confirmarlas con la pieza en mano.
 import * as THREE from 'three';
 
-export type PartCategory = 'estructura' | 'transporte' | 'pelicula' | 'optica' | 'control' | 'potencia' | 'cableado';
+export type PartCategory = 'estructura' | 'transporte' | 'manos' | 'pelicula' | 'optica' | 'control' | 'potencia' | 'cableado';
 
 export const CATEGORY_LABEL: Record<PartCategory, string> = {
   estructura: 'Estructura',
   transporte: 'Transporte',
+  manos: 'Manos y sensores',
   pelicula: 'Película',
   optica: 'Óptica y luz',
-  control: 'Control (caja superior)',
+  control: 'Control',
   potencia: 'Potencia (dentro de la base)',
   cableado: 'Cableado',
 };
@@ -297,6 +298,13 @@ function buildExpansion(): THREE.Group {
   gpio('GPIO26', 10, -1); // DIR
   gpio('GPIO27', 11, -1); // LED (al IR2101)
   gpio('GPIO34', 4, -1); // sensor
+  // dos tambores: PUL y DIR del segundo driver, bus I2C de los sensores de mano y del AS5600, XSHUT del segundo sensor
+  gpio('GPIO32', 7, -1);
+  gpio('GPIO33', 8, -1);
+  gpio('3V3', 0, -1);
+  gpio('GPIO22', 2, 1);
+  gpio('GPIO21', 5, 1);
+  gpio('GPIO4', 12, 1);
   anchor(g, '5V', -22.86 + 18 * PITCH, 8, -(17.8 + PITCH));
   anchor(g, 'GND', -22.86 + 18 * PITCH, 8, -(17.8 + 2 * PITCH));
   anchor(g, 'GND2', -22.86 + 1 * PITCH, 8, 17.8 + 2 * PITCH);
@@ -468,15 +476,23 @@ export function buildRoller(R: number, bodyH: number, drive = false): THREE.Grou
     f.castShadow = true;
     g.add(f);
   }
-  // disco central con seis aligeramientos y cubo
+  // disco central con seis aligeramientos y cubo; en rodillos chicos los aligeramientos se acomodan entre el cubo y el
+  // borde, o no van
   const disc = new THREE.Shape();
   disc.absarc(0, 0, R - 0.5, 0, Math.PI * 2, false);
-  for (let k = 0; k < 6; k++) {
-    const a = (k * Math.PI) / 3;
-    const hole = new THREE.Path();
-    hole.absarc(Math.cos(a) * R * 0.58, Math.sin(a) * R * 0.58, R * 0.22, 0, Math.PI * 2, true);
-    disc.holes.push(hole);
+  let hc = R * 0.58;
+  let hr = R * 0.22;
+  if (hc - hr < 14 || hc + hr > R - 1.5) {
+    hc = (14 + R - 1.5) / 2;
+    hr = Math.min(R * 0.22, (R - 1.5 - 14) / 2 - 0.5);
   }
+  if (hr >= 2.5)
+    for (let k = 0; k < 6; k++) {
+      const a = (k * Math.PI) / 3;
+      const hole = new THREE.Path();
+      hole.absarc(Math.cos(a) * hc, Math.sin(a) * hc, hr, 0, Math.PI * 2, true);
+      disc.holes.push(hole);
+    }
   const hub = new THREE.Path();
   hub.absarc(0, 0, 11, 0, Math.PI * 2, true);
   disc.holes.push(hub);
@@ -496,6 +512,174 @@ export function buildRoller(R: number, bodyH: number, drive = false): THREE.Grou
     g.add(grip);
   }
   g.add(box(R * 0.5, 0.6, 2, mat('red'), R * 0.62, bodyH + 0.9, 0)); // marca de giro
+  return g;
+}
+
+/**
+ * Tambor (ADR-0011, ADR-0012): núcleo impreso de radio `coreR` (anillo de 2 mm con el alma arriba y el cubo para el eje
+ * de 8 mm) entre dos bridas de acrílico transparente de 3 mm, para ver la película enrollada. Eje Y; origen en la cara
+ * inferior de la brida de abajo; `gap` es la luz entre bridas.
+ */
+export function buildReel(coreR: number, flangeR: number, gap: number, flangeT = 3): THREE.Group {
+  const g = new THREE.Group();
+  for (const [y, hole] of [
+    [0, 5.85],
+    [flangeT + gap, 4.1],
+  ] as const) {
+    const f = new THREE.Shape();
+    f.absarc(0, 0, flangeR, 0, Math.PI * 2, false);
+    const h = new THREE.Path();
+    h.absarc(0, 0, hole, 0, Math.PI * 2, true);
+    f.holes.push(h);
+    const fg = new THREE.ExtrudeGeometry(f, { depth: flangeT, bevelEnabled: false, curveSegments: 64 });
+    fg.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(fg, mat('acrylic'));
+    m.position.y = y;
+    g.add(m);
+    // canto pulido del acrílico: se ve como una línea
+    const edge = new THREE.Mesh(new THREE.CylinderGeometry(flangeR, flangeR, flangeT, 96, 1, true), new THREE.MeshStandardMaterial({ color: 0xb9d3da, roughness: 0.1, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
+    edge.position.y = y + flangeT / 2;
+    g.add(edge);
+  }
+  const core = new THREE.Mesh(new THREE.CylinderGeometry(coreR, coreR, gap, 96, 1, true), mat('pla'));
+  core.position.y = flangeT + gap / 2;
+  (core.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+  core.castShadow = true;
+  g.add(core);
+  // alma con aligeramientos bajo la brida de arriba, y el cubo
+  const web = new THREE.Shape();
+  web.absarc(0, 0, coreR - 1, 0, Math.PI * 2, false);
+  for (let k = 0; k < 6; k++) {
+    const a = (k * Math.PI) / 3 + Math.PI / 6;
+    const hp = new THREE.Path();
+    hp.absarc(30 * Math.cos(a), 30 * Math.sin(a), 10.5, 0, Math.PI * 2, true);
+    web.holes.push(hp);
+  }
+  const hub = new THREE.Path();
+  hub.absarc(0, 0, 11, 0, Math.PI * 2, true);
+  web.holes.push(hub);
+  const wg = new THREE.ExtrudeGeometry(web, { depth: 3, bevelEnabled: false, curveSegments: 48 });
+  wg.rotateX(-Math.PI / 2);
+  const wm = new THREE.Mesh(wg, mat('pla'));
+  wm.position.y = flangeT + gap - 3;
+  wm.castShadow = true;
+  g.add(wm);
+  g.add(cyl(11, gap, mat('pla'), 0, flangeT + gap / 2, 0, 32));
+  // ranura de la cola y marca de giro
+  g.add(box(1.2, gap - 4, 6, mat('hole'), coreR - 0.4, flangeT + gap / 2, 0));
+  g.add(box(flangeR * 0.4, 0.6, 2.4, mat('red'), flangeR * 0.7, 2 * flangeT + gap + 0.3, 0));
+  return g;
+}
+
+/**
+ * Rodillo de la mesa de dos tambores (guía o tensor): cuerpo impreso de radio R con su manga para dos 608 y bridas de
+ * acrílico de radio `flangeR`. `relief` rebaja el centro (el rodillo tensor solo apoya en los márgenes). Eje Y; origen
+ * en la cara inferior de la brida de abajo.
+ */
+export function buildSpool(R: number, gap: number, flangeT: number, flangeR: number, relief = 0): THREE.Group {
+  const g = new THREE.Group();
+  const shellR = R - relief;
+  const shell = new THREE.Mesh(new THREE.CylinderGeometry(shellR, shellR, gap - (relief ? 11 : 0), 72, 1, true), mat('pla'));
+  shell.position.y = flangeT + gap / 2;
+  (shell.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+  shell.castShadow = true;
+  g.add(shell);
+  if (relief) for (const y of [flangeT + 2.75, flangeT + gap - 2.75]) g.add(cyl(R, 5.5, mat('pla'), 0, y, 0, 72));
+  g.add(cyl(14, gap, mat('pla'), 0, flangeT + gap / 2, 0, 32));
+  for (const y of [0, flangeT + gap]) {
+    const f = new THREE.Shape();
+    f.absarc(0, 0, flangeR, 0, Math.PI * 2, false);
+    const h = new THREE.Path();
+    h.absarc(0, 0, 11.05, 0, Math.PI * 2, true);
+    f.holes.push(h);
+    const fg = new THREE.ExtrudeGeometry(f, { depth: flangeT, bevelEnabled: false, curveSegments: 48 });
+    fg.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(fg, mat('acrylic'));
+    m.position.y = y;
+    g.add(m);
+  }
+  g.add(box(R * 0.5, 0.6, 2, mat('red'), R * 0.62, 2 * flangeT + gap + 0.9, 0)); // marca de giro
+  return g;
+}
+
+/**
+ * sensor de tiempo de vuelo en su placa Qwiic (SparkFun SEN-18993: 25,4 × 25,4 mm, la que se compra en Amazon México):
+ * el VL53L4CD al centro, un conector Qwiic a cada lado y seis pines en un borde; mira hacia +Y; origen en la cara de abajo
+ */
+function buildTof(): THREE.Group {
+  const g = group(box(25.4, 1.6, 25.4, mat('pcbBlack'), 0, 0.8, 0));
+  g.add(box(4.4, 1, 2.4, mat('epoxy'), 0, 2.1, 0)); // VL53L4CD
+  g.add(box(0.8, 0.05, 0.8, mat('glass'), -1.1, 2.62, 0), box(0.8, 0.05, 0.8, mat('glass'), 1.1, 2.62, 0)); // ventanas del emisor y el receptor
+  for (const s of [-1, 1]) g.add(box(4.3, 2.9, 6, mat('white'), s * 9.5, 1.6 + 1.45, 2)); // conectores Qwiic
+  g.add(instanced(new THREE.CylinderGeometry(0.5, 0.5, 1.7, 8), mat('tin'), Array.from({ length: 6 }, (_, k) => [-6.35 + k * PITCH, 0.8, -10.2] as [number, number, number])));
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(cyl(1.6, 1.8, mat('hole'), sx * 10.2, 0.8, sz * 10.2, 12));
+  anchor(g, 'bus', 0, 1.6, -10.2);
+  return g;
+}
+
+/** AS5600 en su placa de 23 × 23 mm, con el chip hacia +Y; origen en la cara de abajo */
+function buildAs5600(): THREE.Group {
+  const g = group(box(23, 1.6, 23, mat('pcbBlue'), 0, 0.8, 0));
+  g.add(box(5, 1.5, 4, mat('epoxy'), 0, 2.35, 0));
+  g.add(instanced(new THREE.CylinderGeometry(0.5, 0.5, 1.7, 8), mat('tin'), Array.from({ length: 7 }, (_, k) => [-7.62 + k * PITCH, 0.8, -10] as [number, number, number])));
+  anchor(g, 'bus', 0, 1.6, -10);
+  return g;
+}
+
+/** imán diametral de Ø6 × 2,5 mm, la mitad de cada polo */
+export function buildMagnet(): THREE.Group {
+  const half = (color: number, a: number) => new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 2.5, 20, 1, false, a, Math.PI), new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.5 }));
+  return group(half(0xc8372d, 0), half(0x2a6fb5, Math.PI));
+}
+
+/** resorte de extensión entre dos puntos (mm) */
+export function buildSpring(from: THREE.Vector3, to: THREE.Vector3, radius = 3, turns = 12): THREE.Mesh {
+  const dir = to.clone().sub(from);
+  const ax = dir.clone().normalize();
+  const p1 = new THREE.Vector3(0, 1, 0).cross(ax);
+  if (p1.lengthSq() < 1e-6) p1.set(1, 0, 0);
+  p1.normalize();
+  const p2 = ax.clone().cross(p1).normalize();
+  const pts: THREE.Vector3[] = [];
+  const n = turns * 16;
+  for (let k = 0; k <= n; k++) {
+    const t = k / n;
+    const ang = t * Math.PI * 2 * turns;
+    pts.push(from.clone().add(dir.clone().multiplyScalar(t)).add(p1.clone().multiplyScalar(radius * Math.cos(ang))).add(p2.clone().multiplyScalar(radius * Math.sin(ang))));
+  }
+  const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n * 2, 0.45, 6), mat('steel'));
+  m.castShadow = true;
+  return m;
+}
+
+/**
+ * Mano del visitante, extendida con la palma hacia abajo y los dedos hacia +Z (el visitante está detrás de la mesa).
+ * Origen en el centro de la palma, por debajo; solo ilustra la distancia al sensor.
+ */
+export function buildHand(): THREE.Group {
+  const skin = new THREE.MeshStandardMaterial({ color: 0xd9c9bf, roughness: 0.7, transparent: true, opacity: 0.88 });
+  const g = new THREE.Group();
+  const palm = new THREE.Mesh(new THREE.CapsuleGeometry(9, 62, 6, 16), skin);
+  palm.rotation.z = Math.PI / 2;
+  palm.scale.set(1, 1, 4.2);
+  palm.position.set(0, 9, 0);
+  g.add(palm);
+  const finger = (x: number, len: number, z0: number) => {
+    const f = new THREE.Mesh(new THREE.CapsuleGeometry(7.5, len, 6, 12), skin);
+    f.rotation.x = Math.PI / 2;
+    f.position.set(x, 9, z0 + len / 2 + 7);
+    g.add(f);
+  };
+  finger(-27, 46, 30);
+  finger(-9, 56, 36);
+  finger(9, 52, 34);
+  finger(26, 40, 28);
+  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(8.5, 40, 6, 12), skin);
+  thumb.rotation.set(Math.PI / 2, 0, 0.9);
+  thumb.position.set(-46, 8, 6);
+  g.add(thumb);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(30, 34, 80, 20), skin).translateZ(-70).translateY(10).rotateX(Math.PI / 2)); // muñeca
+  g.traverse((o) => ((o as THREE.Mesh).castShadow = true));
   return g;
 }
 
@@ -714,6 +898,26 @@ export const KINDS: Record<string, KindSpec> = {
     specs: ['Sostienen la caja de control por encima de los rodillos'],
     build: buildStandoff,
   },
+  vl53l4cd: {
+    name: 'Sensor de distancia VL53L4CD (SparkFun SEN-18993)',
+    realMm: [25.4, 25.4, 4.5],
+    material: 'PCB con el sensor de tiempo de vuelo y dos conectores Qwiic',
+    specs: ['Láser de 940 nm: mide de 1 mm a 1,2 m en un cono de 18°', 'Hasta 100 lecturas por segundo', 'Mira hacia arriba desde la tapa del tambor: lee la mano del visitante', 'Placa Qwiic de 3,3 V: va directo al ESP32', 'La Pololu #3692 (17,8 × 12,7 mm) es la alternativa importada'],
+    pins: ['3V3', 'GND', 'SDA → GPIO21', 'SCL → GPIO22', 'XSHUT (apagado) → GPIO4, solo el del tambor 2: el ESP32 le cambia la dirección I2C al arrancar', 'INT sin usar'],
+    source: 'Placa Qwiic de SparkFun de 1 × 1 in; medidas de la familia Qwiic, a confirmar con la pieza',
+    approx: true,
+    build: buildTof,
+  },
+  as5600: {
+    name: 'Encoder magnético AS5600',
+    realMm: [23, 23, 3.1],
+    material: 'PCB con el sensor de efecto Hall',
+    specs: ['12 bits: 0,09° por paso', 'Lee el imán diametral del extremo del eje del brazo tensor, a 1–2 mm', 'Dirección I2C fija 0x36'],
+    pins: ['VCC 3,3 V', 'GND', 'SDA → GPIO21', 'SCL → GPIO22', 'DIR a GND'],
+    source: 'Módulo común de 23 × 23 mm; medidas aproximadas',
+    approx: true,
+    build: buildAs5600,
+  },
 };
 
 /** construye una pieza del catálogo con sus metadatos en userData */
@@ -774,4 +978,9 @@ export const BOM_KIND: Record<string, string> = {
   'psu-24v-5a': 'psu',
   'buck-lm2596': 'lm2596',
   standoffs: 'standoff',
+  // el trabajo de impresión 3D se ilustra con su pieza principal, el tambor
+  'print-petg': 'reel',
+  'hand-sensor': 'vl53l4cd',
+  'hand-sensor-bench': 'vl53l4cd',
+  as5600: 'as5600',
 };

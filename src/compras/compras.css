@@ -113,3 +113,15 @@ tr.click:hover td { background: var(--accent-soft); }
 @media (min-width: 1100px) { .scrim { display: none; } }
 @media (max-width: 700px) { .filters input { width: 100%; } .nav { flex-direction: column; align-items: stretch; } .tier .d { display: none; } }
 @media print { .bar, .filters, .det, .scrim, .sw { display: none !important; } .md { grid-template-columns: 1fr; } body { background: #fff; } .row { break-inside: avoid; } }
+
+/* pestaña Taller: corte láser e impresión 3D (dos tambores) */
+.fab { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 14px; margin: 10px 0; }
+.fab section { border: 1px solid var(--line-2); border-radius: 8px; padding: 12px 14px; background: var(--raised); min-width: 0; }
+.fab section.wide { grid-column: 1 / -1; }
+.fab h3 { margin: 0 0 6px; font-size: 15px; }
+.fab ul { margin: 6px 0 10px; padding-left: 18px; line-height: 1.6; }
+.fab ul.stl { columns: 2 220px; }
+.fab .msg { border-top: 1px solid var(--line-2); padding-top: 8px; }
+.fab .msg-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.fab pre { white-space: pre-wrap; font: 12px/1.5 var(--mono); background: var(--surface); border-radius: 6px; padding: 10px; margin: 0; max-height: 420px; overflow: auto; }
+.fab-all { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 18px; }

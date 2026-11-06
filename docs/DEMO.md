@@ -103,3 +103,39 @@ pasar durante cada destello. Prueba el desfase del LED, la escala de tiempo a 0,
 6. Sin el video: `?demo=laminada&section=mechanical` arma la misma máquina
    con la pelota repetida 5 veces. Son los mismos 4,32 m de película laminada en festón de 7 rodillos, a 160 rpm y con
    115 µs, sin avisos.
+
+## 14. Dos tambores con la mano (ADR-0011)
+
+1. Abre `?demo=tambores&section=mechanical`: la película de 5 s laminada entre dos tambores, en una mesa de
+   383 × 262 mm. Arranca quieta, con el fotograma 1 en la ventana y casi toda la película en el tambor 2.
+2. En *Manos del visitante*, marca «Mano sobre el tambor 1» (o mantén presionada la tecla 1). Tras 150 ms la película
+   arranca, llega a 24 fps en 0,4 s y corre hacia el tambor 1. La animación avanza. El tambor 1 se llena (de Ø103,6 a
+   Ø109,2 mm) y gira más despacio; el 2 se vacía y gira más rápido. El destello dura 116 µs.
+3. Sube la mano a 35 cm: 6 fps, destellos de 463 µs y parpadeo. Bájala a 3 cm: 30 fps y 93 µs.
+4. Retira la mano: la película frena y se queda con un fotograma centrado. El LED pulsa a 200 Hz con la misma luz
+   promedio, sin parpadeo.
+5. Lleva la película hasta el final: frena a tiempo (a 24 fps, unos 5 fotogramas antes; a 30 fps, unos 8) y se queda
+   en el último. Pon la mano sobre el tambor 2:
+   la película regresa y la animación corre al revés.
+6. En *Programa del ESP32* prueba «Dos manos a la vez», «Sin visitantes» y «Al final de la película». Quita
+   «Compensar el borde de la marca en reversa» y mira en *Projection Laboratory* cómo salta la imagen al regresar.
+7. Vista «Manos»: los conos de lectura de 18° y la mano a su altura. «Interior»: la fuente de pie, los dos DM542, la
+   protoboard y el ESP32 dentro de la base. «Arriba»: la planta de la propuesta.
+8. Lista de compras: `compras.html?demo=tambores` (o `node scripts/bom.mjs --tambores` para
+   `docs/COMPRAS-TAMBORES.md`). Con el video: `?video=cried-out&segundos=5&fps=24&recorrido=tambores`.
+
+## 15. La mesa sin tornillos: ensamble, corte láser e impresión 3D (ADR-0012)
+
+1. En *Mechanical Simulation*, el grupo «Ensamble sin tornillos» recorre los 12 pasos. «▶ Armar» los pasa solos. Las
+   piezas de cada paso llegan desde afuera y las de pasos futuros no se ven. «Explosión» separa lo ya armado.
+   `?demo=tambores&section=mechanical&ensamble=5&explosion=0.4` abre directo en un paso.
+2. Cada pieza de corte lleva su código: E en MDF, A en acrílico transparente y N en acrílico negro. Las impresas en 3D
+   empiezan con I. Selecciónala para ver qué hace, en qué paso entra y si se pega.
+3. `compras.html?demo=tambores#fabricacion` abre la pestaña *Taller*:
+   - los archivos de corte (DXF R12, SVG y PDF 1:1 por hoja);
+   - los 16 STL;
+   - los dos textos para copiar y mandar;
+   - el rango de lo que debería costar.
+4. `npm run fabricar` vuelve a generar el paquete en `public/fabricacion/tambores/` y `docs/FABRICACION-TAMBORES.md`.
+   Si el MDF real no mide 5,5 mm: `npm run fabricar -- --mdf=5.7`. Si la lente que consigas tiene otro barril:
+   `--lente=62`.

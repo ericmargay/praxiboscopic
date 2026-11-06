@@ -9,8 +9,12 @@ import { CATEGORY_LABEL, type PartCategory } from '../../three/parts';
 import { buildParts } from '../../fabricate/bom';
 import { OFFERS } from '../../fabricate/offers';
 import { MOTORS, type TransportSpec } from '../../mech/transport';
-import { festoonPasses } from '../../core/video';
+import { festoonPasses, reelsProject } from '../../core/video';
 import { DEFAULT_LAMINATE } from '../../film/layout';
+import { defaultReelsSpec, handFps, reelPose, reelPulseS, reelRpm, type ReelControlSpec, type ReelsSpec } from '../../mech/reels';
+import { deriveProject, type Project } from '../../core/project';
+import { buildReelsAssembly } from '../../mech/assembly';
+import { assemblySteps } from '../../mech/structure';
 import { autoSync } from '../../mech/sync';
 import type { DrumStrobe, LedStrobe } from '../../mech/strobe';
 import type { OpticsSpec } from '../../optics/projector';
@@ -39,6 +43,10 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
   // ?bom=<renglón> llega desde la lista de compras: selecciona la primera pieza de ese renglón
   const urlBom = urlParams.get('bom');
   let urlSelDone = false;
+  // ?ensamble=<paso>&explosion=<0–1>: la mesa de dos tambores abre en ese paso del ensamble
+  let asmStep: number | null = urlParams.has('ensamble') ? Math.max(1, Number(urlParams.get('ensamble')) || 1) : null;
+  let asmExplode = Math.max(0, Math.min(1, Number(urlParams.get('explosion') ?? 0) || 0));
+  let asmTimer = 0;
 
   // --- barra del visor: vistas estándar y herramientas -------------------------------------------------------------
   const views: { id: ViewId; label: string; title: string }[] = [
@@ -51,11 +59,14 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     { id: 'control', label: 'Electrónica', title: 'Caja de control: protoboard, ESP32, MOSFET' },
     { id: 'base', label: 'Interior', title: 'Fuente, driver y reguladores dentro de la base' },
     { id: 'screen', label: 'Pantalla', title: 'La imagen proyectada' },
+    { id: 'hands', label: 'Manos', title: 'Dos tambores: las manos del visitante sobre los sensores' },
   ];
   const viewBtns = el('div', { class: 'seg' });
+  let handsViewBtn: HTMLButtonElement | null = null;
   for (const v of views) {
     const b = el('button', { text: v.label, title: v.title }) as HTMLButtonElement;
     b.onclick = () => scene?.setView(v.id);
+    if (v.id === 'hands') handsViewBtn = b;
     viewBtns.append(b);
   }
   const toggle = (label: string, title: string, on: boolean, cb: (v: boolean) => void) => {
@@ -75,6 +86,8 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
   const shellBtn = toggle('Base transparente', 'Paredes de la base en transparencia para ver lo que hay dentro', true, (v) => scene?.setShell(v));
   const gateBtn = toggle('Ventana', 'Resalta el hueco de la ventana óptica', true, (v) => { highlightGate = v; });
   toolbar.append(viewBtns, el('span', { class: 'sep' }), fitBtn, orthoBtn, measureBtn, labelsBtn, shellBtn, gateBtn);
+  // dos tambores: mantener presionada la tecla 1 o 2 pone la mano sobre ese tambor, a la distancia elegida
+  const keyHeld = [false, false];
   window.addEventListener('keydown', (e) => {
     if (!active || (e.target as HTMLElement)?.closest?.('input, textarea, select')) return;
     if (e.key === 'Escape') {
@@ -82,11 +95,26 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
       else scene?.select(null);
     }
     if (e.key === 'f' || e.key === 'F') scene?.fit();
+    if ((e.key === '1' || e.key === '2') && ctx.derived().reels && !e.repeat) {
+      const i = Number(e.key) - 1;
+      keyHeld[i] = true;
+      sim.hands[i].present = true;
+      handBoxes[i]?.set(true);
+    }
   });
+  window.addEventListener('keyup', (e) => {
+    if (e.key !== '1' && e.key !== '2') return;
+    const i = Number(e.key) - 1;
+    if (!keyHeld[i]) return;
+    keyHeld[i] = false;
+    sim.hands[i].present = false;
+    handBoxes[i]?.set(false);
+  });
+  const handBoxes: ({ set(v: boolean): void } | null)[] = [null, null];
 
   // --- navegador de piezas (árbol) --------------------------------------------------------------------------------
   let browserOpen = true;
-  const openCats = new Set<PartCategory>(['transporte', 'optica', 'control', 'potencia']);
+  const openCats = new Set<PartCategory>(['transporte', 'manos', 'optica', 'control', 'potencia']);
   function renderBrowser(): void {
     if (!scene) return;
     const parts = scene.parts();
@@ -243,15 +271,34 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
 
   let sideKey = '';
   const readouts: Record<string, ReturnType<typeof readout>> = {};
+  /** forma del recorrido: del loop a los dos tambores y de regreso */
+  const layoutOptions = [
+    { value: 'rectangle', label: 'Rectángulo de 4 rodillos (toca una cara)' },
+    { value: 'festoon', label: 'Festón (zigzag): compacto, toca las dos caras' },
+    { value: 'reels', label: 'Dos tambores: la película va y viene con la mano' },
+  ];
+  const setLayout = (v: string) =>
+    ctx.store.update((q): Project => {
+      if (v === 'reels') return reelsProject(q);
+      const next: Project = { ...q, pathLayout: v as 'rectangle' | 'festoon', festoon: q.festoon ?? { passes: festoonPasses(ctx.derived().layout.loopLengthMm, q.path.rollerRadiusMm), frontGapMm: 90 }, film: { ...q.film, spliceType: q.film.spliceType === 'none' ? 'tape' : q.film.spliceType } };
+      if (q.pathLayout !== 'reels') return next;
+      // del recorrido abierto al loop: el motor vuelve a seguir los FPS de proyección
+      const r = autoSync(next.targetFps, deriveProject(next).layout, next.transport, next.path.rollerRadiusMm, next.led);
+      return { ...next, transport: { ...r.transport, tensionN: 2 } };
+    });
   function buildSide(): void {
     const p = ctx.project;
     const d = ctx.derived();
+    // la vista «Manos» solo tiene sentido con los dos tambores
+    if (handsViewBtn) handsViewBtn.style.display = d.reels ? '' : 'none';
+    if (d.reels) return buildReelsSide(p, d);
     const k = JSON.stringify({ t: p.transport, path: p.path.rollerRadiusMm, aspect: p.pathAspect, layout: p.pathLayout, festoon: p.festoon, lam: p.film.laminate ?? null, auto: p.autoPath, gate: p.path.gateMm, kind: p.strobeKind, drum: p.drum, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps });
     if (k === sideKey) {
       updateReadouts();
       return;
     }
     sideKey = k;
+    handBoxes[0] = handBoxes[1] = null;
     const motor = MOTORS.find((m) => m.id === p.transport.motorId) ?? MOTORS[0];
     const orep = opticsReport(p.optics);
     side.replaceChildren(el('h3', { text: 'Mechanical Simulation' }));
@@ -290,7 +337,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
               readout('Grosor y rigidez', d.bending ? `${fmtNum(d.bending.thicknessMm, 3)} mm · doblarla pide ${fmtNum(100 * d.bending.stiffnessRatio, 1)} % de la tensión` : '—').root,
             ]
           : []),
-        selectControl({ label: 'Forma', value: p.pathLayout ?? 'rectangle', options: [{ value: 'rectangle', label: 'Rectángulo de 4 rodillos (toca una cara)' }, { value: 'festoon', label: 'Festón (zigzag): compacto, toca las dos caras' }], onChange: (v) => ctx.store.update((q) => ({ ...q, pathLayout: v as 'rectangle' | 'festoon', festoon: q.festoon ?? { passes: festoonPasses(ctx.derived().layout.loopLengthMm, q.path.rollerRadiusMm), frontGapMm: 90 } })) }).root,
+        selectControl({ label: 'Forma', value: p.pathLayout ?? 'rectangle', options: layoutOptions, onChange: setLayout, help: 'Dos tambores (ADR-0011): sin loop, la mano del visitante jala la película hacia un tambor o el otro' }).root,
         ...(p.pathLayout === 'festoon'
           ? [
               numberControl({ label: 'Pasadas del festón', value: p.festoon?.passes ?? 4, min: 1, max: 12, step: 1, onChange: (v) => ctx.store.update((q) => ({ ...q, festoon: { passes: Math.round(v), frontGapMm: q.festoon?.frontGapMm ?? 90 } })), disabled: !p.autoPath, help: 'Rodillos de la fila cercana a la ventana: más pasadas = mesa más ancha y menos profunda' }).root,
@@ -364,7 +411,228 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     updateReadouts();
   }
 
+  // --- dos tambores (ADR-0011): las manos del visitante, el programa del ESP32 y lo que pasa en vivo ------------------
+  const rr: Record<string, ReturnType<typeof readout>> = {};
+  const specOf = (q: Project): ReelsSpec => q.reels ?? defaultReelsSpec({ coreDiameterMm: 2 * q.path.rollerRadiusMm });
+  const setReels = (patch: Partial<ReelsSpec>) => ctx.store.update((q) => ({ ...q, reels: { ...specOf(q), ...patch } }));
+  const setControl = (patch: Partial<ReelControlSpec>) => ctx.store.update((q) => ({ ...q, reels: { ...specOf(q), control: { ...specOf(q).control, ...patch } } }));
+  const STATE_HINT: Record<string, string> = {
+    quieta: 'quieta en un cuadro iluminado',
+    'hacia el tambor 1': 'hacia el tambor 1: la animación avanza',
+    'hacia el tambor 2': 'hacia el tambor 2: la animación va al revés',
+    frenando: 'frenando para quedar en un cuadro',
+    'al final': 'al final de la película: espera al otro tambor',
+    'regresa sola': 'regresa sola al otro extremo',
+    invita: 'sin visitantes: va y viene despacio para invitar',
+  };
+
+  /** ensamble paso a paso de la mesa de dos tambores: lo que se arma, en qué orden y con qué piezas (ADR-0012) */
+  function assemblyGroup(): HTMLElement {
+    const steps = assemblySteps();
+    const n = steps.length;
+    const stopPlay = () => {
+      if (asmTimer) window.clearInterval(asmTimer);
+      asmTimer = 0;
+    };
+    const go = (k: number | null, keepPlay = false) => {
+      if (!keepPlay) stopPlay();
+      asmStep = k === null ? null : Math.max(1, Math.min(n, k));
+      scene?.setAssembly(asmStep, asmExplode);
+      sideKey = '';
+      buildSide();
+    };
+    const play = () => {
+      stopPlay();
+      go(1, true);
+      asmTimer = window.setInterval(() => {
+        if (asmStep === null || asmStep >= n) {
+          stopPlay();
+          sideKey = '';
+          buildSide();
+          return;
+        }
+        go(asmStep + 1, true);
+      }, 1800);
+    };
+    const cur = asmStep ? steps[asmStep - 1] : null;
+    return group('Ensamble sin tornillos', [
+      el('p', { class: 'hint', text: 'La caja es de MDF de 5,5 mm cortado con láser y se arma a mano: las piezas encajan por sus dientes y la tapa trasera se aprieta con dos cuñas. Cada pieza lleva grabado su código (E: MDF, A: acrílico, N: acrílico negro); las impresas en 3D empiezan con I. El único tornillo es el prisionero del cople.' }),
+      el('div', { class: 'btn-row' },
+        button('◀', () => go((asmStep ?? n + 1) - 1), { kind: 'ghost', title: 'Paso anterior' }),
+        button(asmStep ? `Paso ${asmStep} de ${n}` : `Ver los ${n} pasos`, () => go(asmStep ?? 1), { kind: asmStep ? 'default' : 'primary' }),
+        button('▶', () => go((asmStep ?? 0) + 1), { kind: 'ghost', title: 'Paso siguiente' }),
+        button(asmTimer ? '⏸ Detener' : '▶ Armar', () => {
+          if (asmTimer) {
+            stopPlay();
+            sideKey = '';
+            buildSide();
+          } else play();
+        }, { kind: 'ghost', title: 'Recorre los pasos uno tras otro' }),
+        button('Mesa armada', () => {
+          asmExplode = 0;
+          go(null);
+        }, { kind: 'ghost' }),
+      ),
+      numberControl({ label: 'Explosión', value: asmExplode, min: 0, max: 1, step: 0.05, decimals: 2, onChange: (v) => {
+        asmExplode = v;
+        if (asmStep === null) asmStep = n;
+        scene?.setAssembly(asmStep, asmExplode);
+      }, help: 'Separa las piezas ya armadas para ver cómo encajan' }).root,
+      cur
+        ? el('div', { class: 'asm-step' }, el('b', { text: `${cur.n}. ${cur.title}` }), el('ol', {}, ...cur.text.map((t) => el('li', { text: t }))), el('p', { class: 'hint', text: `Entran: ${cur.parts.join(' · ')}` }))
+        : el('p', { class: 'hint', text: steps.map((q) => `${q.n}. ${q.title}`).join(' · ') }),
+      el('p', { class: 'hint' }, 'Archivos y textos para el taller: ', el('a', { href: 'compras.html?demo=tambores#fabricacion', target: '_blank', text: 'corte láser e impresión 3D' })),
+    ]);
+  }
+
+  function buildReelsSide(p: Project, d: ReturnType<AppContext['derived']>): void {
+    const r = d.reels!;
+    const c = r.spec.control;
+    const k = JSON.stringify({ reels: r.spec, t: p.transport, lam: p.film.laminate ?? null, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps, kind: p.strobeKind });
+    if (k === sideKey) {
+      updateReelReadouts();
+      return;
+    }
+    sideKey = k;
+    const orep = opticsReport(p.optics);
+    const handRow = (i: 0 | 1) => {
+      const box = checkbox(`Mano sobre el tambor ${i + 1} · ${i === 0 ? 'la animación avanza' : 'va al revés'}`, sim.hands[i].present, (v) => (sim.hands[i].present = v), `Tecla ${i + 1}: mantenla presionada para poner la mano`);
+      handBoxes[i] = box;
+      const dist = numberControl({ label: `Altura sobre el sensor ${i + 1}`, value: sim.hands[i].distanceMm / 10, min: 0.2, max: 45, step: 0.1, unit: 'cm', decimals: 1, onChange: (v) => (sim.hands[i].distanceMm = v * 10), help: 'Más cerca, más rápido. Más allá del alcance de la tabla no cuenta' });
+      return [box.root, dist.root];
+    };
+    const place = (i: 0 | 1 | null, cm = 15) => {
+      for (const j of [0, 1] as const) {
+        sim.hands[j].present = j === i;
+        if (j === i) sim.hands[j].distanceMm = cm * 10;
+        handBoxes[j]?.set(j === i);
+      }
+      sideKey = '';
+      buildSide();
+    };
+    const mapRows = c.speedMap.map(([dist, fps], idx) =>
+      el('div', { class: 'btn-row' },
+        numberControl({ label: `Punto ${idx + 1}: distancia`, value: dist / 10, min: 0.1, max: 120, step: 0.5, unit: 'cm', decimals: 1, noSlider: true, onChange: (v) => setControl({ speedMap: c.speedMap.map((m, j) => (j === idx ? [v * 10, m[1]] : m)) as [number, number][] }) }).root,
+        numberControl({ label: 'velocidad', value: fps, min: 1, max: 60, step: 1, unit: 'fps', noSlider: true, onChange: (v) => setControl({ speedMap: c.speedMap.map((m, j) => (j === idx ? [m[0], v] : m)) as [number, number][] }) }).root,
+      ),
+    );
+    side.replaceChildren(el('h3', { text: 'Mechanical Simulation · dos tambores' }));
+    side.append(
+      group('Control', [
+        el('div', { class: 'btn-row' },
+          button(p.ui.playing ? '⏸ Pausa' : '▶ Marcha', () => ctx.store.update((q) => ({ ...q, ui: { ...q.ui, playing: !q.ui.playing } })), { kind: 'primary' }),
+          button('Reiniciar (fotograma 1 en ventana)', () => sim.reset(), { kind: 'ghost' }),
+        ),
+        numberControl({ label: 'Escala de tiempo', value: p.ui.timeScale, min: 0.01, max: 2, step: 0.01, onChange: (v) => ctx.store.update((q) => ({ ...q, ui: { ...q.ui, timeScale: v } })), help: '0,05 = cámara lenta para ver cada destello' }).root,
+      ]),
+      assemblyGroup(),
+      group('Manos del visitante', [
+        el('p', { class: 'hint', text: 'La mano sobre un tambor jala la película hacia él, más rápido entre más cerca; al retirarla, frena y se queda en un cuadro. Las teclas 1 y 2 ponen la mano mientras las mantienes presionadas.' }),
+        ...handRow(0),
+        ...handRow(1),
+        el('div', { class: 'btn-row' }, button('Mano a 15 cm · tambor 1', () => place(0), { kind: 'ghost' }), button('Mano a 15 cm · tambor 2', () => place(1), { kind: 'ghost' }), button('Retirar las manos', () => place(null), { kind: 'ghost' })),
+        (rr.state = readout('Estado', '')).root,
+        (rr.speed = readout('Velocidad', '')).root,
+        (rr.gate = readout('En la ventana', '')).root,
+        (rr.sensed = readout('Lecturas de los sensores', '')).root,
+        (rr.pulse = readout('Destello ahora', '')).root,
+      ]),
+      group('Programa del ESP32', [
+        selectControl({ label: 'Dos manos a la vez', value: c.twoHands, options: [{ value: 'first', label: 'Manda la primera que llegó' }, { value: 'nearest', label: 'Manda la más cercana' }, { value: 'stop', label: 'La película se detiene' }], onChange: (v) => setControl({ twoHands: v }) }).root,
+        selectControl({ label: 'Sin visitantes', value: c.idle, options: [{ value: 'hold', label: 'Quieta en un cuadro iluminado' }, { value: 'attract', label: 'Va y viene sola despacio para invitar' }], onChange: (v) => setControl({ idle: v }) }).root,
+        ...(c.idle === 'attract' ? [numberControl({ label: 'Invita después de', value: c.idleS, min: 2, max: 300, step: 1, unit: 's', onChange: (v) => setControl({ idleS: v }) }).root, numberControl({ label: 'Velocidad al invitar', value: c.attractFps, min: 1, max: 30, step: 1, unit: 'fps', onChange: (v) => setControl({ attractFps: v }) }).root] : []),
+        selectControl({ label: 'Al final de la película', value: c.atEnd, options: [{ value: 'wait', label: 'Espera a que alguien use el otro tambor' }, { value: 'return', label: 'Regresa sola al otro extremo' }], onChange: (v) => setControl({ atEnd: v }) }).root,
+        el('p', { class: 'hint', text: 'De la mano a la velocidad (punto de partida para ajustar en la prueba de banco): entre los puntos se interpola; más lejos que el primero no hay mano.' }),
+        ...mapRows,
+        numberControl({ label: 'Aceleración máxima', value: c.accelMmS2 / 1000, min: 0.2, max: 10, step: 0.1, unit: 'm/s²', decimals: 1, onChange: (v) => setControl({ accelMmS2: v * 1000 }), help: 'De quieta a 24 fps en 0,4 s con 2 m/s²' }).root,
+        numberControl({ label: 'La mano espera', value: c.dwellMs, min: 0, max: 1000, step: 10, unit: 'ms', onChange: (v) => setControl({ dwellMs: v }), help: 'Una cabeza o la ropa que pasan no mueven la película' }).root,
+        checkbox('Compensar el borde de la marca en reversa', c.compensateMarkEdge, (v) => setControl({ compensateMarkEdge: v }), 'Al regresar el sensor ve primero el otro borde de la marca, 3 mm antes: sin compensar, la imagen salta al cambiar de sentido').root,
+        selectControl({ label: 'Sensor de mano', value: r.spec.sensor, options: [{ value: 'vl53l4cd', label: 'VL53L4CD (para la mesa)' }, { value: 'vl53l0x', label: 'VL53L0X (para la prueba de banco)' }], onChange: (v) => setReels({ sensor: v }), help: r.sensor.note }).root,
+      ]),
+      group('Tambores', [
+        (rr.reel1 = readout('Tambor 1', '')).root,
+        (rr.reel2 = readout('Tambor 2', '')).root,
+        (rr.dancer = readout('Brazo tensor (AS5600)', '')).root,
+        readout('Tambor lleno', `Ø${fmtNum(2 * r.design.fullR, 1)} mm con ${fmtNum(r.design.maxWoundMm / 1000, 2)} m · bridas de Ø${fmtNum(r.spec.flangeDiameterMm, 0)} (${fmtNum(r.design.geometry.flangeR - r.design.fullR, 1)} mm de margen)`).root,
+        readout('Colas transparentes', `${fmtNum(r.design.tail1Mm, 0)} mm (tambor 1) y ${fmtNum(r.design.tail2Mm, 0)} mm (tambor 2): ${r.spec.tailTurns} vuelta en el núcleo con la película en un extremo`).root,
+        readout('Película', `${fmtNum(d.layout.totalLengthMm / 1000, 2)} m de fotogramas + colas = ${fmtNum(r.design.totalMm / 1000, 2)} m; comprar ${fmtNum(r.filmToBuyM, 1)} m`).root,
+        readout('Mesa', (() => {
+          const b = buildReelsAssembly(p, d).base;
+          return `${fmtNum(b.x1 - b.x0, 0)} × ${fmtNum(b.z1 - b.z0, 0)} × ${fmtNum(b.deckT + b.innerH + b.floorT, 0)} mm, con la electrónica dentro`;
+        })()).root,
+        readout('Rpm de los motores', `a ${r.fps.normal} fps de ${fmtNum(r.rpm.normalFull, 0)} a ${fmtNum(r.rpm.normalCore, 0)}; a ${r.fps.max} fps hasta ${fmtNum(r.rpm.maxCore, 0)}`).root,
+        readout('Par: necesario / disponible', `${fmtNum(r.torque.rollerTorqueNcm, 1)} / ${fmtNum(r.torque.availableNcm, 1)} N·cm a ${fmtNum(r.torque.motorRpm, 0)} rpm (margen ×${fmtNum(r.torque.margin, 1)})`, r.torque.margin >= 1.5 ? undefined : 'Margen bajo').root,
+        numberControl({ label: 'Tensión del brazo tensor', value: p.transport.tensionN, min: 0.5, max: 4, step: 0.1, unit: 'N', decimals: 1, onChange: (v) => setTransport({ tensionN: v }) }).root,
+        numberControl({ label: 'Núcleo de los tambores', value: r.spec.coreDiameterMm, min: 40, max: 200, step: 0.1, unit: 'mm', decimals: 1, onChange: (v) => setReels({ coreDiameterMm: v }) }).root,
+        numberControl({ label: 'Bridas', value: r.spec.flangeDiameterMm, min: 60, max: 300, step: 1, unit: 'mm', onChange: (v) => setReels({ flangeDiameterMm: v }) }).root,
+        numberControl({ label: 'Entre centros de los tambores', value: r.spec.spacingMm, min: 120, max: 600, step: 1, unit: 'mm', onChange: (v) => setReels({ spacingMm: v }) }).root,
+        numberControl({ label: 'Guías', value: r.spec.guideDiameterMm, min: 20, max: 120, step: 1, unit: 'mm', onChange: (v) => setReels({ guideDiameterMm: v }) }).root,
+        numberControl({ label: 'Rodillo del brazo tensor', value: r.spec.dancerDiameterMm, min: 16, max: 80, step: 1, unit: 'mm', onChange: (v) => setReels({ dancerDiameterMm: v }) }).root,
+        numberControl({ label: 'Vueltas de cola en el núcleo', value: r.spec.tailTurns, min: 0.5, max: 4, step: 0.5, decimals: 1, onChange: (v) => setReels({ tailTurns: v }) }).root,
+      ]),
+      group('Recorrido y película', [
+        selectControl({ label: 'Forma', value: 'reels', options: layoutOptions, onChange: setLayout }).root,
+        selectControl({ label: 'Película', value: p.film.laminate ? 'laminated' : 'single', options: [{ value: 'laminated', label: 'Laminada: una cubierta tapa la tinta' }, { value: 'single', label: 'Sencilla: la tinta queda expuesta' }], onChange: (v) => ctx.store.update((q) => ({ ...q, film: { ...q.film, laminate: v === 'laminated' ? { ...DEFAULT_LAMINATE } : undefined } })), help: 'En un tambor cada vuelta se aprieta contra la siguiente: tiene que ser laminada' }).root,
+        ...(p.film.laminate
+          ? [
+              numberControl({ label: 'Base', value: p.film.laminate.baseMm, min: 0.05, max: 1, step: 0.001, unit: 'mm', decimals: 3, onChange: (v) => ctx.store.update((q) => ({ ...q, film: { ...q.film, laminate: { coverMm: q.film.laminate?.coverMm ?? DEFAULT_LAMINATE.coverMm, baseMm: v } } })) }).root,
+              numberControl({ label: 'Cubierta', value: p.film.laminate.coverMm, min: 0.02, max: 1, step: 0.005, unit: 'mm', decimals: 3, onChange: (v) => ctx.store.update((q) => ({ ...q, film: { ...q.film, laminate: { baseMm: q.film.laminate?.baseMm ?? DEFAULT_LAMINATE.baseMm, coverMm: v } } })) }).root,
+            ]
+          : []),
+        readout('Grosor y rigidez', d.bending ? `${fmtNum(d.bending.thicknessMm, 3)} mm · núcleo ${fmtNum(100 * d.bending.stiffnessRatio, 1)} % · guías ${fmtNum(100 * r.guideBending.stiffnessRatio, 1)} % de la tensión` : '—').root,
+        readout('Caras', `tambores y guías tocan la lámpara; el brazo tensor, la cubierta (abraza ${fmtNum(r.dancerWrapDeg, 0)}°)`).root,
+        readout('Recorrido libre', `${fmtNum(d.path.lengthMm, 0)} mm de tambor a tambor · ventana a ${fmtNum(d.pathSpec.gateMm, 0)} mm`).root,
+        el('p', { class: `coherence ${d.coherence.level}`, text: d.coherence.message }),
+      ]),
+      group('Luz', [
+        readout('Destello', `${fmtNum(r.pulseUs.slow, 0)} µs a ${r.fps.min} fps · ${fmtNum(r.pulseUs.normal, 0)} µs a ${r.fps.normal} · ${fmtNum(r.pulseUs.fast, 0)} µs a ${r.fps.max}`).root,
+        readout('Quieta', `pulsos de ${fmtNum(r.pulseUs.still, 1)} µs a ${c.stillHz} Hz: la misma luz promedio (${fmtNum(100 * r.duty, 2)} % del tiempo)`).root,
+        numberControl({ label: 'Corrimiento máximo por destello', value: c.maxBlurMm, min: 0.02, max: 0.5, step: 0.01, unit: 'mm', decimals: 2, onChange: (v) => setControl({ maxBlurMm: v }) }).root,
+        numberControl({ label: 'Pulsos con la película quieta', value: c.stillHz, min: 60, max: 2000, step: 10, unit: 'Hz', onChange: (v) => setControl({ stillHz: v }) }).root,
+        numberControl({ label: 'Flujo de pico', value: p.led.peakLumens, min: 0, max: 100000, step: 500, unit: 'lm', onChange: (v) => setLed({ peakLumens: v }) }).root,
+        numberControl({ label: 'Jitter', value: p.led.jitterUs, min: 0, max: 5000, step: 5, unit: 'µs', onChange: (v) => setLed({ jitterUs: v }) }).root,
+      ]),
+      group('Óptica', [
+        numberControl({ label: 'Focal de la lente', value: p.optics.focalMm, min: 10, max: 300, step: 1, unit: 'mm', onChange: (v) => setOptics({ focalMm: v }) }).root,
+        numberControl({ label: 'Distancia película–lente', value: p.optics.filmToLensMm, min: 5, max: 400, step: 0.01, unit: 'mm', decimals: 2, onChange: (v) => setOptics({ filmToLensMm: v }) }).root,
+        button(`Enfocar (${fmtNum(focusFor(p.optics), 2)} mm)`, () => setOptics({ filmToLensMm: Math.round(focusFor(ctx.project.optics) * 100) / 100 }), { kind: 'ghost' }),
+        numberControl({ label: 'Distancia de proyección', value: p.optics.throwMm, min: 200, max: 10000, step: 10, unit: 'mm', onChange: (v) => setOptics({ throwMm: v }) }).root,
+        readout('Aumento', `×${fmtNum(orep.magnification, 2)} → imagen ${fmtNum(orep.imageWidthMm, 0)} × ${fmtNum(orep.imageHeightMm, 0)} mm`).root,
+        (rr.bright = readout('Brillo estimado', '')).root,
+      ]),
+      group('Avisos', [warningsList(d.warnings)]),
+    );
+    updateReelReadouts();
+  }
+
+  function updateReelReadouts(): void {
+    if (!rr.state) return;
+    const p = ctx.project;
+    const d = ctx.derived();
+    const r = d.reels;
+    const live = sim.reelLive();
+    if (!r || !live) return;
+    const pitch = p.film.pitchMm;
+    const fps = Math.abs(live.vMmS) / pitch;
+    rr.state.set(STATE_HINT[live.state] ?? live.state, live.state === 'al final' ? 'warn' : undefined);
+    rr.speed.set(`${fmtNum(fps, 1)} fps · ${fmtNum(Math.abs(live.vMmS), 0)} mm/s${live.vMmS > 0 ? ' → tambor 1' : live.vMmS < 0 ? ' → tambor 2' : ''}`);
+    const g = sim.gate();
+    rr.gate.set(g ? `fotograma ${g.frameIndex + 1}${d.layout.frames.length > d.layout.frameCount ? ` · ${g.slot + 1} de ${d.layout.frames.length} en la tira` : ` de ${d.layout.frames.length}`} · ${fmtNum(g.offsetMm, 2)} mm del centro` : '—');
+    const sens = live.sensed.map((x, i) => (x === null ? `${i + 1}: sin mano` : `${i + 1}: ${fmtNum(x / 10, 1)} cm → ${fmtNum(handFps(x, r.spec.control.speedMap), 1)} fps${live.owner === i ? ' (manda)' : ''}`));
+    rr.sensed.set(sens.join(' · '));
+    rr.pulse.set(live.still ? `${fmtNum(r.pulseUs.still, 1)} µs a ${r.spec.control.stillHz} Hz (cuadro fijo)` : fps > 0.01 ? `${fmtNum(reelPulseS(live.vMmS, r.spec.control, pitch) * 1e6, 0)} µs, ${fmtNum(fps, 1)} por segundo` : '—');
+    const pose = reelPose(r.design, live.phiMm);
+    rr.reel1.set(`${fmtNum(pose.on1 / 1000, 2)} m · Ø${fmtNum(2 * pose.r1, 1)} mm · ${fmtNum(reelRpm(live.vMmS, pose.r1), 0)} rpm`);
+    rr.reel2.set(`${fmtNum(pose.on2 / 1000, 2)} m · Ø${fmtNum(2 * pose.r2, 1)} mm · ${fmtNum(reelRpm(live.vMmS, pose.r2), 0)} rpm`);
+    const accel = Math.abs(live.vMmS) > 1e-6 ? live.aMmS2 * Math.sign(live.vMmS) : 0;
+    rr.dancer.set(`${fmtNum((Math.max(-0.06, Math.min(0.06, (accel / r.spec.control.accelMmS2) * 0.05)) * 180) / Math.PI, 1)}° · ${accel > 1 ? 'acelera: sube la tensión' : accel < -1 ? 'frena: baja la tensión' : 'al centro'}`);
+    const printed = ctx.printedFrames();
+    const b = brightnessReport(p.optics, p.led.peakLumens * r.duty, mediumById(p.print.mediumId).baseTransmittance * printed.meanTransmittance, p.led.kelvin);
+    rr.bright.set(`${fmtNum(b.imageNits, 1)} cd/m² a cualquier velocidad · contraste ${fmtNum(b.contrastRatio, 0)}:1`, b.imageNits >= 5 ? 'ok' : 'warn');
+  }
+
   function updateReadouts(): void {
+    if (ctx.derived().reels) return updateReelReadouts();
     if (!readouts.speed) return;
     const p = ctx.project;
     const d = ctx.derived();
@@ -403,19 +671,22 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     ensureScene();
     if (!scene) return;
     const p = ctx.project;
-    scene.update({ derived: ctx.derived(), project: p, frames: ctx.frames(), phiMm: ctx.engine.phiMm, simTime: ctx.engine.t, flashIntensity: sim.flashIntensity, screenCanvas: sim.screen, highlightGate });
+    const live = sim.reelLive();
+    scene.update({ derived: ctx.derived(), project: p, frames: ctx.frames(), phiMm: ctx.engine.phiMm, simTime: ctx.engine.t, flashIntensity: sim.flashIntensity, screenCanvas: sim.screen, highlightGate, reel: live ? { live, hands: sim.hands } : undefined });
     if (!urlSelDone) {
       urlSelDone = true;
       renderBrowser();
       const fromBom = urlBom ? scene.parts().find((n) => n.bomId === urlBom)?.id : undefined;
       if (urlSel || fromBom) scene.select((urlSel ?? fromBom)!, true);
+      if (asmStep !== null || asmExplode > 0) scene.setAssembly(asmStep ?? assemblySteps().length, asmExplode);
     }
     const now = performance.now();
     if (now - lastHud > 250) {
       lastHud = now;
       const st = scene.stats();
       const g = sim.gate();
-      hud.textContent = `t = ${ctx.engine.t.toFixed(2)} s · φ = ${ctx.engine.phiMm.toFixed(1)} mm · fotograma ${g ? g.frameIndex + 1 : '—'} (${g ? (g.offsetMm >= 0 ? '+' : '') + g.offsetMm.toFixed(2) : '—'} mm) · destellos ${sim.flashCount} · ${st.drawCalls} draw calls · ${st.triangles} tri · ${st.fps} fps`;
+      const speed = live ? ` · ${(Math.abs(live.vMmS) / p.film.pitchMm).toFixed(1)} fps ${live.vMmS > 0 ? '→ tambor 1' : live.vMmS < 0 ? '→ tambor 2' : ''} · ${live.state}` : '';
+      hud.textContent = `t = ${ctx.engine.t.toFixed(2)} s · φ = ${ctx.engine.phiMm.toFixed(1)} mm · fotograma ${g ? g.frameIndex + 1 : '—'} (${g ? (g.offsetMm >= 0 ? '+' : '') + g.offsetMm.toFixed(2) : '—'} mm)${speed} · destellos ${sim.flashCount} · ${st.drawCalls} draw calls · ${st.triangles} tri · ${st.fps} fps`;
       updateReadouts();
     }
   });

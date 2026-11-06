@@ -102,9 +102,13 @@ export function mountShell(ctx: AppContext, sim: SimulationRunner, app: HTMLElem
     const set = ctx.frames();
     status.replaceChildren(
       el('span', { text: `${d.frameCount} fotogramas · ${p.animation.fps} fps · ${d.duration.toFixed(3)} s` }),
-      el('span', { text: `película ${d.layout.totalLengthMm.toFixed(1)} × ${p.film.stripWidthMm} mm · paso ${p.film.pitchMm} mm · loop ${d.layout.loopLengthMm.toFixed(1)} mm` }),
-      el('span', { text: `recorrido ${d.path.lengthMm.toFixed(1)} mm · ${d.sync.actual.filmSpeedMmS.toFixed(0)} mm/s · ${d.sync.actual.transportFps.toFixed(2)} fot/s · ${d.sync.actual.flashHz.toFixed(2)} Hz` }),
-      el('span', { class: d.coherence.ok ? 'st-ok' : d.coherence.level === 'error' ? 'st-err' : 'st-warn', text: d.coherence.ok ? 'película ↔ recorrido OK' : `película ↔ recorrido: ${d.coherence.errorMm > 0 ? '+' : ''}${d.coherence.errorMm.toFixed(1)} mm` }),
+      d.reels
+        ? el('span', { text: `película abierta ${(d.reels.design.totalMm / 1000).toFixed(2)} m × ${p.film.stripWidthMm} mm · paso ${p.film.pitchMm} mm · dos tambores, lleno Ø${(2 * d.reels.design.fullR).toFixed(1)} mm` })
+        : el('span', { text: `película ${d.layout.totalLengthMm.toFixed(1)} × ${p.film.stripWidthMm} mm · paso ${p.film.pitchMm} mm · loop ${d.layout.loopLengthMm.toFixed(1)} mm` }),
+      d.reels
+        ? el('span', { text: `de ${d.reels.fps.min} a ${d.reels.fps.max} fps con la mano · ${d.reels.fps.normal} fps a 15 cm · destello de ${d.reels.pulseUs.slow.toFixed(0)} a ${d.reels.pulseUs.fast.toFixed(0)} µs` })
+        : el('span', { text: `recorrido ${d.path.lengthMm.toFixed(1)} mm · ${d.sync.actual.filmSpeedMmS.toFixed(0)} mm/s · ${d.sync.actual.transportFps.toFixed(2)} fot/s · ${d.sync.actual.flashHz.toFixed(2)} Hz` }),
+      el('span', { class: d.coherence.ok ? 'st-ok' : d.coherence.level === 'error' ? 'st-err' : 'st-warn', text: d.reels ? 'película abierta: sin loop que cerrar' : d.coherence.ok ? 'película ↔ recorrido OK' : `película ↔ recorrido: ${d.coherence.errorMm > 0 ? '+' : ''}${d.coherence.errorMm.toFixed(1)} mm` }),
       el('span', { class: errors.length ? 'st-err' : warns.length ? 'st-warn' : 'st-ok', text: errors.length ? `${errors.length} error(es)` : warns.length ? `${warns.length} aviso(s)` : 'sin avisos', title: d.warnings.map((w) => `${w.source}: ${w.message}`).join('\n') }),
       el('span', { class: 'spacer' }),
       el('span', { text: `caché: ${set.cached} · repintados: ${set.regenerated}` }),

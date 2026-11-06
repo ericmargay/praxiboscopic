@@ -59,10 +59,18 @@ export function mountFilmPanel(ctx: AppContext, root: HTMLElement): { dispose():
         readout('Fotogramas en la tira', `${d.layout.frames.length} (${d.layout.frameCount} × ${f.repeats})`).root,
         readout('Longitud de imágenes', `${fmtNum(d.layout.imageLengthMm, 1)} mm`).root,
         readout('Longitud total a imprimir', `${fmtNum(d.layout.totalLengthMm, 1)} mm`).root,
-        readout('Longitud del loop', `${fmtNum(d.layout.loopLengthMm, 1)} mm`).root,
-        readout('Recorrido mecánico', `${fmtNum(d.path.lengthMm, 1)} mm`, 'Longitud del camino de la película alrededor de los rodillos').root,
+        ...(d.reels
+          ? [
+              readout('Colas transparentes', `${fmtNum(d.reels.design.tail1Mm, 0)} mm (tambor 1) y ${fmtNum(d.reels.design.tail2Mm, 0)} mm (tambor 2), sin imprimir: van fijas a los núcleos`).root,
+              readout('Película total', `${fmtNum(d.reels.design.totalMm / 1000, 2)} m entre los dos tambores; comprar ${fmtNum(d.reels.filmToBuyM, 1)} m de base y de laminado`).root,
+              readout('Recorrido libre', `${fmtNum(d.path.lengthMm, 1)} mm de tambor a tambor`).root,
+            ]
+          : [
+              readout('Longitud del loop', `${fmtNum(d.layout.loopLengthMm, 1)} mm`).root,
+              readout('Recorrido mecánico', `${fmtNum(d.path.lengthMm, 1)} mm`, 'Longitud del camino de la película alrededor de los rodillos').root,
+            ]),
         readout('Superficie transparente restante', `${fmtNum(d.layout.clearAreaMm2 / 100, 1)} cm² (${fmtNum(d.layout.clearFraction * 100, 0)} %)`).root,
-        readout('Ciclos que caben en el recorrido', `${fmtNum(d.path.lengthMm / Math.max(1e-9, d.layout.frameCount * f.pitchMm), 3)}`).root,
+        d.reels ? null : readout('Ciclos que caben en el recorrido', `${fmtNum(d.path.lengthMm / Math.max(1e-9, d.layout.frameCount * f.pitchMm), 3)}`).root,
       ]),
       group('Coherencia con el recorrido', [
         el('p', { class: `coherence ${d.coherence.level}`, text: d.coherence.message }),

@@ -1,0 +1,47 @@
+id,name,category,qty,material,process,dimsMm,supplier,sku,url,unitCost,totalCost,currency
+coupling-5-8,Cople flexible D19L25 de aluminio 5 × 8 mm,mechanical,2,,buy,,UNIT Electronics,D19L25-5x8,,33,66,MXN
+shaft-8mm,"Eje lineal de acero Ø8 × 500 mm (varilla rectificada), cortado en 6 tramos",mechanical,1,,buy,8x8x500,UNIT Electronics / MercadoLibre,,,150,150,MXN
+print-petg,"Impresión 3D en PETG: 16 piezas distintas, 28 en total (núcleos de los tambores, cuerpos de las guías y del rodillo tensor, brazo, copa del pivote, postes, capuchones, cabeza del LED, cuna de la lente y soportes)",mechanical,1,petg,print3d,,servicio de impresión 3D (CDMX),,https://www.impresora3dmexico.com.mx/precios-por-impresion-3D.php,1277,1277,MXN
+dancer-spring,"Kit de resortes de compresión y extensión, 200 piezas",mechanical,1,,buy,,UNIT Electronics,AR3384,https://uelectronics.com/producto/resortes-de-compresion-y-extension-200-piezas/,162,162,MXN
+bearing-608,Rodamiento 608ZZ 8 × 22 × 7 mm,mechanical,12,,buy,22x22x7,UNIT Electronics,608ZZ-7,https://uelectronics.com/producto/608zz-7-rodamiento-tipo-balero-de-8-x-22-x-7-mm/,8,96,MXN
+washers-m8,"Rondanas planas M8 (DIN 125, 1,6 mm), bolsa de 10",mechanical,1,,buy,,ferretería,,,20,20,MXN
+ca-glue,"Cianoacrilato (Kola Loka o similar), 2 tubos",structural,1,,buy,,papelería / ferretería,,,40,40,MXN
+cable-ties,"Cinchos de nylon de 3,6 × 150 mm (bolsa de 100)",structural,1,,buy,,ferretería / Steren,,,45,45,MXN
+laser-acrylic,Corte láser en acrílico transparente de 3 mm: tapas de los tambores y bridas (13 piezas),structural,1,acrilico-3,laser,,"taller de corte láser (FIC, CDMX)",,https://fic-cortelaser.mx/,255,255,MXN
+laser-mdf,"Corte láser en MDF de 5,5 mm: caja con dientes, cubierta doble, torres de los motores, marco y topes de la fuente, cuñas y piezas de prueba (24 piezas)",structural,1,mdf-5.5,laser,383.16x262x125,"taller de corte láser (FIC, CDMX)",,https://fic-cortelaser.mx/,711,711,MXN
+epoxy,Epóxico transparente de 5 minutos (J-B Weld ClearWeld),structural,1,,buy,,Home Depot,,https://www.homedepot.com.mx/s/resistol%20850,109,109,MXN
+glue-wood,"Resistol 850 (cola blanca para madera), 250 g",structural,1,,buy,,Home Depot,,https://www.homedepot.com.mx/s/resistol%20850,89,89,MXN
+led-caps,Capacitor electrolítico 1000 µF 50 V,electronic,3,,buy,,UNIT Electronics,CAP-1000U-50V,https://uelectronics.com/producto/capacitor-electrolitico-50v/,6,18,MXN
+ceramic-caps,Capacitores 100 nF cerámico y 10 µF 50 V,electronic,2,,buy,,UNIT Electronics,CAP-100N + CAP-10U,,3,6,MXN
+led-heatsink,Disipador de aluminio 40 × 40 × 20 mm,electronic,1,,buy,,UNIT Electronics,DIS-40X40,,35,35,MXN
+led-gate-driver,Driver de compuerta IR2101 DIP-8,electronic,1,,buy,,UNIT Electronics,IR2101PBF,https://uelectronics.com/producto/ir2101-driver-dip-8-ir2101pbf/,50,50,MXN
+driver-dm542,"Driver DM542 20–50 V 4,2 A",electronic,2,,buy,,UNIT Electronics,DM542,,219,438,MXN
+as5600,"Encoder magnético AS5600 de 12 bits en módulo I2C, con imán",electronic,1,,buy,,UNIT Electronics,AS5600,https://uelectronics.com/producto/as5600-encoder-magnetico-12-bits/,52,52,MXN
+esp32,ESP32 DevKitC V4 WROOM-32D,electronic,1,,buy,,UNIT Electronics,ESP32-DevKitC-V4,https://uelectronics.com/producto/esp32-devkitc-v4-esp32-wroom-32d-32u/,145,145,MXN
+psu-24v-5a,Fuente conmutada 24 V 5 A 120 W,electronic,1,,buy,,UNIT Electronics,UE-120-24,https://uelectronics.com/producto/fuente-conmutada-24v-5a/,210,210,MXN
+led-fuse,"Fusible de 500 mA de 5 × 20 mm con portafusible en línea (Steren FEUR .5 + FUS-AUE), antes de los capacitores",electronic,1,,buy,,Steren,FEUR .5 + FUS-AUE,https://www.steren.com.mx/catalogsearch/result/?q=fusible,33,33,MXN
+breadboard-kit,Kit protoboard 830 puntos + fuente MB102 + 65 jumpers macho-macho,electronic,1,,buy,,UNIT Electronics,KIT-PROTO-830-MB102,https://uelectronics.com/producto/kit-protoboard-830-puntos-fuente-mb102-65-cables-dupont-m-m/,150,150,MXN
+led-10w,"LED blanco frío de potencia 10 W, emisor 10,8 × 10,8 mm",electronic,3,,buy,,UNIT Electronics,LED-10W-BF,https://uelectronics.com/producto/led-blanco-frio-de-potencia-10w-50w-y-100w/,26,78,MXN
+led-mosfet,MOSFET IRLZ44N 55 V 47 A,electronic,2,,buy,,UNIT Electronics,IRLZ44N,https://uelectronics.com/producto/transistor-irlz44/,12,24,MXN
+motor-17hs8401,"Motor NEMA 17 17HS8401 42 × 48 mm, 1,8 A",electronic,2,,buy,42.3x42.3x48,UNIT Electronics,17HS8401,https://uelectronics.com/producto/nema-17-motor-a-pasos-17hs8401/,225,450,MXN
+buck-lm2596,Regulador LM2596 step down 3 A (uno a 5 V y otro a 12 V),electronic,2,,buy,,UNIT Electronics,AR0150,https://uelectronics.com/producto/modulo-regulador-ajustable-lm2596-dc-dc-step-down-3a-1-25-30v/,36,72,MXN
+led-resistor,"Resistencia de aluminio 10 W, 3,3 Ω (confirmar valor disponible)",electronic,1,,buy,,UNIT Electronics,RES-AL-10W,https://uelectronics.com/producto/resistencia-de-aluminio-10w/,32,32,MXN
+small-resistors,"Resistencias 1/4 W: 3 × 1 kΩ, 1 × 10 Ω, 2 × 10 kΩ",electronic,6,,buy,,UNIT Electronics,RES-1/4W,,1,6,MXN
+sensor-f249,"Sensor de barrera F249 3,3–5 V (la marca negra interrumpe el haz)",electronic,2,,buy,,UNIT Electronics,F249,https://uelectronics.com/producto/sensor-de-velocidad-f249-3-3v-5v/,20,40,MXN
+hand-sensor-bench,"Sensor de distancia VL53L0X en placa (GY-VL53L0XV2), para empezar la prueba de banco mientras llega el VL53L4CD",electronic,1,,buy,,UNIT Electronics,VL53L0X,https://uelectronics.com/producto/vl53l0x-medidor-de-distancia-laser-i2c-940nm-tof/,47,47,MXN
+hand-sensor,Sensor de distancia VL53L4CD en placa Qwiic (SparkFun SEN-18993),electronic,2,,buy,,Amazon México,B09YWNL4BN,https://www.amazon.com.mx/dp/B09YWNL4BN,500.18,1000.36,MXN
+pin-headers,"Tira de pines macho en ángulo recto de 2,54 mm (40 pines)",electronic,1,,buy,,UNIT Electronics,,https://uelectronics.com/?s=tira+de+pines,3,3,MXN
+npn-s8050,"Transistor NPN S8050 (PUL y DIR de 3,3 V a las entradas de 5 V de cada driver)",electronic,5,,buy,,UNIT Electronics,S8050,https://uelectronics.com/producto/transistor-npn-500ma-25v-s8050/,2,10,MXN
+esp32-expansion,UNIT Placa de expansión para ESP32 de 38 pines,electronic,1,,buy,,UNIT Electronics,UNIT-EXP-ESP32-38,https://uelectronics.com/producto/unit-placa-de-expansion-para-esp32-38-pines/,89,89,MXN
+condenser,Condensador: par de lentes plano-convexas Ø40 mm f≈50 mm en tubo impreso,optical,1,,buy,,óptica / AliExpress,,,300,300,MXN
+laser-black,Corte láser en acrílico negro de 3 mm: placa de la ventana y sus dos guías,optical,1,acrilico-negro-3,laser,,"taller de corte láser (FIC, CDMX)",,https://fic-cortelaser.mx/,50,50,MXN
+lens-50mm,"Lente de 50 mm f/1.8 para réflex de 35 mm, con montura de enfoque (no sirve una CCTV C-mount)",optical,1,,buy,,segunda mano,,,800,800,MXN
+splice-tape,"Cinta de empalme transparente (poliéster, 19 mm) o cinta Scotch Magic",material,1,,buy,,papelería,,,60,60,MXN
+film-sheets-inkjet-transparency,Hojas transparentes A4 (210 × 297) para inyección de tinta (paquete),material,1,,buy,,papelería / Office Depot,,,320,320,MXN
+film-cover,"Laminado en frío brillante de 75–80 µm con adhesivo acrílico, 6.1 m, pasado en laminadora de rodillos (servicio)",material,1,,buy,,tienda de rotulación o gran formato (Maxicopias: $170/m²),,https://maxicopias.com/lista-de-precios/,1037,1037,MXN
+screen,Pantalla blanca mate ≥ 730 × 456 mm (foam board o tela),material,1,,buy,,papelería,,,120,120,MXN
+film-base-roll,"PET cristal de 127 µm o PVC rígido cristal calibre 5 (acetato), al menos 6.1 m por metro lineal",material,7,,buy,,distribuidora de plásticos (por metro),,,45,315,MXN
+wire-18awg,Cable 18 AWG rojo y negro (por metro),wiring,5,,buy,,UNIT Electronics,CAB-18AWG,,15,75,MXN
+ac-cable,"Cable de alimentación universal AC 1,8 m",wiring,1,,buy,,UNIT Electronics,AC-1.8,,93,93,MXN
+jumpers-hh,Jumpers dupont hembra-hembra de 30 cm (40 piezas),wiring,1,,buy,,UNIT Electronics,DUPONT-30-HH,https://uelectronics.com/producto/cables-dupont-extra-largos-30cm-hh-mh-mm/,20,20,MXN
+jumpers-hm,Jumpers dupont hembra-macho 20 cm (40 piezas),wiring,1,,buy,,UNIT Electronics,JMP-HM-40,,45,45,MXN

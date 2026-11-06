@@ -9,6 +9,7 @@ import { buildFilmLayout, checkCoherence, defaultFilmSpec, FilmSpecSchema, type 
 import { defaultPrintSpec, type PrintSpec } from '../film/print';
 import { defaultFrameGenSettings, FrameGenSettingsSchema, orientedSizeMm, resolveFrameCount, type FrameGenSettings } from '../frames/settings';
 import { aspectForShortGap, buildPath, designFestoon, designRectangle, gateOnStraight, interiorClearance, rollerFaces, type PathGeometry, type PathSpec } from '../mech/path';
+import { defaultReelsSpec, designReels, fpsRange, HAND_SENSORS, reelDuty, reelPulseS, reelRpm, reelsClearance, reelTorque, stillPulseS, type HandSensor, type ReelsDesign, type ReelsSpec } from '../mech/reels';
 import { defaultDrumStrobe, defaultLedStrobe, type DrumStrobe, type LedStrobe, type StrobeSpec } from '../mech/strobe';
 import { syncState, type SyncState } from '../mech/sync';
 import { defaultTransportSpec, filmBending, type BendingReport, type TransportSpec } from '../mech/transport';
@@ -38,10 +39,15 @@ export interface Project {
   autoPath: boolean;
   /** relación de lados del rectángulo de rodillos al autodiseñar */
   pathAspect: number;
-  /** forma del recorrido al autodiseñar: rectángulo de 4 rodillos o festón (zigzag) para películas largas */
-  pathLayout?: 'rectangle' | 'festoon';
+  /**
+   * forma del recorrido al autodiseñar: rectángulo de 4 rodillos, festón (zigzag) para películas largas, o dos tambores
+   * entre los que la película va y viene con la mano del visitante (ADR-0011)
+   */
+  pathLayout?: 'rectangle' | 'festoon' | 'reels';
   /** festón: rodillos de la fila cercana a la ventana y hueco entre el tramo frontal y esa fila (mm) */
   festoon?: { passes: number; frontGapMm: number };
+  /** dos tambores: medidas de la mesa y el programa de las manos. Sin él, `defaultReelsSpec` */
+  reels?: ReelsSpec;
   ui: { section: Section; studioTab: string; time: number; playing: boolean; timeScale: number; compare: boolean };
 }
 
@@ -63,8 +69,35 @@ export const ProjectSchema = z.object({
   targetFps: z.number().gt(0),
   autoPath: z.boolean(),
   pathAspect: z.number().gt(0),
-  pathLayout: z.enum(['rectangle', 'festoon']).optional(),
+  pathLayout: z.enum(['rectangle', 'festoon', 'reels']).optional(),
   festoon: z.object({ passes: z.number().int().min(1).max(20), frontGapMm: z.number().min(40) }).optional(),
+  reels: z
+    .object({
+      coreDiameterMm: z.number().min(40).max(400),
+      flangeDiameterMm: z.number().min(40).max(600),
+      spacingMm: z.number().min(60).max(1000),
+      depthMm: z.number().min(60).max(1000),
+      guideDiameterMm: z.number().min(10).max(200),
+      dancerDiameterMm: z.number().min(10).max(200),
+      tailTurns: z.number().min(0).max(10),
+      sensor: z.enum(['vl53l4cd', 'vl53l0x']),
+      control: z.object({
+        speedMap: z.array(z.tuple([z.number().min(0), z.number().min(0).max(120)])).min(1),
+        accelMmS2: z.number().gt(0),
+        dwellMs: z.number().min(0),
+        filterMs: z.number().min(0),
+        twoHands: z.enum(['first', 'nearest', 'stop']),
+        idle: z.enum(['hold', 'attract']),
+        idleS: z.number().min(0),
+        attractFps: z.number().gt(0),
+        atEnd: z.enum(['wait', 'return']),
+        returnFps: z.number().gt(0),
+        maxBlurMm: z.number().gt(0),
+        stillHz: z.number().gt(0),
+        compensateMarkEdge: z.boolean(),
+      }),
+    })
+    .optional(),
   ui: z.object({ section: z.enum(['studio', 'mechanical', 'laboratory']), studioTab: z.string(), time: z.number(), playing: z.boolean(), timeScale: z.number(), compare: z.boolean() }),
 }) as unknown as z.ZodType<Project>;
 
@@ -161,6 +194,30 @@ export interface Derived {
   bending: BendingReport | null;
   /** avisos de todo el proyecto (coherencia, película, mecánica, óptica) */
   warnings: { level: 'error' | 'warning' | 'info'; source: string; message: string }[];
+  /** dos tambores (ADR-0011): solo con `pathLayout: 'reels'` */
+  reels?: ReelsDerived;
+}
+
+/** lo que se deduce de los dos tambores: diseño, sensor de mano, velocidades, rpm, destellos y par */
+export interface ReelsDerived {
+  spec: ReelsSpec;
+  design: ReelsDesign;
+  sensor: HandSensor;
+  /** fotogramas por segundo: el más lento y el más rápido de la tabla de la mano, y el normal (los de proyección) */
+  fps: { min: number; normal: number; max: number };
+  /** rpm de un tambor con el núcleo vacío y lleno, a la velocidad normal y a la máxima */
+  rpm: { normalCore: number; normalFull: number; maxCore: number; maxFull: number };
+  /** destello a la velocidad mínima, normal y máxima, y los pulsos con la película quieta (µs) */
+  pulseUs: { slow: number; normal: number; fast: number; still: number };
+  /** fracción del tiempo con luz, igual a cualquier velocidad */
+  duty: number;
+  torque: ReturnType<typeof reelTorque>;
+  /** cuánto abraza la película el rodillo del brazo tensor (°) y su rigidez ahí */
+  dancerWrapDeg: number;
+  dancerBending: BendingReport;
+  guideBending: BendingReport;
+  /** largo de película a comprar: la tira, las dos colas y 0,5 m para pruebas (m) */
+  filmToBuyM: number;
 }
 
 /**
@@ -178,6 +235,7 @@ export function deriveProject(p: Project): Derived {
   const frameMm = orientedSizeMm(p.frames);
   // la imagen va derecha sobre la banda de canto: su ancho corre a lo largo de la tira y su alto la cruza
   const layout = buildFilmLayout({ frameCount: count, alongMm: frameMm.width, acrossMm: frameMm.height }, p.film);
+  if (p.pathLayout === 'reels' && layout.frames.length) return deriveReels(p, count, duration, frameMm, layout);
   let pathSpec = p.path;
   if (p.autoPath && layout.loopLengthMm > 0) {
     try {
@@ -238,6 +296,104 @@ export function deriveProject(p: Project): Derived {
   if (bending && bending.stiffnessRatio > 0.1) warnings.push({ level: 'warning', source: 'película', message: `La película laminada de ${bending.thicknessMm.toFixed(2)} mm es rígida para rodillos de Ø${(2 * pathSpec.rollerRadiusMm).toFixed(1)} mm: doblarla pide el ${(100 * bending.stiffnessRatio).toFixed(0)} % de lo que da la tensión (conviene menos del 10 %). Se despegará de los rodillos y el empalme golpeará: usa de 0,2 a 0,3 mm en total.` });
   else if (bending && bending.thicknessMm < 0.15) warnings.push({ level: 'info', source: 'película', message: `La película laminada de ${bending.thicknessMm.toFixed(2)} mm es delgada: se arruga al manipularla y ondula en la ventana. Conviene de 0,2 a 0,3 mm en total.` });
   return { frameCount: count, duration, frameMm, layout, path, pathSpec, coherence, sync, strobe, clearance, faces, bending, warnings };
+}
+
+/**
+ * Dos tambores (ADR-0011): la película abierta va de un tambor a otro con la mano del visitante. No hay loop que
+ * cerrar; se comprueba que la película quepa en los tambores, que nada choque, que los motores alcancen a la velocidad
+ * máxima, que el destello siga a la velocidad y que la tinta vaya cubierta.
+ */
+function deriveReels(p: Project, count: number, duration: number, frameMm: { width: number; height: number }, layout: FilmLayout): Derived {
+  const spec = p.reels ?? defaultReelsSpec({ coreDiameterMm: 2 * p.path.rollerRadiusMm });
+  const lam = p.film.laminate;
+  // sin laminar se modela una sola hoja de calibre 5
+  const t = lam ? lam.baseMm + lam.coverMm : 0.127;
+  const design = designReels(spec, layout.frames.map((f) => f.centerMm), layout.totalLengthMm, t);
+  const g = design.geometry;
+  const path = design.path;
+  const pitch = p.film.pitchMm;
+  const c = spec.control;
+  const T = p.transport.tensionN;
+  const pathSpec: PathSpec = { rollers: [g.guide2, g.guide1], rollerRadiusMm: g.guideR, driveRoller: 0, gateMm: design.gateMm, direction: 1, sides: [1, 1] };
+  const coherence: CoherenceReport = {
+    loopLengthMm: layout.totalLengthMm,
+    pathLengthMm: path.lengthMm,
+    errorMm: 0,
+    framesOff: 0,
+    ok: true,
+    level: 'ok',
+    message: `Película abierta entre dos tambores: ${layout.frames.length} fotogramas en ${(layout.totalLengthMm / 1000).toFixed(2)} m, con colas transparentes de ${design.tail1Mm} mm (tambor 1) y ${design.tail2Mm} mm (tambor 2). No cierra un loop: su largo no tiene que coincidir con el recorrido.`,
+    suggestions: [],
+  };
+  const strobe: StrobeSpec = p.strobeKind === 'drum' ? p.drum : p.led;
+  const fr = fpsRange(c.speedMap);
+  const normalFps = p.targetFps;
+  const vN = normalFps * pitch;
+  const pulseN = reelPulseS(vN, c, pitch);
+  const torque = reelTorque(p.transport, design, c, pitch, p.film.stripWidthMm);
+  const sync: SyncState = {
+    targets: { fps: normalFps, filmSpeedMmS: vN, rollerRpm: reelRpm(vN, g.coreR), motorRpm: reelRpm(vN, g.coreR), drumRpm: null, ledHz: normalFps },
+    actual: { filmSpeedMmS: vN, transportFps: normalFps, flashHz: normalFps, flashDurationS: pulseN, beatHz: 0, secondsPerFrameSlip: Infinity, blurMm: vN * pulseN, blurFraction: (vN * pulseN) / pitch, averageLumens: p.led.peakLumens * Math.min(1, normalFps * pulseN), maxExposureS: c.maxBlurMm / vN },
+    torque,
+    warnings: [...torque.warnings],
+  };
+  const warnings: Derived['warnings'] = [];
+  // sin loop no hay empalme de cierre: el aviso del empalme a tope no aplica
+  for (const w of layout.warnings) if (w.code !== 'butt-splice') warnings.push({ level: w.level, source: 'película', message: w.message });
+  const gate = gateOnStraight(path, design.gateMm, p.optics.gateHeightMm);
+  if (!gate.ok && gate.message) warnings.push({ level: 'warning', source: 'ventana', message: gate.message });
+  for (const w of sync.warnings) warnings.push({ level: 'warning', source: 'sincronía', message: w });
+  if (Math.abs(p.targetFps - p.animation.fps) > 1e-9) warnings.push({ level: 'info', source: 'tiempo', message: `La animación está muestreada a ${p.animation.fps} FPS y la velocidad normal es de ${p.targetFps} FPS: el movimiento irá ${(p.targetFps / p.animation.fps).toFixed(2)}× más rápido.` });
+  if (p.optics.gateWidthMm > frameMm.width + 1e-6 || p.optics.gateHeightMm > frameMm.height + 1e-6) warnings.push({ level: 'warning', source: 'ventana', message: `La ventana óptica (${p.optics.gateWidthMm} × ${p.optics.gateHeightMm} mm) es mayor que el fotograma (${frameMm.width} × ${frameMm.height} mm): se verán los bordes y el fotograma vecino.` });
+  if (p.strobeKind === 'drum') warnings.push({ level: 'error', source: 'estroboscopio', message: 'Con dos tambores la velocidad la pone la mano: el destello lo tiene que disparar cada marca. El tambor de ranuras gira a velocidad fija y no sirve; usa el LED.' });
+  else if (p.led.trigger !== 'sensor') warnings.push({ level: 'error', source: 'estroboscopio', message: 'Con dos tambores la velocidad cambia con la mano: el LED tiene que dispararse con el sensor de marcas, no con un reloj propio.' });
+  if (!lam) warnings.push({ level: 'error', source: 'película', message: 'En un tambor cada vuelta se aprieta contra la siguiente y el brazo tensor toca la cara de la tinta: sin cubierta, la tinta se raya. Usa la película laminada (ADR-0010).' });
+  const margin = g.flangeR - design.fullR;
+  if (margin < 3) warnings.push({ level: 'error', source: 'tambores', message: `La película no cabe: el tambor lleno mide Ø${(2 * design.fullR).toFixed(1)} mm y las bridas Ø${(2 * g.flangeR).toFixed(0)} mm. Usa bridas más grandes o una película más corta.` });
+  else if (margin < 8) warnings.push({ level: 'warning', source: 'tambores', message: `El tambor lleno mide Ø${(2 * design.fullR).toFixed(1)} mm y las bridas Ø${(2 * g.flangeR).toFixed(0)} mm: quedan ${margin.toFixed(1)} mm por lado. Con menos de 8 mm la película puede saltar la brida.` });
+  // choques entre tambores (por sus bridas), guías y brazo tensor, con 3 mm de holgura
+  const bodies = path.circles.map((x) => ({ id: x.id, x: x.x, y: x.y, r: x.id === 'reel1' || x.id === 'reel2' ? g.flangeR : x.r + 2 }));
+  const NAME: Record<string, string> = { reel1: 'el tambor 1', reel2: 'el tambor 2', guide1: 'la guía 1', guide2: 'la guía 2', dancer: 'el brazo tensor' };
+  bodies.forEach((a, i) => bodies.slice(i + 1).forEach((b) => {
+    const gap = Math.hypot(a.x - b.x, a.y - b.y) - a.r - b.r;
+    if (gap < 3) warnings.push({ level: 'error', source: 'tambores', message: `${NAME[a.id]} y ${NAME[b.id]} quedan a ${gap.toFixed(1)} mm: chocarían. Separa los tambores o achica las bridas.` });
+  }));
+  const need = lanternEnvelopeMm(p);
+  const room = reelsClearance(design, need.depthMm);
+  const clearance = { depthMm: room.depthMm, widthMm: room.widthMm, requiredDepthMm: need.depthMm, requiredWidthMm: need.widthMm, ok: room.depthMm >= need.depthMm && room.widthMm >= need.widthMm };
+  if (!clearance.ok) warnings.push({ level: 'error', source: 'espacio', message: `La cabeza del LED ocupa ${need.widthMm.toFixed(0)} × ${need.depthMm.toFixed(0)} mm y detrás de la ventana hay ${room.widthMm.toFixed(0)} × ${room.depthMm.toFixed(0)} mm: chocaría con los tambores o las guías.` });
+  // la película se dobla en el núcleo como en los rodillos de hoy; en las guías y el brazo tensor, más
+  const bending = filmBending(t, p.film.stripWidthMm, g.coreR, T);
+  const guideBending = filmBending(t, p.film.stripWidthMm, g.guideR, T);
+  const dancerBending = filmBending(t, p.film.stripWidthMm, g.dancerR, T);
+  const dancerArc = path.segments.find((x) => x.kind === 'arc' && x.roller === 1);
+  const dancerWrapDeg = dancerArc && dancerArc.kind === 'arc' ? (Math.abs(dancerArc.sweep) * 180) / Math.PI : 0;
+  if (bending.stiffnessRatio > 0.1) warnings.push({ level: 'warning', source: 'película', message: `La película de ${t.toFixed(2)} mm es rígida para el núcleo de Ø${(2 * g.coreR).toFixed(1)} mm: doblarla pide el ${(100 * bending.stiffnessRatio).toFixed(0)} % de la tensión. Usa de 0,2 a 0,3 mm en total.` });
+  if (guideBending.stiffnessRatio > 0.1) warnings.push({ level: 'warning', source: 'película', message: `Las guías de Ø${(2 * g.guideR).toFixed(0)} mm doblan la película 90°: con ${T} N su rigidez pide el ${(100 * guideBending.stiffnessRatio).toFixed(0)} % de la tensión y no las abrazará. Usa guías más grandes o más tensión.` });
+  if (dancerBending.stiffnessRatio > 0.1) warnings.push({ level: 'info', source: 'película', message: `El rodillo del brazo tensor (Ø${(2 * g.dancerR).toFixed(0)} mm) solo desvía la película ${dancerWrapDeg.toFixed(0)}°: con ${T} N su rigidez pide el ${(100 * dancerBending.stiffnessRatio).toFixed(0)} % de la tensión y no lo abraza del todo. Basta para que el brazo sienta la tensión.` });
+  // caras: tambores y guías tocan la de la lámpara; el brazo tensor, la de la lente. En el tambor cada vuelta apoya en la anterior
+  const ink = p.print.emulsion === 'toward-lens' ? 'lens' : 'lamp';
+  const faces = { lampSide: 4, lensSide: 1, ink, inkTouched: ink === 'lens' ? 1 : 4, covered: !!lam } as const;
+  if (lam) warnings.push({ level: 'info', source: 'rodillos', message: `El rodillo del brazo tensor toca la cubierta que tapa la tinta: hazlo con el centro rebajado, apoyado solo en los márgenes de ${((p.film.stripWidthMm - frameMm.height) / 2).toFixed(0)} mm. En los tambores cada vuelta apoya la cubierta sobre la base de la anterior.` });
+  const sensor = HAND_SENSORS[spec.sensor];
+  if (spec.sensor === 'vl53l0x') warnings.push({ level: 'info', source: 'manos', message: `El VL53L0X pierde la mano a menos de unos 3 cm: la velocidad máxima de la tabla (a ${Math.min(...c.speedMap.map((m) => m[0])) / 10} cm) no siempre se alcanza. Sirve para la prueba de banco; para la mesa, el VL53L4CD.` });
+  const slowUs = reelPulseS(fr.min * pitch, c, pitch) * 1e6;
+  if (fr.min < 16) warnings.push({ level: 'info', source: 'luz', message: `A ${fr.min} fps cada destello dura ${slowUs.toFixed(0)} µs, ${(slowUs / (pulseN * 1e6)).toFixed(1)} veces el de ${normalFps} fps: mide en banco que el LED aguante el pulso. Abajo de unos 16 fps se nota el parpadeo.` });
+  const reels: ReelsDerived = {
+    spec,
+    design,
+    sensor,
+    fps: { min: fr.min, normal: normalFps, max: fr.max },
+    rpm: { normalCore: reelRpm(vN, g.coreR), normalFull: reelRpm(vN, design.fullR), maxCore: reelRpm(fr.max * pitch, g.coreR), maxFull: reelRpm(fr.max * pitch, design.fullR) },
+    pulseUs: { slow: slowUs, normal: pulseN * 1e6, fast: reelPulseS(fr.max * pitch, c, pitch) * 1e6, still: stillPulseS(c, pitch) * 1e6 },
+    duty: reelDuty(c, pitch),
+    torque,
+    dancerWrapDeg,
+    dancerBending,
+    guideBending,
+    filmToBuyM: design.totalMm / 1000 + 0.5,
+  };
+  return { frameCount: count, duration, frameMm, layout, path, pathSpec, coherence, sync, strobe, clearance, faces, bending, warnings, reels };
 }
 
 /** cuando el usuario cambia el tamaño físico del fotograma, la ventana óptica lo sigue si estaba igualada */

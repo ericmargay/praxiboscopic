@@ -7,6 +7,7 @@ import type { SimulationRunner } from '../../app/simulation';
 import { evaluate } from '../../animation/evaluate';
 import { renderDisplayList } from '../../animation/render2d';
 import { pointAt, samplePath } from '../../mech/path';
+import { livePath, reelPulseS, stillPulseS } from '../../mech/reels';
 import { MEDIA, mediumById } from '../../optics/medium';
 import { brightnessReport, opticsReport } from '../../optics/projector';
 import { button, checkbox, el, fmtNum, group, numberControl, readout, selectControl } from '../controls';
@@ -50,16 +51,17 @@ export function mountLabPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = '#000';
     g.fillRect(0, 0, A.c.width, A.c.height);
-    // la animación ideal avanza con el tiempo de simulación, a los FPS de proyección objetivo: fotograma = floor(t·fps)
+    // la animación ideal avanza con el tiempo de simulación, a los FPS de proyección objetivo: fotograma = floor(t·fps).
+    // Con dos tambores la velocidad la pone la mano: A muestra el fotograma digital que está en la ventana
     const t = ctx.engine.t;
-    const frameIdx = Math.floor(t * p.targetFps) % Math.max(1, d.frameCount);
+    const frameIdx = d.reels ? (sim.gate()?.frameIndex ?? 0) : Math.floor(t * p.targetFps) % Math.max(1, d.frameCount);
     const tAnim = (frameIdx * d.duration) / Math.max(1, d.frameCount);
     const list = evaluate({ ...doc, duration: d.duration }, tAnim, { frameIndex: frameIdx });
     const scale = Math.min(A.c.width / doc.width, A.c.height / doc.height) * 0.92;
     const ox = (A.c.width - doc.width * scale) / 2;
     const oy = (A.c.height - doc.height * scale) / 2;
     renderDisplayList(g, list, { scale, offsetX: ox, offsetY: oy, resources: ctx.resources, forceBackground: showIdealInA ? (doc.background.transparent ? '#ffffff' : null) : null });
-    A.cap.textContent = `fotograma ${frameIdx + 1}/${d.frameCount} · t = ${tAnim.toFixed(3)} s · ${p.targetFps} fps digitales`;
+    A.cap.textContent = d.reels ? `fotograma ${frameIdx + 1}/${d.frameCount} · el de la ventana: la velocidad la pone la mano` : `fotograma ${frameIdx + 1}/${d.frameCount} · t = ${tAnim.toFixed(3)} s · ${p.targetFps} fps digitales`;
   }
 
   function drawB(): void {
@@ -74,10 +76,12 @@ export function mountLabPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     g.fillRect(0, 0, W, H);
     const frames = sim.useIdealFrames ? ctx.frames().frames : ctx.printedFrames().frames;
     const byIndex = new Map(frames.map((f) => [f.index, f.canvas]));
-    const layout = d.layout;
+    // la película abierta de los dos tambores no envuelve: el primer fotograma no tiene vecino al otro lado
+    const layout = sim.exposureLayout(d);
     const phi = ctx.engine.phiMm;
     const L = layout.loopLengthMm;
-    if (bZoom === 'gate') {
+    if (bZoom === 'path' && d.reels) drawReelsPlan(g, W, H, byIndex);
+    else if (bZoom === 'gate') {
       // tramo de tira alrededor de la ventana: s horizontal (la cinta avanza de derecha a izquierda vista desde la lente)
       const spanMm = Math.max(p.optics.gateWidthMm * 3, layout.spec.pitchMm * 3);
       const k = (W * 0.96) / spanMm;
@@ -188,6 +192,91 @@ export function mountLabPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     B.cap.textContent = gs ? `φ = ${phi.toFixed(1)} mm · ${gs.speedMmS.toFixed(1)} mm/s · en la ventana: fotograma ${gs.frameIndex + 1} (${gs.offsetMm >= 0 ? '+' : ''}${gs.offsetMm.toFixed(2)} mm)` : '';
   }
 
+  /** planta de los dos tambores: la película enrollada en cada uno, las guías, el brazo tensor y los fotogramas libres */
+  function drawReelsPlan(g: CanvasRenderingContext2D, W: number, H: number, byIndex: Map<number, unknown>): void {
+    const d = ctx.derived();
+    const r = d.reels!;
+    const phi = ctx.engine.phiMm;
+    const lp = livePath(r.design, phi);
+    const geo = r.design.geometry;
+    const xs = [geo.reel1.x - geo.flangeR, geo.reel2.x + geo.flangeR, geo.pivot.x + 10];
+    const ys = [geo.reel1.y - geo.flangeR, 30];
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const k = Math.min(W / (maxX - minX + 40), H / (maxY - minY + 40));
+    const X = (x: number) => (x - (minX + maxX) / 2) * k + W / 2;
+    // +y (la lente) abajo, como la planta de la propuesta
+    const Y = (y: number) => (y - (minY + maxY) / 2) * k + H / 2;
+    const circle = (x: number, y: number, rad: number, fill: string | null, stroke: string | null) => {
+      g.beginPath();
+      g.arc(X(x), Y(y), rad * k, 0, Math.PI * 2);
+      if (fill) {
+        g.fillStyle = fill;
+        g.fill();
+      }
+      if (stroke) {
+        g.strokeStyle = stroke;
+        g.lineWidth = 1;
+        g.stroke();
+      }
+    };
+    [geo.reel1, geo.reel2].forEach((q, i) => {
+      circle(q.x, q.y, geo.flangeR, 'rgba(99,184,211,0.08)', '#63b8d3');
+      circle(q.x, q.y, i === 0 ? lp.pose.r1 : lp.pose.r2, 'rgba(160,175,185,0.55)', null);
+      circle(q.x, q.y, geo.coreR, '#2a3036', '#9fb2ba');
+      g.fillStyle = '#9aa';
+      g.font = '11px ui-monospace, monospace';
+      g.textAlign = 'center';
+      g.fillText(`tambor ${i + 1}`, X(q.x), Y(q.y) + 4);
+    });
+    for (const q of [geo.guide1, geo.guide2]) circle(q.x, q.y, geo.guideR, '#9fb2ba', null);
+    const dancer = lp.path.circles.find((c) => c.id === 'dancer')!;
+    circle(dancer.x, dancer.y, dancer.r, '#63b8d3', null);
+    g.strokeStyle = '#63b8d3';
+    g.beginPath();
+    g.moveTo(X(geo.pivot.x), Y(geo.pivot.y));
+    g.lineTo(X(dancer.x), Y(dancer.y));
+    g.stroke();
+    // película libre de tambor a tambor
+    const pts = samplePath(lp.path, 2);
+    g.strokeStyle = 'rgba(200,210,230,0.7)';
+    g.lineWidth = Math.max(1, 1.5 * k);
+    g.beginPath();
+    pts.forEach((q, i) => (i ? g.lineTo(X(q.position.x), Y(q.position.y)) : g.moveTo(X(q.position.x), Y(q.position.y))));
+    g.stroke();
+    const shift = lp.path.gateMm - r.design.gateMm;
+    for (const pf of d.layout.frames) {
+      const s = phi - pf.centerMm + shift;
+      if (s < 0 || s > lp.path.lengthMm) continue;
+      const q = pointAt(lp.path, s);
+      const sz = Math.max(3, pf.alongMm * k * 0.9);
+      g.save();
+      g.translate(X(q.position.x), Y(q.position.y));
+      g.rotate(Math.atan2(q.tangent.y, q.tangent.x));
+      const img = byIndex.get(pf.frameIndex);
+      g.fillStyle = '#fff';
+      g.fillRect(-sz / 2, -sz * 0.3, sz, sz * 0.6);
+      if (img) g.drawImage(img as CanvasImageSource, -sz / 2, -sz * 0.3, sz, sz * 0.6);
+      g.restore();
+    }
+    const gq = pointAt(lp.path, lp.path.gateMm);
+    g.strokeStyle = '#63b8d3';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.arc(X(gq.position.x), Y(gq.position.y), Math.max(6, ctx.project.optics.gateWidthMm * k * 0.7), 0, Math.PI * 2);
+    g.stroke();
+    g.fillStyle = '#9aa';
+    g.textAlign = 'left';
+    g.fillText('ventana', X(gq.position.x) + 12, Y(gq.position.y) + 16);
+    const live = sim.reelLive();
+    if (live) {
+      g.textAlign = 'left';
+      g.fillText(`${(Math.abs(live.vMmS) / ctx.project.film.pitchMm).toFixed(1)} fps ${live.vMmS > 0 ? '← hacia el tambor 1' : live.vMmS < 0 ? 'hacia el tambor 2 →' : '· quieta'}`, 8, H - 8);
+    }
+  }
+
   function drawC(): void {
     sizeCanvas(C.c);
     const g = C.c.getContext('2d')!;
@@ -271,9 +360,20 @@ export function mountLabPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     const d = ctx.derived();
     const g = sim.gate();
     ro.gate.set(g ? `${g.frameIndex + 1} (${g.offsetMm >= 0 ? '+' : ''}${g.offsetMm.toFixed(2)} mm)` : '—');
-    ro.flash.set(`${sim.flashCount} · ${fmtNum(d.sync.actual.flashHz, 2)} Hz · ${fmtNum(d.sync.actual.flashDurationS * 1e6, 0)} µs`);
-    ro.sync.set(Math.abs(d.sync.actual.beatHz) < 1e-3 ? 'en fase' : `deriva ${fmtNum(d.sync.actual.beatHz, 3)} Hz`, Math.abs(d.sync.actual.beatHz) < 1e-3 ? 'ok' : 'warn');
-    ro.blur.set(`${fmtNum(d.sync.actual.blurMm, 3)} mm sobre la película`, d.sync.actual.blurMm <= 0.1 ? 'ok' : 'warn');
+    const live = sim.reelLive();
+    if (d.reels && live) {
+      // dos tambores: cada marca dispara su destello, que se acorta con la velocidad; quieta, pulsos rápidos
+      const c = d.reels.spec.control;
+      const v = Math.abs(live.vMmS);
+      const dur = live.still ? stillPulseS(c, p.film.pitchMm) : reelPulseS(v, c, p.film.pitchMm);
+      ro.flash.set(live.still ? `${sim.flashCount} · ${c.stillHz} Hz · ${fmtNum(dur * 1e6, 1)} µs (cuadro fijo)` : `${sim.flashCount} · ${fmtNum(v / p.film.pitchMm, 1)} Hz · ${fmtNum(dur * 1e6, 0)} µs`);
+      ro.sync.set('cada marca dispara su destello: no deriva', 'ok');
+      ro.blur.set(`${fmtNum(v * dur, 3)} mm sobre la película`, v * dur <= c.maxBlurMm + 1e-9 ? 'ok' : 'warn');
+    } else {
+      ro.flash.set(`${sim.flashCount} · ${fmtNum(d.sync.actual.flashHz, 2)} Hz · ${fmtNum(d.sync.actual.flashDurationS * 1e6, 0)} µs`);
+      ro.sync.set(Math.abs(d.sync.actual.beatHz) < 1e-3 ? 'en fase' : `deriva ${fmtNum(d.sync.actual.beatHz, 3)} Hz`, Math.abs(d.sync.actual.beatHz) < 1e-3 ? 'ok' : 'warn');
+      ro.blur.set(`${fmtNum(d.sync.actual.blurMm, 3)} mm sobre la película`, d.sync.actual.blurMm <= 0.1 ? 'ok' : 'warn');
+    }
     const rep = opticsReport(p.optics);
     ro.focus.set(`${fmtNum(rep.blurCircleMm, 2)} mm en pantalla`, rep.blurCircleMm < 2 ? 'ok' : 'warn');
     const printed = ctx.printedFrames();

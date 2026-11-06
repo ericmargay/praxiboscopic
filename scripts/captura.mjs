@@ -13,7 +13,7 @@ import { chromium } from 'playwright';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Map(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? '1']));
 const hasVideo = existsSync(path.join(root, 'public', 'videos', 'cried-out', 'manifest.json'));
-const views = (args.get('vistas') ?? `studio,frames,film,export,mechanical,mechanical-motor,mechanical-electronics,mechanical-interior,mechanical-gate,mechanical-screen,laboratory,laboratory-drum,compras,laminada,laminada-top${hasVideo ? ',video-frames,video-mechanical,video-top,video-gate,video-laboratory' : ''}`).split(',');
+const views = (args.get('vistas') ?? `studio,frames,film,export,mechanical,mechanical-motor,mechanical-electronics,mechanical-interior,mechanical-gate,mechanical-screen,laboratory,laboratory-drum,compras,laminada,laminada-top,tambores,tambores-top,tambores-manos,tambores-interior,tambores-ventana,tambores-tensor,tambores-laboratorio,tambores-ensamble,tambores-explosion,compras-tambores,compras-taller${hasVideo ? ',video-frames,video-mechanical,video-top,video-gate,video-laboratory' : ''}`).split(',');
 const outDir = path.join(root, 'capturas');
 await mkdir(outDir, { recursive: true });
 
@@ -76,6 +76,35 @@ try {
       const file = path.join(outDir, 'compras.png');
       await page.screenshot({ path: file });
       report.views[v] = { file: path.relative(root, file) };
+      console.log(`✓ ${v} → ${path.relative(root, file)}`);
+      continue;
+    }
+    if (v === 'compras-tambores' || v === 'compras-taller') {
+      // la pestaña Taller (ADR-0012): archivos de corte e impresión, textos para cotizar y estimados
+      await page.goto(`${url}compras.html?demo=tambores${v === 'compras-taller' ? '#fabricacion' : '&row=hand-sensor'}`, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 30_000 });
+      await page.waitForTimeout(1200);
+      const file = path.join(outDir, `${v}.png`);
+      await page.screenshot({ path: file, fullPage: true });
+      report.views[v] = { file: path.relative(root, file) };
+      console.log(`✓ ${v} → ${path.relative(root, file)}`);
+      continue;
+    }
+    if (v.startsWith('tambores')) {
+      // dos tambores (?demo=tambores, ADR-0011): la mano sobre el tambor 1 a 15 cm mueve la película hacia él
+      const lab = v === 'tambores-laboratorio';
+      // ensamble sin tornillos (ADR-0012): el paso 5 con la cubierta bajando, y la mesa completa en explosión
+      const asm = { 'tambores-ensamble': '&ensamble=5&explosion=0.35', 'tambores-explosion': '&ensamble=12&explosion=0.7' }[v];
+      await page.goto(`${url}?demo=tambores&section=${lab ? 'laboratory' : 'mechanical'}${asm ?? (v === 'tambores-top' || v === 'tambores-interior' ? '' : '&mano=1&cm=15')}`, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => window.__praxi?.ready, null, { timeout: 30_000 });
+      await page.waitForTimeout(2500);
+      const view = { tambores: 'home', 'tambores-top': 'top', 'tambores-manos': 'hands', 'tambores-interior': 'base', 'tambores-ventana': 'gate' }[v];
+      if (view) await page.evaluate(([vv, sel]) => { window.__praxiScene?.select(sel); window.__praxiScene?.setView(vv); }, [view, v === 'tambores-interior' ? 'dm542-1' : null]);
+      if (v === 'tambores-tensor') await page.evaluate(() => window.__praxiScene?.select('dancer', true));
+      await page.waitForTimeout(1500);
+      const file = path.join(outDir, `${v}.png`);
+      await page.screenshot({ path: file });
+      report.views[v] = { file: path.relative(root, file), stats: await page.evaluate(() => window.__praxi.stats()) };
       console.log(`✓ ${v} → ${path.relative(root, file)}`);
       continue;
     }

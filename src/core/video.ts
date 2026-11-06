@@ -6,6 +6,7 @@ import { emptyDoc, identityTransform, makeLayer, uid, type AnimationDoc, type Im
 import { DEFAULT_LAMINATE } from '../film/layout';
 import { defaultPrintSpec } from '../film/print';
 import { aspectForFootprint } from '../mech/path';
+import { defaultReelsSpec, type ReelsSpec } from '../mech/reels';
 import { demoProject, deriveProject, type Project } from './project';
 
 export interface VideoManifest {
@@ -147,6 +148,30 @@ export function laminatedDemoProject(base: Project = demoProject()): Project {
   };
   p.transport = { ...p.transport, motorRpm: deriveProject(p).sync.targets.motorRpm };
   return p;
+}
+
+/**
+ * La misma película en la mesa de dos tambores (ADR-0011): laminada, sin empalme de cierre, con tensión de 1,5 N y el
+ * programa de la mano de la propuesta. Conserva la animación, los fotogramas, la óptica y la impresión.
+ */
+export function reelsProject(base: Project, spec: ReelsSpec = base.reels ?? defaultReelsSpec({ coreDiameterMm: 2 * base.path.rollerRadiusMm })): Project {
+  const p: Project = {
+    ...base,
+    film: { ...base.film, laminate: base.film.laminate ? { ...base.film.laminate } : { ...DEFAULT_LAMINATE }, spliceOverlapMm: 0, spliceType: 'none' },
+    autoPath: true,
+    pathLayout: 'reels',
+    reels: spec,
+    strobeKind: 'led',
+    led: { ...base.led, trigger: 'sensor' },
+    transport: { ...base.transport, tensionN: 1.5, running: true, speedErrorPct: 0 },
+  };
+  p.transport = { ...p.transport, motorRpm: Math.round(deriveProject(p).sync.targets.motorRpm * 10) / 10 };
+  return p;
+}
+
+/** la demostración de 5 s en película laminada, en la mesa de dos tambores: lo que abre `?demo=tambores` */
+export function reelsDemoProject(): Project {
+  return { ...reelsProject(laminatedDemoProject()), name: 'Demostración · dos tambores con la mano (5 s)' };
 }
 
 /**

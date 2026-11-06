@@ -105,3 +105,8 @@
 .lab-side { overflow: auto; }
 .tips { padding-left: 16px; margin: 0; display: flex; flex-direction: column; gap: 4px; }
 @media (max-width: 1200px) { .lab-panels { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); } }
+
+/* ensamble paso a paso de la mesa de dos tambores */
+.sim-side .asm-step { margin: 6px 0 4px; font-size: 12px; line-height: 1.45; }
+.sim-side .asm-step ol { margin: 4px 0 6px; padding-left: 18px; }
+.sim-side .asm-step li { margin: 2px 0; }

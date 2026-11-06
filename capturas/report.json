@@ -1,6 +1,6 @@
 {
   "url": "http://localhost:4188/",
-  "generated": "2026-11-04T05:58:48.541Z",
+  "generated": "2026-11-06T04:02:03.513Z",
   "views": {
     "studio": {
       "file": "capturas/studio.png",
@@ -13,17 +13,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 2.3331999999999997,
-        "phi": 816.3185984382262,
-        "flashes": 54,
+        "t": 2.283199999999997,
+        "phi": 773.1185984382296,
+        "flashes": 53,
         "gate": {
-          "phiMm": 816.3185984382262,
-          "slot": 8,
-          "frameIndex": 8,
-          "offsetMm": 0.11519999999973152,
-          "offsetFraction": 0.003199999999992542,
+          "phiMm": 773.1185984382296,
+          "slot": 7,
+          "frameIndex": 7,
+          "offsetMm": 7.315199999996366,
+          "offsetFraction": 0.20319999999989907,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "frames": {
@@ -37,17 +38,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 4.416499999999999,
-        "phi": 24.289798438226285,
-        "flashes": 104,
+        "t": 4.316499999999999,
+        "phi": 801.8897984382288,
+        "flashes": 102,
         "gate": {
-          "phiMm": 24.289798438226285,
-          "slot": 10,
-          "frameIndex": 10,
-          "offsetMm": 0.14399999999960755,
-          "offsetFraction": 0.003999999999989099,
+          "phiMm": 801.8897984382288,
+          "slot": 8,
+          "frameIndex": 8,
+          "offsetMm": 14.54399999999714,
+          "offsetFraction": 0.4039999999999206,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "film": {
@@ -61,17 +63,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 6.416400000000023,
-        "phi": 24.203398438224667,
-        "flashes": 152,
+        "t": 6.316400000000023,
+        "phi": 801.8033984382282,
+        "flashes": 150,
         "gate": {
-          "phiMm": 24.203398438224667,
-          "slot": 10,
-          "frameIndex": 10,
-          "offsetMm": 0.23040000000122518,
-          "offsetFraction": 0.006400000000034033,
+          "phiMm": 801.8033984382282,
+          "slot": 8,
+          "frameIndex": 8,
+          "offsetMm": 14.630399999997735,
+          "offsetFraction": 0.4063999999999371,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "export": {
@@ -85,17 +88,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 8.416300000000039,
-        "phi": 24.116998438224755,
-        "flashes": 200,
+        "t": 8.299600000000039,
+        "phi": 787.2881984382257,
+        "flashes": 198,
         "gate": {
-          "phiMm": 24.116998438224755,
-          "slot": 10,
-          "frameIndex": 10,
-          "offsetMm": 0.3168000000011375,
-          "offsetFraction": 0.008800000000031597,
+          "phiMm": 787.2881984382257,
+          "slot": 7,
+          "frameIndex": 7,
+          "offsetMm": -6.854399999999714,
+          "offsetFraction": -0.19039999999999205,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "mechanical": {
@@ -109,17 +113,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 11.4995,
-        "phi": 96.00179843821957,
-        "flashes": 274,
+        "t": 11.349499999999995,
+        "phi": 830.4017984382206,
+        "flashes": 271,
         "gate": {
-          "phiMm": 96.00179843821957,
-          "slot": 12,
-          "frameIndex": 12,
-          "offsetMm": 0.432000000006326,
-          "offsetFraction": 0.012000000000175723,
+          "phiMm": 830.4017984382206,
+          "slot": 8,
+          "frameIndex": 8,
+          "offsetMm": -13.967999999994618,
+          "offsetFraction": -0.38799999999985046,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "mechanical-motor": {
@@ -133,17 +138,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 14.56609999999995,
-        "phi": 153.54419843821438,
-        "flashes": 348,
+        "t": 14.382699999999963,
+        "phi": 859.0865984382185,
+        "flashes": 344,
         "gate": {
-          "phiMm": 153.54419843821438,
-          "slot": 14,
-          "frameIndex": 14,
-          "offsetMm": 14.889600000011512,
-          "offsetFraction": 0.41360000000031977,
+          "phiMm": 859.0865984382185,
+          "slot": 9,
+          "frameIndex": 9,
+          "offsetMm": -6.652799999992567,
+          "offsetFraction": -0.18479999999979352,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "mechanical-electronics": {
@@ -157,17 +163,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 17.765899999999917,
-        "phi": 326.17139843820564,
-        "flashes": 425,
+        "t": 17.44929999999992,
+        "phi": 52.62899843821208,
+        "flashes": 417,
         "gate": {
-          "phiMm": 326.17139843820564,
-          "slot": 18,
-          "frameIndex": 18,
-          "offsetMm": -13.737599999979693,
-          "offsetFraction": -0.38159999999943595,
+          "phiMm": 52.62899843821208,
+          "slot": 11,
+          "frameIndex": 11,
+          "offsetMm": 7.804800000013813,
+          "offsetFraction": 0.21680000000038369,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "mechanical-interior": {
@@ -181,17 +188,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 20.865799999999822,
-        "phi": 412.4849984381949,
-        "flashes": 499,
+        "t": 20.48249999999986,
+        "phi": 81.31379843820366,
+        "flashes": 490,
         "gate": {
-          "phiMm": 412.4849984381949,
-          "slot": 21,
-          "frameIndex": 21,
-          "offsetMm": 7.948800000031042,
-          "offsetFraction": 0.22080000000086228,
+          "phiMm": 81.31379843820366,
+          "slot": 12,
+          "frameIndex": 12,
+          "offsetMm": 15.12000000002223,
+          "offsetFraction": 0.4200000000006175,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "mechanical-gate": {
@@ -205,17 +213,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 23.898999999999766,
-        "phi": 441.16979843818626,
-        "flashes": 572,
+        "t": 23.58239999999976,
+        "phi": 167.62739843819327,
+        "flashes": 564,
         "gate": {
-          "phiMm": 441.16979843818626,
-          "slot": 22,
-          "frameIndex": 22,
-          "offsetMm": 15.264000000039687,
-          "offsetFraction": 0.4240000000011024,
+          "phiMm": 167.62739843819327,
+          "slot": 14,
+          "frameIndex": 14,
+          "offsetMm": 0.8064000000326814,
+          "offsetFraction": 0.02240000000090782,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "mechanical-screen": {
@@ -229,17 +238,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 26.89889999999972,
-        "phi": 441.0833984381784,
-        "flashes": 644,
+        "t": 26.615599999999713,
+        "phi": 196.31219843818553,
+        "flashes": 637,
         "gate": {
-          "phiMm": 441.0833984381784,
-          "slot": 22,
-          "frameIndex": 22,
-          "offsetMm": 15.350400000047557,
-          "offsetFraction": 0.42640000000132106,
+          "phiMm": 196.31219843818553,
+          "slot": 15,
+          "frameIndex": 15,
+          "offsetMm": 8.121600000040416,
+          "offsetFraction": 0.22560000000112268,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "laboratory": {
@@ -253,17 +263,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 1,
-        "t": 28.915499999999646,
-        "phi": 455.42579843817157,
-        "flashes": 692,
+        "t": 28.615499999999667,
+        "phi": 196.22579843818107,
+        "flashes": 685,
         "gate": {
-          "phiMm": 455.42579843817157,
-          "slot": 22,
-          "frameIndex": 22,
-          "offsetMm": 1.0080000000543805,
-          "offsetFraction": 0.02800000000151057,
+          "phiMm": 196.22579843818107,
+          "slot": 15,
+          "frameIndex": 15,
+          "offsetMm": 8.208000000044876,
+          "offsetFraction": 0.22800000000124657,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "laboratory-drum": {
@@ -277,17 +288,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 24,
         "warnings": 3,
-        "t": 30.89879999999964,
-        "phi": 440.9969984381655,
-        "flashes": 740,
+        "t": 30.615399999999624,
+        "phi": 196.13939843817343,
+        "flashes": 733,
         "gate": {
-          "phiMm": 440.9969984381655,
-          "slot": 22,
-          "frameIndex": 22,
-          "offsetMm": 15.43680000006043,
-          "offsetFraction": 0.4288000000016786,
+          "phiMm": 196.13939843817343,
+          "slot": 15,
+          "frameIndex": 15,
+          "offsetMm": 8.29440000005252,
+          "offsetFraction": 0.23040000000145888,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "compras": {
@@ -304,17 +316,18 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 2,
-        "t": 4.466399999999999,
-        "phi": 3589.704793752846,
-        "flashes": 108,
+        "t": 4.433199999999999,
+        "phi": 3561.0199937528705,
+        "flashes": 107,
         "gate": {
-          "phiMm": 3589.704793752846,
-          "slot": 107,
-          "frameIndex": 11,
-          "offsetMm": -6.969599999943057,
-          "offsetFraction": -0.19359999999841826,
+          "phiMm": 3561.0199937528705,
+          "slot": 106,
+          "frameIndex": 10,
+          "offsetMm": -14.284799999967618,
+          "offsetFraction": -0.3967999999991005,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "laminada-top": {
@@ -328,137 +341,437 @@
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 2,
-        "t": 4.416600000000002,
-        "phi": 3546.67759375287,
-        "flashes": 105,
+        "t": 4.866500000000001,
+        "phi": 3935.3911937528683,
+        "flashes": 117,
         "gate": {
-          "phiMm": 3546.67759375287,
-          "slot": 106,
-          "frameIndex": 10,
-          "offsetMm": 0.05760000003283494,
-          "offsetFraction": 0.0016000000009120817,
+          "phiMm": 3935.3911937528683,
+          "slot": 117,
+          "frameIndex": 21,
+          "offsetMm": 7.344000000034612,
+          "offsetFraction": 0.20400000000096144,
           "speedMmS": 863.9999999999998
+        },
+        "reels": null
+      }
+    },
+    "tambores": {
+      "file": "capturas/tambores.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.925599999997028,
+        "phi": 4246.924668230913,
+        "flashes": 139,
+        "gate": {
+          "phiMm": 4246.924668230913,
+          "slot": 109,
+          "frameIndex": 13,
+          "offsetMm": -16.18531847000122,
+          "offsetFraction": -0.4495921797222561,
+          "speedMmS": 864
+        },
+        "reels": {
+          "state": "hacia el tambor 1",
+          "fps": 24,
+          "owner": 0,
+          "still": false,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
         }
       }
+    },
+    "tambores-top": {
+      "file": "capturas/tambores-top.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.886200000002994,
+        "phi": 306.7393497123478,
+        "flashes": 1003,
+        "gate": {
+          "phiMm": 306.7393497123478,
+          "slot": 0,
+          "frameIndex": 0,
+          "offsetMm": 0,
+          "offsetFraction": 0,
+          "speedMmS": 0
+        },
+        "reels": {
+          "state": "quieta",
+          "fps": 0,
+          "owner": null,
+          "still": true,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "tambores-manos": {
+      "file": "capturas/tambores-manos.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.399900000000081,
+        "phi": 3793.756383663027,
+        "flashes": 126,
+        "gate": {
+          "phiMm": 3793.756383663027,
+          "slot": 97,
+          "frameIndex": 1,
+          "offsetMm": 4.982966065406799,
+          "offsetFraction": 0.13841572403907776,
+          "speedMmS": 864
+        },
+        "reels": {
+          "state": "hacia el tambor 1",
+          "fps": 24,
+          "owner": 0,
+          "still": false,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "tambores-interior": {
+      "file": "capturas/tambores-interior.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.5124000000000715,
+        "phi": 306.7393497123478,
+        "flashes": 903,
+        "gate": {
+          "phiMm": 306.7393497123478,
+          "slot": 0,
+          "frameIndex": 0,
+          "offsetMm": 0,
+          "offsetFraction": 0,
+          "speedMmS": 0
+        },
+        "reels": {
+          "state": "quieta",
+          "fps": 0,
+          "owner": null,
+          "still": true,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "tambores-ventana": {
+      "file": "capturas/tambores-ventana.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.3838999999971,
+        "phi": 3779.327669218577,
+        "flashes": 126,
+        "gate": {
+          "phiMm": 3779.327669218577,
+          "slot": 96,
+          "frameIndex": 0,
+          "offsetMm": -16.588319540023804,
+          "offsetFraction": -0.4607866538895501,
+          "speedMmS": 864
+        },
+        "reels": {
+          "state": "hacia el tambor 1",
+          "fps": 24,
+          "owner": 0,
+          "still": false,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "tambores-tensor": {
+      "file": "capturas/tambores-tensor.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.416500000000083,
+        "phi": 3808.0987836630256,
+        "flashes": 127,
+        "gate": {
+          "phiMm": 3808.0987836630256,
+          "slot": 97,
+          "frameIndex": 1,
+          "offsetMm": -9.359434008598328,
+          "offsetFraction": -0.2599842780166202,
+          "speedMmS": 864
+        },
+        "reels": {
+          "state": "hacia el tambor 1",
+          "fps": 24,
+          "owner": 0,
+          "still": false,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "tambores-laboratorio": {
+      "file": "capturas/tambores-laboratorio.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.858400000002983,
+        "phi": 4189.382268230937,
+        "flashes": 137,
+        "gate": {
+          "phiMm": 4189.382268230937,
+          "slot": 108,
+          "frameIndex": 12,
+          "offsetMm": 5.3570815324783325,
+          "offsetFraction": 0.14880782034662035,
+          "speedMmS": 864
+        },
+        "reels": {
+          "state": "hacia el tambor 1",
+          "fps": 24,
+          "owner": 0,
+          "still": false,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "tambores-ensamble": {
+      "file": "capturas/tambores-ensamble.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.41020000000306,
+        "phi": 306.7393497123478,
+        "flashes": 883,
+        "gate": {
+          "phiMm": 306.7393497123478,
+          "slot": 0,
+          "frameIndex": 0,
+          "offsetMm": 0,
+          "offsetFraction": 0,
+          "speedMmS": 0
+        },
+        "reels": {
+          "state": "quieta",
+          "fps": 0,
+          "owner": null,
+          "still": true,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "tambores-explosion": {
+      "file": "capturas/tambores-explosion.png",
+      "stats": {
+        "frames": 24,
+        "frameHash": "900e3d4793f0a845",
+        "filmMm": 4320,
+        "pathMm": 585.9447666259275,
+        "coherent": true,
+        "transportFps": 24,
+        "flashHz": 24,
+        "warnings": 3,
+        "t": 4.383100000000094,
+        "phi": 306.7393497123478,
+        "flashes": 877,
+        "gate": {
+          "phiMm": 306.7393497123478,
+          "slot": 0,
+          "frameIndex": 0,
+          "offsetMm": 0,
+          "offsetFraction": 0,
+          "speedMmS": 0
+        },
+        "reels": {
+          "state": "quieta",
+          "fps": 0,
+          "owner": null,
+          "still": true,
+          "totalMm": 5610,
+          "fullDiameterMm": 109.18964990468494
+        }
+      }
+    },
+    "compras-tambores": {
+      "file": "capturas/compras-tambores.png"
+    },
+    "compras-taller": {
+      "file": "capturas/compras-taller.png"
     },
     "video-frames": {
       "file": "capturas/video-frames.png",
       "stats": {
         "frames": 120,
-        "frameHash": "4187accc721dc797",
+        "frameHash": "5bcb06e1252de81d",
         "filmMm": 4320,
         "pathMm": 4319.999999999999,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 2,
-        "t": 6.150300000071541,
-        "phi": 1522.292998500001,
-        "flashes": 147,
+        "t": 8.633000000000038,
+        "phi": 3667.345798438201,
+        "flashes": 206,
         "gate": {
-          "phiMm": 1522.292998500001,
-          "slot": 50,
-          "frameIndex": 50,
-          "offsetMm": 8.44219525290191,
-          "offsetFraction": 0.23450542369171976,
+          "phiMm": 3667.345798438201,
+          "slot": 109,
+          "frameIndex": 109,
+          "offsetMm": -12.610604685298313,
+          "offsetFraction": -0.3502945745916198,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "video-mechanical": {
       "file": "capturas/video-mechanical.png",
       "stats": {
         "frames": 120,
-        "frameHash": "f4b72d72adb83fd8",
+        "frameHash": "602c7bc337ec4889",
         "filmMm": 4320,
         "pathMm": 4319.999999999999,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 2,
-        "t": 7.533100000000033,
-        "phi": 2717.032198438217,
-        "flashes": 179,
+        "t": 5.666400000000015,
+        "phi": 1104.2033984382006,
+        "flashes": 135,
         "gate": {
-          "phiMm": 2717.032198438217,
-          "slot": 83,
-          "frameIndex": 83,
-          "offsetMm": 1.7029953146857224,
-          "offsetFraction": 0.04730542540793673,
+          "phiMm": 1104.2033984382006,
+          "slot": 38,
+          "frameIndex": 38,
+          "offsetMm": -5.468204685297678,
+          "offsetFraction": -0.15189457459160216,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "video-top": {
       "file": "capturas/video-top.png",
       "stats": {
         "frames": 120,
-        "frameHash": "fd04cfdd423ff1d5",
+        "frameHash": "80e4a773b94807f0",
         "filmMm": 4320,
         "pathMm": 4319.999999999999,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 2,
-        "t": 7.791000000047718,
-        "phi": 2939.857798479393,
-        "flashes": 186,
+        "t": 6.46640000000002,
+        "phi": 1795.4033984382068,
+        "flashes": 154,
         "gate": {
-          "phiMm": 2939.857798479393,
-          "slot": 89,
-          "frameIndex": 89,
-          "offsetMm": -5.1226047264899535,
-          "offsetFraction": -0.14229457573583204,
+          "phiMm": 1795.4033984382068,
+          "slot": 57,
+          "frameIndex": 57,
+          "offsetMm": -12.668204685303863,
+          "offsetFraction": -0.351894574591774,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "video-gate": {
       "file": "capturas/video-gate.png",
       "stats": {
         "frames": 120,
-        "frameHash": "fbfb0cc0ca64d22c",
+        "frameHash": "8c0b012fb03750f8",
         "filmMm": 4320,
         "pathMm": 4319.999999999999,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 2,
-        "t": 6.533100000000018,
-        "phi": 1853.0321984382072,
-        "flashes": 155,
+        "t": 7.533100000000034,
+        "phi": 2717.0321984381953,
+        "flashes": 179,
         "gate": {
-          "phiMm": 1853.0321984382072,
-          "slot": 59,
-          "frameIndex": 59,
-          "offsetMm": 1.7029953146957268,
-          "offsetFraction": 0.047305425408214634,
+          "phiMm": 2717.0321984381953,
+          "slot": 83,
+          "frameIndex": 83,
+          "offsetMm": 1.7029953147075503,
+          "offsetFraction": 0.047305425408543066,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     },
     "video-laboratory": {
       "file": "capturas/video-laboratory.png",
       "stats": {
         "frames": 120,
-        "frameHash": "b20f8dafc3081a40",
+        "frameHash": "b33b6e6c087b07b7",
         "filmMm": 4320,
         "pathMm": 4319.999999999999,
         "coherent": true,
         "transportFps": 23.999999999999993,
         "flashHz": 23.999999999999993,
         "warnings": 2,
-        "t": 6.3330000000000215,
-        "phi": 1680.1457984382178,
-        "flashes": 151,
+        "t": 6.233000000000016,
+        "phi": 1593.7457984381972,
+        "flashes": 148,
         "gate": {
-          "phiMm": 1680.1457984382178,
-          "slot": 54,
-          "frameIndex": 54,
-          "offsetMm": -5.4106046853148655,
-          "offsetFraction": -0.1502945745920796,
+          "phiMm": 1593.7457984381972,
+          "slot": 52,
+          "frameIndex": 52,
+          "offsetMm": 8.989395314705689,
+          "offsetFraction": 0.24970542540849136,
           "speedMmS": 863.9999999999998
-        }
+        },
+        "reels": null
       }
     }
   },

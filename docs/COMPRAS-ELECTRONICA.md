@@ -61,3 +61,46 @@ impresión 3D y corte láser, sin cotizar aquí. La lista completa está en `doc
 1. Compra primero la electrónica y arma el pulso del LED en banco.
 2. Mide flujo, temperatura y disparo con una tira impresa con tu tinta real.
 3. Con eso, decide lente, tamaño de imagen y película final.
+
+## Dos tambores con la mano (ADR-0011)
+
+Revisado el 5-nov-2026. Es la versión que se construye y suma estas piezas a la lista de arriba. La lista completa
+está en `docs/COMPRAS-TAMBORES.md` y en `compras.html?demo=tambores`.
+
+**Cómo se obtuvieron.** Los dólares se pasaron a 18,80 MXN, el FIX de Banxico del 30-oct-2026 (18,7962). Amazon México
+se leyó en sus páginas de producto, sin carrito ni sesión. Sus fechas de entrega son para el C.P. que usa por omisión.
+Los precios de UNIT salen del buscador y hay que confirmarlos en el carrito.
+
+| Pieza | Cant. | Dónde | c/u | Total | Alternativas |
+|---|---:|---|---:|---:|---|
+| Motor Nema 17 17HS8401 (el segundo) | +1 | UNIT | 225 | 225 | igual que arriba |
+| Driver DM542 (el segundo) | +1 | UNIT | 219 | 219 | TMC2209 en UNIT, de 87 a 99 (existencias por confirmar) |
+| Soporte Nema 17 y cople 5 × 8 (los segundos) | +1 de cada uno | UNIT | 25 y 33 | 58 | igual que arriba |
+| Transistor S8050 | +2 (5 en total) | UNIT | 2 | 4 | — |
+| Sensor de mano VL53L4CD, SparkFun SEN-18993 | 2 | Amazon México (B09YWNL4BN), envío gratis, entrega el 17-nov | 500.18 | 1,000.36 | Pololu #3692 a US$13.95 (≈262) más envío y aduana; DigiKey, Adafruit 5396, a US$14.95 (≈281) y US$30 de envío abajo de US$100 |
+| Sensor VL53L0X para la prueba de banco (opcional) | 1 | UNIT, 1,199 disponibles | 47 | 47 | Amazon, 2 por 150.38 (B099N2JW89) |
+| Encoder AS5600 con imán | 1 | UNIT, 67 disponibles | 52 | 52 | Amazon HiLetgo, 2 por 258.98 con imán diametral (B09KGWC1PT) |
+| Kit de 200 resortes de compresión y extensión (AR3384) | 1 | UNIT, 283 disponibles | 162 | 162 | Amazon HERCHR, 274 (B0BWNHMW7Z), entrega el 7-nov |
+| Jumpers hembra-hembra de 30 cm (40) | 1 | UNIT | 20 | 20 | Amazon ELEGOO, 120 de 20 cm por 199.99 (B01EV70C78) |
+| Kit de 1260 tornillos M2 a M5 | 1 | UNIT | 341 | 341 | Amazon DSHTP, kit M3 con insertos y cautín, 473.37 (B0GGH7DMKG) |
+| Tira de pines macho de 40 | 1 | UNIT | sin precio | — | — |
+| Rodamientos 608ZZ | +4 (12 en total) | UNIT | 8 | 32 | igual que arriba |
+
+**Por qué el VL53L4CD viene de Amazon.** Ninguna tienda en México lo tiene: ni UNIT, ni MercadoLibre, ni 330ohms, ni
+AG Electrónica, ni SandoRobotics. Pololu cuesta la mitad, pero no publica su envío a México y la aduana corre por tu
+cuenta. Amazon lo trae con los impuestos incluidos. AG Electrónica tiene el VL53L1X (OKY3240-0) a 174.14, que mide hasta
+4 m pero en un cono de 27°: no lo recomiendo para una mano a 3 cm.
+
+**Antes de pagar:**
+
+- **AS5600:** la ficha de UNIT no dice si el imán es diametral, con los polos a los lados del disco. Compruébalo al
+  recibirlo; si no lo es, el de HiLetgo sí. Evita el de UMLIFE: sus reseñas reportan imanes que no son diametrales.
+- **VL53L0X:** también aparece a 48 y a 54 en páginas más viejas.
+- **TMC2209:** la ficha dice «Sin existencias» y sus datos dicen que hay.
+- **Kit M3 de UNIT:** solo encontré su categoría, no su ficha.
+
+**Fuera de esta lista:**
+
+- Tambores, guías, brazo tensor y tapas: impresión 3D y corte láser.
+- Base de PET y laminado: 6,1 m de cada uno. No encontré precio en México; hay que pedir cotización.
+- Ejes de 8 mm.

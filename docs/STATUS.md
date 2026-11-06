@@ -1,6 +1,6 @@
 # Estado de Praxiboscopic
 
-Actualizado: 4/11/2026. Puente entre sesiones: la siguiente arranca leyendo este archivo.
+Actualizado: 5/11/2026. Puente entre sesiones: la siguiente arranca leyendo este archivo.
 
 ## Qué funciona (verificado)
 
@@ -24,10 +24,32 @@ Actualizado: 4/11/2026. Puente entre sesiones: la siguiente arranca leyendo este
 | Video como fuente | Implementado: `scripts/video.mjs` (color BT.709 correcto, detección de cuadro repetido, paleta por k-medias), imagen con `sequence` repartida en la duración, a fps fijos o uno por cuadro, biblioteca *Videos*, `?video=&segundos=&fps=`; solo se repintan los fotogramas cuyas imágenes acaban de cargar | `src/core/video.ts`, `src/animation/*`, `src/frames/generator.ts` |
 | Impresión con color gestionado | Implementado: PDF con perfil sRGB incrustado (ICCBased, validado con littleCMS), imágenes sin pérdida, página de colores del material, texto con acentos (WinAnsi), prueba de color de dos hojas y MP4 de vista previa; `scripts/imprimir.mjs` | `src/export/icc.ts`, `src/export/pdf.ts`, `impresion/` (no versionado) |
 | Lista de compras en su página | Implementado (`compras.html`): totales por proveedor, renglones por tipo con miniatura 3D, detalle con la pieza en 3D a escala, precios en UNIT, Amazon y MercadoLibre, qué revisar antes de pagar, renglones fuera de la compra y comprados guardados en el navegador, CSV e impresión. Enlaza al simulador (`?bom=`) y el simulador a ella | `src/compras/*`, `capturas/compras.png` |
+| Dos tambores con la mano (ADR-0011) | Implementado: recorrido abierto entre dos tambores con radio que crece al enrollar, colas transparentes, brazo tensor y AS5600; programa del ESP32 (`ReelController`: dos sensores de mano, filtro, espera, rampa de 2 m/s², frenado antes del final, paro con un fotograma centrado, dos manos, invitar, regresar sola); destello de 0,1 mm / v y cuadro fijo a 200 Hz; mesa de 383 × 262 mm con la electrónica dentro (ADR-0012); escena 3D con tambores que giran y se llenan, tapas, sensores, conos y la mano del visitante; laboratorio con la planta de los tambores; lista de compras propia (`compras.html?demo=tambores`, `docs/COMPRAS-TAMBORES.md`) | `src/mech/reels.ts`, `reels.test.ts`, `capturas/tambores*.png` |
+| Mesa de dos tambores sin tornillos (ADR-0012) | Implementado: la estructura se calcula desde el ensamble (`buildReelsStructure`): caja de MDF de 5,5 mm con dientes en sus 12 aristas (una prueba recorre las aristas y cada punto es de una sola cara), cubierta doble, tapa trasera con cuñas, torres de los motores, marco y topes de la fuente, tapas y bridas de acrílico, ventana de acrílico negro y piezas de prueba. 16 piezas impresas en PETG modeladas con manifold-3d y revisadas con `checkPrint`. `npm run fabricar` escribe DXF R12, SVG y PDF 1:1 por hoja, los STL, el README con los textos para los talleres y un ZIP en `public/fabricacion/tambores/`. Estimados de taller con tarifas de CDMX (`estimate.ts`). En el simulador, *Ensamble sin tornillos* tiene 12 pasos con explosión (`?ensamble=N&explosion=x`). La página de compras tiene la pestaña *Taller* | `src/mech/structure.ts`, `src/fabricate/printed.ts`, `src/fabricate/estimate.ts`, `src/fabricate/shops.ts`, `scripts/fabricar.mjs`, `structure.test.ts`, `printed.test.ts`, `capturas/tambores-ensamble*.png` |
 | Espacio interior del loop | Implementado: `interiorClearance` mide fondo y ancho reales dentro del loop y `deriveProject` marca error si la linterna o el tambor no caben | `src/mech/path.ts`, `project.test.ts` |
-| Pruebas y capturas | 88 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
+| Pruebas y capturas | 121 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
 
 ## Decisiones tomadas (ADR en docs/adr)
+
+**Dos tambores con la mano (5-nov-2026, ADR-0011):** el cliente pidió el 4-nov-2026 cambiar el loop por dos tambores
+con motor; la película va y viene y la mano sobre el sensor de cada tambor la jala hacia él. Eric avisó el 5-nov-2026
+que se construye. Propuesta en Claude Docs: https://claude.ai/artifact/B3RKM3CKqwqeYmCrSBghfK. Las seis decisiones del
+cliente seguían sin marcar: el simulador toma lo recomendado y las deja como opciones del programa. `?demo=tambores`
+(con `&mano=1&cm=15`) y `compras.html?demo=tambores`. Lista generada en `docs/COMPRAS-TAMBORES.md`.
+
+**Estructura sin tornillos (5-nov-2026, ADR-0012):** Eric pidió armar la mesa de dos tambores a mano, sin tornillos,
+con piezas cortadas con láser que encajan por ranuras. También pidió los textos para pedírsela al taller y a quien
+imprima, los archivos de impresión y precios aproximados de lo que no tenía precio. La caja es de MDF de 5,5 mm (el «de
+6» de México) con dientes y una tapa trasera con cuñas. Cada motor se para en una torre que lleva el segundo 608. Las
+piezas que giran o sostienen son de PETG, entre bridas de acrílico. El único tornillo es el prisionero de cada cople.
+Los archivos y el README para los talleres se generan con `npm run fabricar` (`docs/FABRICACION-TAMBORES.md`). La lista
+de compras ya tiene precio en todo: MXN 9,243, con el taller estimado entre 1,827 y 3,321 (medio, 2,267). La mesa pasa
+a 383 × 262 × 125 mm.
+
+**La película sigue laminada (5-nov-2026, ADR-0013):** Eric preguntó por una laca en aerosol en lugar del laminado en
+frío. Se investigó con fuentes y se descartó. Corre o vela la tinta inkjet, no pega bien al PET sin lijar, se pega a sí
+misma en el tambor (blocking), deja piel de naranja y polvo que se ven a 19× y no une los empalmes. Queda solo para
+arte pintado a mano, con márgenes enmascarados, 7 días de curado y el protocolo de prueba de banco del ADR.
 
 **Primer prototipo (2-nov-2026, decidido con Eric):** LED, un motor, sin bandas, sin perforaciones. Ver `docs/COMPRAS-ELECTRONICA.md`. El tambor de referencia no es de ranuras; parece el de espejos y aún no está modelado.
 
@@ -49,7 +71,8 @@ Desde el 4-nov-2026 el sitio va con el video, a pedido de Eric (`npm run publica
 loop · 0004 caché incremental por hash · 0005 modelo de exposición · 0006 LED por defecto, tambor como alternativa ·
 0007 ensamble compacto y electrónica dentro y encima de la obra · 0008 película de 10 s en festón y video como fuente ·
 0009 la tinta no toca nada: recorrido convexo y video de 5 s a 24 fps · 0010 película laminada: la tinta va cubierta y
-vuelve el festón.
+vuelve el festón · 0011 dos tambores: la película va y viene con la mano · 0012 la mesa de dos tambores se corta con
+láser y se arma sin tornillos · 0013 la película sigue laminada: la laca en aerosol no la sustituye.
 
 ## Qué está a medias
 
@@ -64,10 +87,15 @@ vuelve el festón.
   tambor es independiente (NEMA 17 pancake) y gira al ritmo del tambor; no se modela aún una transmisión común con el
   motor de transporte (engranes o correa con relación fija), que eliminaría la deriva por diseño.
 - **Correa GT2**: con reducción ≠ 1 el transporte la calcula, pero la escena ya no la dibuja (solo acoplamiento directo).
-- **Visor de CAD**: no se pueden mover piezas con el ratón (no hay gizmo de transformación ni restricciones), no hay vista
-  explosionada ni cortes. Los cables siguen rutas aproximadas y el brazo tensor es esquemático.
+- **Visor de CAD**: no se pueden mover piezas con el ratón (no hay gizmo de transformación ni restricciones) ni hay
+  cortes. La vista explosionada y el ensamble paso a paso existen solo para la mesa de dos tambores. Los cables siguen
+  rutas aproximadas.
+- **Piezas impresas en la escena**: la escena las dibuja con primitivas a las mismas medidas; los STL (manifold) tienen
+  el detalle real (asientos, broches, ranuras).
 - **Medidas aproximadas** (marcadas en el catálogo): fuente de 24 V, resistencia de aluminio, placa de expansión, base del LED,
   sensor F249. Confirmarlas con la pieza en mano.
+- **Dos tambores**: el brazo tensor de la escena solo se abre un poco al acelerar (no hay dinámica de la tensión); no se
+  modela la búsqueda del extremo al encender ni la variante de exhibición con la película alrededor de la mesa.
 - **BOM**: los precios 🟢 de UNIT vienen de capturas o del buscador; los de placa de expansión, kit de protoboard, jumpers,
   disipador, separadores y cable son 🟡 estimados (la tienda bloquea el acceso automático).
 
@@ -78,6 +106,13 @@ vuelve el festón.
   devuelto ya existen).
 - Tambor de espejos del Théâtre Optique, la referencia real del dispositivo.
 - Medir en banco: flujo del LED pulsado, fricción de los 608, disparo del sensor con la tinta real y parpadeo a 24 Hz.
+- Dos tambores: escribir el programa del ESP32 que `ReelController` ya modela, y medir en banco la tensión al invertir,
+  la mano con el VL53L4CD, los pulsos de 463 µs a 6 fps y el cuadro fijo a 200 Hz.
 - Captura de vídeo (WebM) de la proyección.
-- Planos de las piezas de taller (SVG/DXF de la base, la ventana y el tambor con `@aminoacid/omega/fabricate`): la
-  BOM ya marca qué piezas van a láser e impresión 3D.
+- Dos tambores, taller:
+  - Cotizar con los textos de `docs/FABRICACION-TAMBORES.md` y comparar con el rango estimado.
+  - Medir el espesor real del MDF y cortar primero las piezas de prueba (E14, E15, A06). Si no mide 5,5 mm:
+    `npm run fabricar -- --mdf=…`.
+  - Confirmar con la pieza en mano el diámetro del barril de la lente (`--lente=`).
+  - Probar en banco el collar del motor, el ajuste de los 608 y los broches.
+- Planos de taller del loop: solo la mesa de dos tambores tiene archivos de corte e impresión.

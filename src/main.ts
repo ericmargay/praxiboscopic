@@ -9,7 +9,7 @@ import { browserCanvases } from './host/browserCanvas';
 import { createModel3dRenderer } from './three';
 import { mountShell } from './ui/shell';
 import { demoProject, type Project } from './core/project';
-import { laminatedDemoProject } from './core/video';
+import { laminatedDemoProject, reelsDemoProject } from './core/video';
 
 declare global {
   interface Window {
@@ -37,9 +37,10 @@ window.__praxi = {
 
 try {
   const app = document.querySelector<HTMLElement>('#app')!;
-  // ?demo=1 ignora el proyecto guardado y arranca con la demostración; ?demo=laminada, con la de película laminada
+  // ?demo=1 ignora el proyecto guardado y arranca con la demostración; ?demo=laminada, con la de película laminada;
+  // ?demo=tambores, con la mesa de dos tambores (ADR-0011)
   const demo = q.get('demo');
-  const ctx = new AppContext(browserCanvases, demo === '1' ? demoProject() : demo === 'laminada' ? laminatedDemoProject() : undefined);
+  const ctx = new AppContext(browserCanvases, demo === '1' ? demoProject() : demo === 'laminada' ? laminatedDemoProject() : demo === 'tambores' ? reelsDemoProject() : undefined);
   // render de elementos 3D (glTF) dentro de la animación
   const model3d = createModel3dRenderer();
   model3d.onLoaded = () => {
@@ -49,6 +50,9 @@ try {
   ctx.resources.render3dHook = (geo, w, h) => model3d.render(geo, w, h);
   const sim = new SimulationRunner(ctx);
   sim.reset();
+  // dos tambores: ?mano=1&cm=15 pone la mano del visitante sobre el tambor 1 a 15 cm (o 2: sobre el tambor 2)
+  const hand = Number(q.get('mano'));
+  if (hand === 1 || hand === 2) sim.hands[hand - 1] = { present: true, distanceMm: (Number(q.get('cm')) || 15) * 10 };
   ctx.onTick((dt) => sim.tick(dt));
   mountShell(ctx, sim, app);
   if (q.get('section')) ctx.store.update((p) => ({ ...p, ui: { ...p.ui, section: (q.get('section') as Project['ui']['section']) ?? p.ui.section, studioTab: q.get('tab') ?? p.ui.studioTab } }));
@@ -59,7 +63,8 @@ try {
   window.__praxi.stats = () => {
     const d = ctx.derived();
     const f = ctx.frames();
-    return { frames: f.count, frameHash: f.hash, filmMm: d.layout.totalLengthMm, pathMm: d.path.lengthMm, coherent: d.coherence.ok, transportFps: d.sync.actual.transportFps, flashHz: d.sync.actual.flashHz, warnings: d.warnings.length, t: ctx.engine.t, phi: ctx.engine.phiMm, flashes: sim.flashCount, gate: sim.gate() };
+    const live = sim.reelLive();
+    return { frames: f.count, frameHash: f.hash, filmMm: d.layout.totalLengthMm, pathMm: d.path.lengthMm, coherent: d.coherence.ok, transportFps: d.sync.actual.transportFps, flashHz: d.sync.actual.flashHz, warnings: d.warnings.length, t: ctx.engine.t, phi: ctx.engine.phiMm, flashes: sim.flashCount, gate: sim.gate(), reels: live ? { state: live.state, fps: live.vMmS / ctx.project.film.pitchMm, owner: live.owner, still: live.still, totalMm: d.reels!.design.totalMm, fullDiameterMm: 2 * d.reels!.design.fullR } : null };
   };
   window.__praxi.ready = true;
 } catch (e) {

@@ -9,7 +9,12 @@ import { bomCsv } from '@aminoacid/omega/fabricate';
 import { bomFromParts } from '@aminoacid/omega/parts';
 import { loadProject } from '../app/context';
 import { demoProject, deriveProject, type Project } from '../core/project';
-import { laminatedDemoProject } from '../core/video';
+import { laminatedDemoProject, reelsDemoProject } from '../core/video';
+import { buildReelsAssembly } from '../mech/assembly';
+import { buildReelsStructure, SHEET_MATERIALS } from '../mech/structure';
+import { reelsPrintedParts } from '../fabricate/printed';
+import { estimateLaser, estimatePrint, fmtMxn, RATE_SOURCES } from '../fabricate/estimate';
+import { FAB_DIR, LASER_PREFIX, laserRequestText, printRequestText, ZIP_NAME } from '../fabricate/shops';
 import { buildParts } from '../fabricate/bom';
 import { OFFERS, UNIT_SHIPPING, type Offer } from '../fabricate/offers';
 import { BOM_KIND } from '../three/parts';
@@ -24,10 +29,13 @@ const mxn = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionDigi
 const q = new URLSearchParams(location.search);
 function load(): { project: Project; fromDemo: boolean } {
   const saved = q.get('demo') ? null : loadProject();
-  return saved ? { project: saved, fromDemo: false } : { project: q.get('demo') === 'laminada' ? laminatedDemoProject() : demoProject(), fromDemo: true };
+  const demo = q.get('demo');
+  return saved ? { project: saved, fromDemo: false } : { project: demo === 'laminada' ? laminatedDemoProject() : demo === 'tambores' ? reelsDemoProject() : demoProject(), fromDemo: true };
 }
 const { project, fromDemo } = load();
 const derived = deriveProject(project);
+/** si la lista viene de una demostración, el simulador abre la misma */
+const simDemo = fromDemo && q.get('demo') ? `&demo=${encodeURIComponent(q.get('demo')!)}` : '';
 const { parts, notes } = buildParts(project, derived);
 const ROWS = new Map(parts.map((p) => [p.id, p]));
 
@@ -59,6 +67,16 @@ let search = '';
 let dtab: 'sum' | 'buy' | 'check' = 'sum';
 let sheet = !!sel;
 
+// --- taller (dos tambores): lo que se manda a cortar e imprimir, con sus textos y estimados (ADR-0012) -------------
+const fab = derived.reels
+  ? (() => {
+      const st = buildReelsStructure(project, derived);
+      const printed = reelsPrintedParts(project, derived, {}, st.asm);
+      return { st, printed, laser: estimateLaser(st), pe: estimatePrint(printed) };
+    })()
+  : null;
+if (fab && location.hash === '#fabricacion') tab = 'fab';
+
 // --- datos derivados --------------------------------------------------------------------------------------------------
 const CATS: [string, string][] = [
   ['electronic', 'Electrónica'],
@@ -80,6 +98,10 @@ const EV_LABEL = { read: 'precio leído', estimated: 'precio estimado', unverifi
 const shapeOf = (r: PartMeta): PartShape | null => {
   const kind = BOM_KIND[r.id] ?? (r.id.startsWith('motor-17hs8401') ? 'nema17' : r.id.startsWith('lens-') ? 'lens' : undefined);
   if (!kind) return null;
+  if (kind === 'reel' && derived.reels) {
+    const a = buildReelsAssembly(project, derived);
+    return { kind, reel: { coreR: a.coreR, flangeR: a.flangeR, gap: a.flangeHighY - a.flangeLowY } };
+  }
   return kind === 'roller' ? { kind, rollerRadiusMm: derived.pathSpec.rollerRadiusMm, rollerBodyMm: project.film.stripWidthMm + 10 } : { kind };
 };
 const processLabel = (r: PartMeta) => (r.process === 'print3d' ? 'impresión 3D' : r.process === 'laser' ? 'corte láser' : r.process === 'buy' ? 'compra' : r.process ?? '');
@@ -159,11 +181,11 @@ function detailHtml(): string {
       ['Notas', r.notes],
     ]);
     body += `<label class="check"><input type="checkbox" id="bought" ${bought(r) ? 'checked' : ''}> Ya lo compré</label>`;
-    body += `<p class="hint"><a href="./index.html?section=mechanical&bom=${encodeURIComponent(r.id)}">Verla en el simulador 3D</a> (selecciona la pieza en la obra)</p>`;
+    body += `<p class="hint"><a href="./index.html?section=mechanical${simDemo}&bom=${encodeURIComponent(r.id)}">Verla en el simulador 3D</a> (selecciona la pieza en la obra)</p>`;
   } else if (dtab === 'buy') {
     const cards: string[] = [];
     if (r.supplier) cards.push(`<div class="lk"><div class="h">${r.supplier.url ? `<a href="${esc(r.supplier.url)}" target="_blank" rel="noopener">${esc(r.supplier.name)}</a>` : `<b>${esc(r.supplier.name)}</b>`}<b class="mono">${u !== undefined ? mxn(u) : '—'}</b></div><div class="note">${esc([r.supplier.sku, EV_LABEL[ev(r)]].filter(Boolean).join(' · '))}${r.supplier.url ? '' : ' · sin enlace directo: búscalo por nombre en la tienda'}</div></div>`);
-    for (const o of offersOf(r)) cards.push(`<div class="lk"><div class="h"><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.store)}</a><b class="mono">${o.price !== undefined ? mxn(o.price) : o.range ? `~${mxn(o.range[0])}–${mxn(o.range[1])}` : '—'}</b></div><div class="note">${esc([o.pack, o.note, o.store === 'MercadoLibre' ? 'rango de resultados indexados, sin fecha' : 'leído el 2-nov-2026'].filter(Boolean).join(' · '))}</div></div>`);
+    for (const o of offersOf(r)) cards.push(`<div class="lk"><div class="h"><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.store)}</a><b class="mono">${o.price !== undefined ? mxn(o.price) : o.range ? `~${mxn(o.range[0])}–${mxn(o.range[1])}` : '—'}</b></div><div class="note">${esc([o.pack, o.note, o.date ? `leído el ${o.date}` : o.store === 'MercadoLibre' ? 'rango de resultados indexados, sin fecha' : 'leído el 2-nov-2026'].filter(Boolean).join(' · '))}</div></div>`);
     body = cards.join('') || '<p class="hint">Sin proveedor: es una pieza de taller (impresión 3D o láser) o un material de papelería.</p>';
   } else {
     body = `${x?.check ? `<div class="pend">${esc(x.check)}</div>` : '<p class="hint">Nada especial que revisar en este renglón.</p>'}${isUnit(r) ? `<p class="hint">${esc(UNIT_SHIPPING)}</p>` : ''}`;
@@ -179,11 +201,39 @@ function altTable(): string {
     const u = unitOf(r);
     return offersOf(r).map((o, i) => `<tr class="click" data-open="${esc(r.id)}">${i === 0 ? `<td rowspan="${offersOf(r).length}"><b>${esc(r.name)}</b><br><span class="hint">${esc(r.supplier?.name ?? '')} ${u !== undefined ? mxn(u) + ' c/u' : ''}</span></td>` : ''}<td><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.store)}</a>${o.pack ? `<br><span class="hint">${esc(o.pack)}</span>` : ''}</td><td class="r">${o.price !== undefined ? mxn(o.price) : o.range ? `~${mxn(o.range[0])}–${mxn(o.range[1])}` : '—'}</td></tr>`).join('');
   }).join('');
-  return `<p class="hint" style="margin:0 0 8px">Amazon México se leyó directo el 2-nov-2026. MercadoLibre son rangos de resultados indexados, sin fecha. Los paquetes traen varias piezas: compara por pieza.</p><div class="list"><table><thead><tr><th>Pieza y precio elegido</th><th>Alternativa</th><th class="r">Precio</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<p class="hint" style="margin:0 0 8px">Amazon México se leyó directo el 2 y el 5-nov-2026. MercadoLibre son rangos de resultados indexados, sin fecha. Los paquetes traen varias piezas: compara por pieza.</p><div class="list"><table><thead><tr><th>Pieza y precio elegido</th><th>Alternativa</th><th class="r">Precio</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+function fabHtml(): string {
+  if (!fab) return '';
+  const { st, laser, printed, pe } = fab;
+  const base = `./${FAB_DIR}`;
+  const laserLinks = laser
+    .map((e) => {
+      const pre = LASER_PREFIX[e.material];
+      const sheets = e.nest.sheets.map((ns) => `hoja ${ns.index}: <a href="${base}/laser/${pre}-hoja-${ns.index}.dxf" download>DXF</a> · <a href="${base}/laser/${pre}-hoja-${ns.index}.svg" target="_blank" rel="noopener">SVG</a>`).join(' · ');
+      return `<li><b>${esc(SHEET_MATERIALS[e.material].label)}</b>: ${e.pieces} piezas, ${e.cutM.toFixed(1).replace('.', ',')} m de corte · ${sheets} · <a href="${base}/laser/${pre}.pdf" target="_blank" rel="noopener">PDF 1:1</a></li>`;
+    })
+    .join('');
+  const stl = printed.map((p) => `<li><a href="${base}/impresion-3d/${esc(p.file)}" download>${esc(p.file)}</a> × ${p.qty} <span class="hint">${esc(p.name)}</span></li>`).join('');
+  const row = (label: string, what: string, r: { low: number; mid: number; high: number }) => `<tr><td>${esc(label)}</td><td class="hint">${esc(what)}</td><td class="r">${fmtMxn(r.low)}</td><td class="r"><b>${fmtMxn(r.mid)}</b></td><td class="r">${fmtMxn(r.high)}</td></tr>`;
+  const sum = (k: 'low' | 'mid' | 'high') => laser.reduce((a, e) => a + e.mxn[k], 0) + pe.mxn[k];
+  const rows = [...laser.map((e) => row(`Corte láser · ${e.label}`, `${e.pieces} piezas · ${Math.round(e.minutes)} min · ${e.sheets} hoja${e.sheets === 1 ? '' : 's'}`, e.mxn)), row('Impresión 3D en PETG', `${pe.pieces} piezas · ${Math.round(pe.grams)} g · ${pe.hours.toFixed(0)} h`, pe.mxn), row('Total de taller', '', { low: sum('low'), mid: sum('mid'), high: sum('high') })].join('');
+  return `<div class="why"><b>Cómo se fabrica.</b> La estructura es de MDF de ${esc(String(st.mdfMm).replace('.', ','))} mm cortado con láser y se arma a mano, sin tornillos: dientes y ranuras, dos cuñas en la tapa trasera y broches en las tapas. Las piezas que giran o sostienen se imprimen en PETG. Cada pieza lleva su código (E, A, N, I), el mismo que usan los <a href="./index.html?section=mechanical&demo=tambores&ensamble=1">12 pasos del ensamble en el simulador</a>.</div>
+    <div class="fab">
+      <section><h3>1 · Corte láser</h3><p class="hint">DXF R12, SVG y PDF a escala 1:1, con las piezas acomodadas en hojas de 87 × 57 cm y el kerf compensado. Rojo corta, azul marca y negro graba el código.</p><ul>${laserLinks}</ul>
+        <div class="msg"><div class="msg-h"><b>Texto para el taller</b><button class="btn" data-copy="msg-laser">Copiar</button></div><pre id="msg-laser">${esc(laserRequestText(st, laser))}</pre></div></section>
+      <section><h3>2 · Impresión 3D</h3><p class="hint">${printed.length} STL, uno por pieza, ya orientados y revisados (sólidos cerrados, sin soportes).</p><ul class="stl">${stl}</ul>
+        <div class="msg"><div class="msg-h"><b>Texto para el servicio</b><button class="btn" data-copy="msg-print">Copiar</button></div><pre id="msg-print">${esc(printRequestText(printed, pe))}</pre></div></section>
+      <section class="wide"><h3>Cuánto debería costar</h3><p class="hint">Rango con las tarifas publicadas en CDMX el 5-nov-2026: sirve para saber qué tan lejos queda cada cotización. Por encima del alto, pregunta qué cobran aparte; por debajo del bajo, suele ser el corte sin material.</p>
+        <div class="list"><table><thead><tr><th>Trabajo</th><th>Cantidad</th><th class="r">Bajo</th><th class="r">Medio</th><th class="r">Alto</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <ul class="hint">${Object.values(RATE_SOURCES).map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a></li>`).join('')}</ul></section>
+    </div>
+    <p class="fab-all"><a class="btn primary" href="${base}/${ZIP_NAME}" download>Descargar todo (ZIP)</a> <a class="btn" href="${base}/README.md" target="_blank" rel="noopener">README con piezas y pasos</a></p>`;
+}
+
 function checkList(): string {
   const items = parts.filter((r) => OFFERS[r.id]?.check).map((r) => `<li><a href="#" data-open="${esc(r.id)}">${esc(r.name)}</a>: ${esc(OFFERS[r.id]!.check)}</li>`).join('');
-  return `<div class="why"><b>Envío.</b> ${esc(UNIT_SHIPPING)}</div><ul class="checks">${items}</ul><div class="why"><b>Orden de compra.</b> Compra primero la electrónica y arma el pulso del LED en banco. Mide flujo, temperatura y disparo con una tira impresa con tu tinta real. Con eso, decide lente, tamaño de imagen y película final.</div>`;
+  return `<div class="why"><b>Envío.</b> ${esc(UNIT_SHIPPING)}</div><ul class="checks">${items}</ul><div class="why"><b>Orden de compra.</b> ${derived.reels ? 'Pide primero la cotización del corte (con las piezas de prueba) y de la impresión: tardan días. Mientras, compra la electrónica y arma la prueba de banco con un tramo de 1 a 2 m de película laminada: tensión al invertir, la mano, el parpadeo a 6 fps y el cuadro fijo. El VL53L0X sirve para empezar mientras llega el VL53L4CD.' : 'Compra primero la electrónica y arma el pulso del LED en banco. Mide flujo, temperatura y disparo con una tira impresa con tu tinta real. Con eso, decide lente, tamaño de imagen y película final.'}</div>`;
 }
 
 function render(): void {
@@ -197,23 +247,24 @@ function render(): void {
   const sumAll = by.read + by.estimated + by.unverified || 1;
   const counts: Record<string, number> = { all: all.length, alt: all.filter((r) => offersOf(r).length).length, check: all.filter((r) => OFFERS[r.id]?.check).length };
   for (const [c] of CATS) counts[c] = all.filter((r) => r.category === c).length;
-  const TABS: [string, string][] = [['all', 'Todo'], ...CATS.filter(([c]) => counts[c]), ['alt', 'Alternativas'], ['check', 'Antes de pagar']];
-  const full = tab === 'alt' || tab === 'check';
+  if (fab) counts.fab = fab.laser.length + 1;
+  const TABS: [string, string][] = [['all', 'Todo'], ...CATS.filter(([c]) => counts[c]), ['alt', 'Alternativas'], ['check', 'Antes de pagar'], ...(fab ? [['fab', 'Taller: láser e impresión 3D'] as [string, string]] : [])];
+  const full = tab === 'alt' || tab === 'check' || tab === 'fab';
   if (!full && !sel && innerWidth >= 1100) sel = all.find(pass)?.id ?? null;
   const app = $('#app')!;
-  app.innerHTML = `<header><div><h1>Praxiboscopic · Lista de compras</h1><div class="sub">${esc(project.name)}${fromDemo ? ' (demostración)' : ''} · MXN antes de envío · precios de UNIT leídos el 2-nov-2026, confirmar en el carrito</div></div>
-      <div class="bar"><a class="btn" href="./index.html?section=mechanical">← Simulador 3D</a><button class="btn" id="csv">Descargar CSV</button><button class="btn" id="print">Imprimir</button></div></header>
+  app.innerHTML = `<header><div><h1>Praxiboscopic · Lista de compras</h1><div class="sub">${esc(project.name)}${fromDemo ? ' (demostración)' : ''} · MXN antes de envío · precios de UNIT del 2 y del 5-nov-2026: confírmalos en el carrito</div></div>
+      <div class="bar"><a class="btn" href="./index.html?section=mechanical${simDemo}">← Simulador 3D</a><button class="btn" id="csv">Descargar CSV</button><button class="btn" id="print">Imprimir</button></div></header>
     <div class="tiers">
       <div class="tier on"><span class="tag">Recomendada</span><span class="l">UNIT Electronics</span><span class="n">${mxn(total(unitRows))}</span><span class="d">${unitRows.length} renglones · casi toda la electrónica</span></div>
-      <div class="tier"><span class="l">Otros proveedores</span><span class="n">${mxn(total(otherRows))}</span><span class="d">Lente, condensador, ejes, papelería</span></div>
-      <div class="tier"><span class="l">Todo lo que tiene precio</span><span class="n">${mxn(total(all))}</span><span class="d">${noPrice} renglones sin precio (taller y servicios)</span></div>
+      <div class="tier"><span class="l">Otros proveedores</span><span class="n">${mxn(total(otherRows))}</span><span class="d">${esc([...new Set(otherRows.map((r) => r.supplier?.name ?? ''))].filter(Boolean).slice(0, 4).join(', '))}</span></div>
+      <div class="tier"><span class="l">Todo lo que tiene precio</span><span class="n">${mxn(total(all))}</span><span class="d">${noPrice ? `${noPrice} renglones sin precio (taller y servicios)` : fab ? 'taller y película estimados' : 'todo con precio'}</span></div>
       <div class="tier"><span class="l">Falta comprar</span><span class="n">${mxn(total(pending))}</span><span class="d">${pending.length} de ${all.filter(counted).length} renglones en la compra</span></div>
     </div>
     <div class="why">La lista sale del mismo proyecto que el simulador: si cambias rodillos, motor o estroboscopio allá, esta página cambia. UNIT y MercadoLibre bloquean el acceso automático, así que sus precios vienen de capturas o del buscador; confírmalos en el carrito.</div>
     <div class="strip"><span>confianza en precios <span class="conf"><i class="d-green" style="width:${(by.read / sumAll) * 100}%"></i><i class="d-yellow" style="width:${(by.estimated / sumAll) * 100}%"></i><i class="d-red" style="width:${(by.unverified / sumAll) * 100}%"></i></span></span><span class="hint">● leído ${mxn(by.read)} · ● estimado ${mxn(by.estimated)} · ● sin verificar ${mxn(by.unverified)}</span></div>
     <div class="nav"><div class="tabs">${TABS.map(([k, l]) => `<button data-t="${k}" aria-pressed="${k === tab}">${esc(l)}<span class="c">${counts[k]}</span></button>`).join('')}</div>
       <div class="filters"><input id="q" type="search" placeholder="Buscar pieza o código" value="${esc(search)}">${full ? '' : ([['all', 'Todo'], ['check', 'Por confirmar'], ['noprice', 'Sin precio'], ['pending', 'Pendientes'], ['bought', 'Compradas']] as const).map(([k, l]) => `<button class="fchip" data-f="${k}" aria-pressed="${k === filt}">${l}</button>`).join('')}</div></div>
-    ${full ? (tab === 'alt' ? altTable() : checkList()) : `<div class="md"><div>${listHtml()}</div>${sheet && innerWidth < 1100 ? '<div class="scrim" id="scrim"></div>' : ''}<aside class="det${sheet ? ' open' : ''}">${detailHtml()}</aside></div>`}`;
+    ${full ? (tab === 'alt' ? altTable() : tab === 'fab' ? fabHtml() : checkList()) : `<div class="md"><div>${listHtml()}</div>${sheet && innerWidth < 1100 ? '<div class="scrim" id="scrim"></div>' : ''}<aside class="det${sheet ? ' open' : ''}">${detailHtml()}</aside></div>`}`;
   wire();
   const slot = $('#mini-slot');
   if (slot && sel) {
@@ -292,6 +343,19 @@ function wire(): void {
     sheet = false;
     sel = null;
     render();
+  };
+  for (const b of $$<HTMLButtonElement>('[data-copy]')) b.onclick = async () => {
+    const text = $(`#${b.dataset.copy}`)?.textContent ?? '';
+    try {
+      await navigator.clipboard.writeText(text);
+      b.textContent = 'Copiado';
+    } catch {
+      const r = document.createRange();
+      r.selectNodeContents($(`#${b.dataset.copy}`)!);
+      getSelection()?.removeAllRanges();
+      getSelection()?.addRange(r);
+      b.textContent = 'Seleccionado: Cmd+C';
+    }
   };
   $('#print')!.onclick = () => window.print();
   $('#csv')!.onclick = () => {

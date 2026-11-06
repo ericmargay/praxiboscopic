@@ -12,3 +12,5 @@ capturas/*.tmp
 public/videos/
 impresion/
 capturas/video-*.png
+# el paquete para los talleres se arma con npm run fabricar: el ZIP repite los archivos que sí van en git
+public/fabricacion/tambores/*.zip

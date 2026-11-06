@@ -3,17 +3,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { buildKind, buildRoller, localBox } from '../three/parts';
+import { buildKind, buildReel, buildRoller, localBox } from '../three/parts';
 
 export interface PartShape {
   kind: string;
   /** solo para el rodillo, que depende del proyecto */
   rollerRadiusMm?: number;
   rollerBodyMm?: number;
+  /** solo para el tambor de dos tambores (ADR-0011) */
+  reel?: { coreR: number; flangeR: number; gap: number };
 }
 
 function makePart(s: PartShape): THREE.Group {
   if (s.kind === 'roller') return buildRoller(s.rollerRadiusMm ?? 50, s.rollerBodyMm ?? 50, false);
+  if (s.kind === 'reel') return buildReel(s.reel?.coreR ?? 51.6, s.reel?.flangeR ?? 65, s.reel?.gap ?? 42);
   return buildKind(s.kind);
 }
 

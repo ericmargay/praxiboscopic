@@ -4,7 +4,7 @@
 // Fuente legible: docs/COMPRAS-ELECTRONICA.md.
 
 export interface Offer {
-  store: 'Amazon México' | 'MercadoLibre';
+  store: 'Amazon México' | 'MercadoLibre' | 'Pololu' | 'DigiKey México';
   /** precio total de la oferta en MXN (o rango) */
   price?: number;
   range?: [number, number];
@@ -12,6 +12,8 @@ export interface Offer {
   pack?: string;
   url: string;
   note?: string;
+  /** cuándo se leyó (por omisión, el 2-nov-2026) */
+  date?: string;
 }
 
 export interface RowExtra {
@@ -42,6 +44,19 @@ export const OFFERS: Record<string, RowExtra> = {
   'esp32-expansion': { offers: [], check: 'Precio estimado: la ficha existe pero no pude leer el precio' },
   'breadboard-kit': { offers: [{ store: 'MercadoLibre', range: [120, 220], url: ml('kit-protoboard-830-fuente-mb102') }], check: 'Precio estimado: la ficha existe pero no pude leer el precio' },
   'jumpers-hm': { offers: [{ store: 'MercadoLibre', range: [56, 92], pack: '40 piezas', url: ml('jumpers-macho-hembra') }], check: 'Precio estimado' },
+  // dos tambores (ADR-0011): leído el 5-nov-2026. Dólares a 18,80 MXN (FIX del 30-oct-2026: 18,7962)
+  'hand-sensor': {
+    offers: [
+      { store: 'Pololu', price: 262, note: '#3692 a US$13.95, con sus pines. Pololu calcula el envío a México al pagar y la aduana corre por tu cuenta', url: 'https://www.pololu.com/product/3692', date: '5-nov-2026' },
+      { store: 'DigiKey México', price: 281, note: 'Adafruit 5396 a US$14.95. Envío de US$30 abajo de US$100 de pedido; IVA y aranceles al recibir', url: 'https://www.digikey.com.mx/es/products/detail/adafruit-industries-llc/5396/16129669', date: '5-nov-2026' },
+    ],
+    check: 'Ninguna tienda en México lo tiene. Amazon lo envía con los impuestos incluidos y da entrega para el 17-nov. La placa de SparkFun tiene conectores Qwiic; si no trae pines, suéldale una tira de 6. El sensor del tambor 2 usa su pin de apagado (XSHUT)',
+  },
+  'hand-sensor-bench': { offers: [{ store: 'Amazon México', price: 150.38, pack: '2 piezas, VKLSVAN', url: amz('B099N2JW89'), date: '5-nov-2026' }], check: 'Precio del buscador: también aparece a 48 y 54; desde 10 piezas baja a 41.32' },
+  as5600: { offers: [{ store: 'Amazon México', price: 258.98, pack: '2 piezas, HiLetgo, con imán diametral según las reseñas', url: amz('B09KGWC1PT'), date: '5-nov-2026' }], check: 'La ficha de UNIT dice que trae un imán de neodimio, pero no si es diametral (los polos a los lados del disco). Compruébalo al recibirlo; si no lo es, el HiLetgo de Amazon sí lo es. Evita el UMLIFE: sus reseñas reportan imanes que no son diametrales' },
+  'dancer-spring': { offers: [{ store: 'Amazon México', price: 274, pack: '200 piezas, HERCHR, 124 de extensión', url: amz('B0BWNHMW7Z'), date: '5-nov-2026' }, { store: 'MercadoLibre', range: [93, 519], pack: 'kits de 200', url: ml('resorte-de-compresion-y-extension') }], check: 'Precio del buscador. Del surtido, prueba los de extensión de 5 a 8 mm de diámetro y de 20 a 32 mm de largo' },
+  'jumpers-hh': { offers: [{ store: 'Amazon México', price: 199.99, pack: 'ELEGOO, 120 de 20 cm (40 HH, 40 MH y 40 MM)', url: amz('B01EV70C78'), date: '5-nov-2026' }], check: 'Precio del buscador: pide la variante hembra-hembra (HH) de 30 cm; existencias sin confirmar' },
+  'm3-kit': { offers: [{ store: 'Amazon México', price: 473.37, pack: 'DSHTP, 420 piezas M3 con insertos de latón y su cautín', url: amz('B0GGH7DMKG'), date: '5-nov-2026' }], check: 'No encontré la ficha del kit de UNIT, solo su categoría: búscalo por nombre en la tienda. No trae insertos de latón; para las piezas impresas sirve el kit DSHTP de Amazon' },
 };
 
 /** envío de UNIT: las páginas se contradicen (59 a 99 sobre 599, o recoger gratis en sucursal) */

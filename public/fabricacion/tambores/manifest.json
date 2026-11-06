@@ -1,0 +1,37 @@
+{
+  "date": "5/11/2026",
+  "mdfMm": 5.5,
+  "laser": [
+    "laser/mesa-tambores-mdf-5.5mm-hoja-1.svg",
+    "laser/mesa-tambores-mdf-5.5mm-hoja-1.dxf",
+    "laser/mesa-tambores-mdf-5.5mm-hoja-2.svg",
+    "laser/mesa-tambores-mdf-5.5mm-hoja-2.dxf",
+    "laser/mesa-tambores-mdf-5.5mm.pdf",
+    "laser/mesa-tambores-acrilico-transparente-3mm-hoja-1.svg",
+    "laser/mesa-tambores-acrilico-transparente-3mm-hoja-1.dxf",
+    "laser/mesa-tambores-acrilico-transparente-3mm.pdf",
+    "laser/mesa-tambores-acrilico-negro-3mm-hoja-1.svg",
+    "laser/mesa-tambores-acrilico-negro-3mm-hoja-1.dxf",
+    "laser/mesa-tambores-acrilico-negro-3mm.pdf"
+  ],
+  "stl": [
+    "impresion-3d/I01-nucleo-tambor.stl",
+    "impresion-3d/I02-cuerpo-guia.stl",
+    "impresion-3d/I03-cuerpo-rodillo-tensor.stl",
+    "impresion-3d/I04-brazo-tensor.stl",
+    "impresion-3d/I05-copa-pivote.stl",
+    "impresion-3d/I06-tapa-iman.stl",
+    "impresion-3d/I07-tapon-eje.stl",
+    "impresion-3d/I08-poste-tapa.stl",
+    "impresion-3d/I09-poste-hueco.stl",
+    "impresion-3d/I10-capuchon-sensor.stl",
+    "impresion-3d/I11-cabeza-led.stl",
+    "impresion-3d/I12-tubo-condensador.stl",
+    "impresion-3d/I13-cuna-lente.stl",
+    "impresion-3d/I14-brazo-sensor-marcas.stl",
+    "impresion-3d/I15-ancla-resorte.stl",
+    "impresion-3d/I16-espiga.stl"
+  ],
+  "zip": "mesa-tambores-taller.zip",
+  "zipBytes": 2769723
+}

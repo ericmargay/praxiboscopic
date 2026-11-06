@@ -4,7 +4,7 @@ import type { AppContext } from '../../app/context';
 import { emptyDoc, makeLayer, parseAnimationDoc } from '../../animation/model';
 import { GENERATORS } from '../../animation/procedural';
 import { button, download, el, numberControl, selectControl, textControl } from '../controls';
-import { videoProject, type VideoManifest } from '../../core/video';
+import { reelsProject, videoProject, type VideoManifest } from '../../core/video';
 import { DEFAULT_LAMINATE } from '../../film/layout';
 import type { EditorStore } from './state';
 
@@ -123,7 +123,7 @@ interface VideoEntry {
  * Tarjetas de los videos importados. «Usar» cambia el proyecto entero: animación, película del largo necesario,
  * recorrido (festón con la película laminada, rectángulo de 4 rodillos con la sencilla) e impresión en carta.
  * `?video=<nombre>&segundos=5&fps=24&pelicula=laminada` en la URL hace lo mismo al abrir (`fps` vacío: uno por cuadro
- * del video; `pelicula=sencilla`: rectángulo).
+ * del video; `pelicula=sencilla`: rectángulo; `recorrido=tambores`: la mesa de dos tambores, ADR-0011).
  */
 async function loadVideos(ctx: AppContext, box: HTMLElement, notes: HTMLElement, done: () => void): Promise<void> {
   let list: VideoEntry[] = [];
@@ -137,13 +137,16 @@ async function loadVideos(ctx: AppContext, box: HTMLElement, notes: HTMLElement,
     box.append(el('div', { class: 'hint', text: 'Sin videos. Impórtalos con: node scripts/video.mjs "archivo.mp4" --nombre=mi-video' }));
     return;
   }
-  const apply = async (v: VideoEntry, seconds: number, fit: 'contain' | 'cover', fps: number | undefined, laminated: boolean) => {
+  const apply = async (v: VideoEntry, seconds: number, fit: 'contain' | 'cover', fps: number | undefined, film: string) => {
     const m = (await (await fetch(`./videos/${v.name}/manifest.json`)).json()) as VideoManifest;
-    ctx.replaceProject(videoProject(ctx.project, m, { seconds, fit, fps, laminate: laminated ? DEFAULT_LAMINATE : undefined }));
+    const laminated = film !== 'sencilla';
+    const video = videoProject(ctx.project, m, { seconds, fit, fps, laminate: laminated ? DEFAULT_LAMINATE : undefined });
+    ctx.replaceProject(film === 'tambores' ? reelsProject(video) : video);
     const count = fps ? Math.round(fps * seconds) : m.frames;
     const pick = count < m.frames ? ` · se saltan ${m.frames - count} de ${m.frames} cuadros` : count > m.frames ? ` · se repiten ${count - m.frames} cuadros` : '';
-    const rollers = ctx.derived().pathSpec.rollers.length;
-    const path = laminated ? `Película laminada en festón de ${rollers} rodillos` : `Película sencilla en rectángulo de ${rollers} rodillos`;
+    const dd = ctx.derived();
+    const rollers = dd.pathSpec.rollers.length;
+    const path = dd.reels ? `Película laminada entre dos tambores: lleno mide Ø${(2 * dd.reels.design.fullR).toFixed(1)} mm` : laminated ? `Película laminada en festón de ${rollers} rodillos` : `Película sencilla en rectángulo de ${rollers} rodillos`;
     notes.textContent = `· ${m.title}: ${count} fotogramas en ${seconds} s a ${(count / seconds).toFixed(2)} fps${pick}. La película mide ${((count * ctx.project.film.pitchMm) / 1000).toFixed(2)} m. ${path}.`;
     done();
   };
@@ -156,9 +159,9 @@ async function loadVideos(ctx: AppContext, box: HTMLElement, notes: HTMLElement,
     const secs = numberControl({ label: 'Duración', value: seconds, min: 1, max: 60, step: 0.5, unit: 's', decimals: 1, onChange: (x) => (seconds = x), help: 'El video se alenta o acelera para llenarla' });
     const fpsSel = selectControl({ label: 'Proyección', value: fps, options: [{ value: '', label: 'Uno por cuadro del video' }, { value: '24', label: '24 fps' }, { value: '18', label: '18 fps' }, { value: '12', label: '12 fps' }], onChange: (x) => (fps = x), help: 'A fps fijos cada fotograma toma el cuadro del video que toca en su instante: se saltan o se repiten cuadros' });
     const fitSel = selectControl({ label: 'Encuadre', value: fit, options: [{ value: 'contain', label: 'Completo (bandas negras)' }, { value: 'cover', label: 'Llenar el fotograma (recorta)' }], onChange: (x) => (fit = x as typeof fit) });
-    const filmSel = selectControl({ label: 'Película', value: film, options: [{ value: 'laminada', label: 'Laminada: festón compacto' }, { value: 'sencilla', label: 'Sencilla: rectángulo de 4 rodillos' }], onChange: (x) => (film = x), help: 'Laminada: una cubierta tapa la tinta y los rodillos pueden tocar las dos caras. Sencilla: solo un loop convexo no roza la tinta, y pide más mesa' });
+    const filmSel = selectControl({ label: 'Película', value: film, options: [{ value: 'laminada', label: 'Laminada: festón compacto' }, { value: 'sencilla', label: 'Sencilla: rectángulo de 4 rodillos' }, { value: 'tambores', label: 'Laminada entre dos tambores, con la mano' }], onChange: (x) => (film = x), help: 'Laminada: una cubierta tapa la tinta y los rodillos pueden tocar las dos caras. Sencilla: solo un loop convexo no roza la tinta, y pide más mesa. Dos tambores: la película va y viene con la mano del visitante' });
     box.append(
-      el('div', { class: 'lib-card video-card' }, el('span', { class: 'lib-card-title', text: v.title }), el('span', { class: 'lib-card-desc', text: `${v.frames} cuadros · ${v.durationS.toFixed(2)} s a ${v.sourceFps} fps` }), secs.root, fpsSel.root, fitSel.root, filmSel.root, button('Usar en el proyecto', () => void apply(v, seconds, fit, fpsOf(fps), film === 'laminada'), { kind: 'primary' })),
+      el('div', { class: 'lib-card video-card' }, el('span', { class: 'lib-card-title', text: v.title }), el('span', { class: 'lib-card-desc', text: `${v.frames} cuadros · ${v.durationS.toFixed(2)} s a ${v.sourceFps} fps` }), secs.root, fpsSel.root, fitSel.root, filmSel.root, button('Usar en el proyecto', () => void apply(v, seconds, fit, fpsOf(fps), film), { kind: 'primary' })),
     );
   }
   const q = new URLSearchParams(location.search);
@@ -166,11 +169,11 @@ async function loadVideos(ctx: AppContext, box: HTMLElement, notes: HTMLElement,
   if (!v) return;
   const seconds = Number(q.get('segundos') ?? 5);
   const fps = q.has('fps') ? fpsOf(q.get('fps')) : 24;
-  const laminated = q.get('pelicula') !== 'sencilla';
-  // se aplica si el proyecto no tiene ya ese video con esa duración, esos fps y esa película
+  const film = q.get('recorrido') === 'tambores' ? 'tambores' : q.get('pelicula') === 'sencilla' ? 'sencilla' : 'laminada';
+  // se aplica si el proyecto no tiene ya ese video con esa duración, esos fps, esa película y ese recorrido
   const a = ctx.project.animation;
-  const loaded = a.layers.some((l) => l.items.some((it) => it.type === 'image' && it.sequence?.base.includes(`/${v.name}/`))) && a.duration === seconds && (!fps || a.fps === fps) && !!ctx.project.film.laminate === laminated;
-  if (!loaded) await apply(v, seconds, 'contain', fps, laminated);
+  const loaded = a.layers.some((l) => l.items.some((it) => it.type === 'image' && it.sequence?.base.includes(`/${v.name}/`))) && a.duration === seconds && (!fps || a.fps === fps) && !!ctx.project.film.laminate === (film !== 'sencilla') && (ctx.project.pathLayout === 'reels') === (film === 'tambores');
+  if (!loaded) await apply(v, seconds, 'contain', fps, film);
 }
 
 function slug(s: string): string {

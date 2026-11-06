@@ -15,10 +15,11 @@ Crear animación → Diseñar movimiento → Generar fotogramas → Distribuir e
 ```bash
 npm install           # enlaza ../omega con file:
 npm run dev           # http://localhost:5174
-npm test              # 88 pruebas (vitest + @napi-rs/canvas)
+npm test              # 121 pruebas (vitest + @napi-rs/canvas)
 npm run build         # tsc + vite build → dist/
 npm run captura       # capturas/*.png + report.json con Chrome headless (verificación visual)
-node scripts/bom.mjs  # docs/COMPRAS.md y fabricacion/BOM.csv de la demostración
+node scripts/bom.mjs  # docs/COMPRAS.md y fabricacion/BOM.csv de la demostración (--tambores: la de dos tambores)
+npm run fabricar      # corte láser, STL y textos para los talleres de la mesa de dos tambores (public/fabricacion/tambores)
 npm run publicar -- --con-videos  # compila y sube dist/ a gh-pages (GitHub Pages) con los videos importados
 npm run video -- "archivo.mp4" --nombre=mi-video   # importa un video como secuencia de cuadros (public/videos/)
 npm run imprimir -- --video=mi-video [--segundos=5] [--fps=24] # PDF a tamaño real en carta y MP4 (impresion/)
@@ -39,7 +40,9 @@ https://ericmargay.github.io/praxiboscopic/?video=cried-out&segundos=5&fps=24&se
 
 Parámetros de URL: `?demo=1` ignora el proyecto guardado en `localStorage` y arranca con la demostración;
 `?demo=laminada` arranca con la máquina de la película laminada de 5 s (festón de 7 rodillos), con la pelota repetida
-5 veces en lugar del video;
+5 veces en lugar del video; `?demo=tambores` arranca con la mesa de dos tambores (ADR-0011) y `&mano=1&cm=15` pone la
+mano del visitante sobre el tambor 1 a 15 cm (`mano=2`: sobre el tambor 2); `&recorrido=tambores` junto a `?video=`
+arma el video en los dos tambores;
 `?section=mechanical|laboratory|studio&tab=editor|frames|film|export`; `?play=0` arranca en pausa; `?sel=motor` o
 `?bom=driver-dm542` seleccionan una pieza en la escena 3D.
 
@@ -73,6 +76,14 @@ exporta/importa como JSON.
 7. Exportaciones: PNG, spritesheet, SVG, tira PNG/SVG, PDF por segmentos y lista de compras.
 
 La compra de electrónica por tienda está en [docs/COMPRAS-ELECTRONICA.md](docs/COMPRAS-ELECTRONICA.md).
+
+**Dos tambores (ADR-0011).** La versión que se construye: la película va y viene entre dos tambores con un NEMA 17
+cada uno, y la mano del visitante sobre un sensor VL53L4CD encima de cada tambor la jala hacia él, de 6 a 30 fps.
+`?demo=tambores` la abre en el simulador y su lista de compras está en
+[docs/COMPRAS-TAMBORES.md](docs/COMPRAS-TAMBORES.md) y en `compras.html?demo=tambores`. La mesa se corta con láser en
+MDF de 5,5 mm y acrílico, y se arma sin tornillos (ADR-0012). Los archivos para el taller, los textos para cotizar y
+los 12 pasos de armado están en [docs/FABRICACION-TAMBORES.md](docs/FABRICACION-TAMBORES.md) y en la pestaña *Taller*
+de la página de compras.
 
 Ver [docs/DEMO.md](docs/DEMO.md) para el recorrido paso a paso y [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para
 el diseño. El estado del proyecto está en [docs/STATUS.md](docs/STATUS.md) y las decisiones en `docs/adr/`.

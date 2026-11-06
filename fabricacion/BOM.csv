@@ -16,7 +16,7 @@ led-gate-driver,Driver de compuerta IR2101 DIP-8,electronic,1,,buy,,UNIT Electro
 driver-dm542,"Driver DM542 20–50 V 4,2 A",electronic,1,,buy,,UNIT Electronics,DM542,,219,219,MXN
 esp32,ESP32 DevKitC V4 WROOM-32D,electronic,1,,buy,,UNIT Electronics,ESP32-DevKitC-V4,https://uelectronics.com/producto/esp32-devkitc-v4-esp32-wroom-32d-32u/,145,145,MXN
 psu-24v-5a,Fuente conmutada 24 V 5 A 120 W,electronic,1,,buy,,UNIT Electronics,UE-120-24,https://uelectronics.com/producto/fuente-conmutada-24v-5a/,210,210,MXN
-led-fuse,"Fusible rápido de 500 mA con portafusible, antes de los capacitores",electronic,1,,buy,,,,,,,
+led-fuse,"Fusible de 500 mA de 5 × 20 mm con portafusible en línea (Steren FEUR .5 + FUS-AUE), antes de los capacitores",electronic,1,,buy,,Steren,FEUR .5 + FUS-AUE,https://www.steren.com.mx/catalogsearch/result/?q=fusible,33,33,MXN
 breadboard-kit,Kit protoboard 830 puntos + fuente MB102 + 65 jumpers macho-macho,electronic,1,,buy,,UNIT Electronics,KIT-PROTO-830-MB102,https://uelectronics.com/producto/kit-protoboard-830-puntos-fuente-mb102-65-cables-dupont-m-m/,150,150,MXN
 led-10w,"LED blanco frío de potencia 10 W, emisor 10,8 × 10,8 mm",electronic,3,,buy,,UNIT Electronics,LED-10W-BF,https://uelectronics.com/producto/led-blanco-frio-de-potencia-10w-50w-y-100w/,26,78,MXN
 led-mosfet,MOSFET IRLZ44N 55 V 47 A,electronic,2,,buy,,UNIT Electronics,IRLZ44N,https://uelectronics.com/producto/transistor-irlz44/,12,24,MXN
