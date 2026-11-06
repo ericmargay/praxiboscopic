@@ -24,10 +24,10 @@ Actualizado: 5/11/2026. Puente entre sesiones: la siguiente arranca leyendo este
 | Video como fuente | Implementado: `scripts/video.mjs` (color BT.709 correcto, detección de cuadro repetido, paleta por k-medias), imagen con `sequence` repartida en la duración, a fps fijos o uno por cuadro, biblioteca *Videos*, `?video=&segundos=&fps=`; solo se repintan los fotogramas cuyas imágenes acaban de cargar | `src/core/video.ts`, `src/animation/*`, `src/frames/generator.ts` |
 | Impresión con color gestionado | Implementado: PDF con perfil sRGB incrustado (ICCBased, validado con littleCMS), imágenes sin pérdida, página de colores del material, texto con acentos (WinAnsi), prueba de color de dos hojas y MP4 de vista previa; `scripts/imprimir.mjs` | `src/export/icc.ts`, `src/export/pdf.ts`, `impresion/` (no versionado) |
 | Lista de compras en su página | Implementado (`compras.html`): totales por proveedor, renglones por tipo con miniatura 3D, detalle con la pieza en 3D a escala, precios en UNIT, Amazon y MercadoLibre, qué revisar antes de pagar, renglones fuera de la compra y comprados guardados en el navegador, CSV e impresión. Enlaza al simulador (`?bom=`) y el simulador a ella | `src/compras/*`, `capturas/compras.png` |
-| Dos tambores con la mano (ADR-0011) | Implementado: recorrido abierto entre dos tambores con radio que crece al enrollar, colas transparentes, brazo tensor y AS5600; programa del ESP32 (`ReelController`: dos sensores de mano, filtro, espera, rampa de 2 m/s², frenado antes del final, paro con un fotograma centrado, dos manos, invitar, regresar sola); destello de 0,1 mm / v y cuadro fijo a 200 Hz; mesa de 383 × 262 mm con la electrónica dentro (ADR-0012); escena 3D con tambores que giran y se llenan, tapas, sensores, conos y la mano del visitante; laboratorio con la planta de los tambores; lista de compras propia (`compras.html?demo=tambores`, `docs/COMPRAS-TAMBORES.md`) | `src/mech/reels.ts`, `reels.test.ts`, `capturas/tambores*.png` |
-| Mesa de dos tambores sin tornillos (ADR-0012) | Implementado: la estructura se calcula desde el ensamble (`buildReelsStructure`): caja de MDF de 5,5 mm con dientes en sus 12 aristas (una prueba recorre las aristas y cada punto es de una sola cara), cubierta doble, tapa trasera con cuñas, torres de los motores, marco y topes de la fuente, tapas y bridas de acrílico, ventana de acrílico negro y piezas de prueba. 16 piezas impresas en PETG modeladas con manifold-3d y revisadas con `checkPrint`. `npm run fabricar` escribe DXF R12, SVG y PDF 1:1 por hoja, los STL, el README con los textos para los talleres y un ZIP en `public/fabricacion/tambores/`. Estimados de taller con tarifas de CDMX (`estimate.ts`). En el simulador, *Ensamble sin tornillos* tiene 12 pasos con explosión (`?ensamble=N&explosion=x`). La página de compras tiene la pestaña *Taller* | `src/mech/structure.ts`, `src/fabricate/printed.ts`, `src/fabricate/estimate.ts`, `src/fabricate/shops.ts`, `scripts/fabricar.mjs`, `structure.test.ts`, `printed.test.ts`, `capturas/tambores-ensamble*.png` |
+| Dos tambores con la mano (ADR-0011) | Implementado: recorrido abierto entre dos tambores con radio que crece al enrollar, colas transparentes, brazo tensor y AS5600; programa del ESP32 (`ReelController`: dos sensores de mano, filtro, espera, rampa de 2 m/s², frenado antes del final, paro con un fotograma centrado, dos manos, invitar, regresar sola); destello de 0,1 mm / v y cuadro fijo a 200 Hz; mesa de 394 × 268 mm con la electrónica dentro y a la vista (ADR-0012); escena 3D con tambores que giran y se llenan, tapas, sensores, conos y la mano del visitante; laboratorio con la planta de los tambores; lista de compras propia (`compras.html?demo=tambores`, `docs/COMPRAS-TAMBORES.md`) | `src/mech/reels.ts`, `reels.test.ts`, `capturas/tambores*.png` |
+| Mesa de dos tambores sin tornillos (ADR-0012) | Implementado: la estructura se calcula desde el ensamble (`buildReelsStructure`): piso y cubierta doble de MDF de 5,5 mm y paredes de acrílico transparente de 3 mm atrapadas en ranuras del MDF (una prueba recorre las aristas: ninguna pieza se encima y entre acrílicos solo queda su holgura de 0,1 mm), tapa trasera de acrílico con cuñas, torres de los motores, marco y topes de la fuente, tapas y bridas de acrílico, ventana de acrílico negro y piezas de prueba. 16 piezas impresas en PETG modeladas con manifold-3d y revisadas con `checkPrint`. `npm run fabricar` escribe DXF R12, SVG y PDF 1:1 por hoja, los STL, el README con los textos para los talleres y un ZIP en `public/fabricacion/tambores/`. Estimados de taller con tarifas de CDMX (`estimate.ts`). En el simulador, *Ensamble sin tornillos* tiene 12 pasos con explosión (`?ensamble=N&explosion=x`). La página de compras tiene la pestaña *Taller* | `src/mech/structure.ts`, `src/fabricate/printed.ts`, `src/fabricate/estimate.ts`, `src/fabricate/shops.ts`, `scripts/fabricar.mjs`, `structure.test.ts`, `printed.test.ts`, `capturas/tambores-ensamble*.png` |
 | Espacio interior del loop | Implementado: `interiorClearance` mide fondo y ancho reales dentro del loop y `deriveProject` marca error si la linterna o el tambor no caben | `src/mech/path.ts`, `project.test.ts` |
-| Pruebas y capturas | 121 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
+| Pruebas y capturas | 122 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
 
 ## Decisiones tomadas (ADR en docs/adr)
 
@@ -39,12 +39,13 @@ cliente seguían sin marcar: el simulador toma lo recomendado y las deja como op
 
 **Estructura sin tornillos (5-nov-2026, ADR-0012):** Eric pidió armar la mesa de dos tambores a mano, sin tornillos,
 con piezas cortadas con láser que encajan por ranuras. También pidió los textos para pedírsela al taller y a quien
-imprima, los archivos de impresión y precios aproximados de lo que no tenía precio. La caja es de MDF de 5,5 mm (el «de
-6» de México) con dientes y una tapa trasera con cuñas. Cada motor se para en una torre que lleva el segundo 608. Las
+imprima, los archivos de impresión y precios aproximados de lo que no tenía precio. Luego pidió que la caja no fuera
+toda de MDF: piso y cubierta de MDF de 5,5 mm (el «de 6» de México) y paredes de acrílico transparente de 3 mm, para
+que se vean los circuitos. Las paredes quedan atrapadas en ranuras del MDF y la tapa trasera lleva cuñas. Cada motor se para en una torre que lleva el segundo 608. Las
 piezas que giran o sostienen son de PETG, entre bridas de acrílico. El único tornillo es el prisionero de cada cople.
 Los archivos y el README para los talleres se generan con `npm run fabricar` (`docs/FABRICACION-TAMBORES.md`). La lista
-de compras ya tiene precio en todo: MXN 9,243, con el taller estimado entre 1,827 y 3,321 (medio, 2,267). La mesa pasa
-a 383 × 262 × 125 mm.
+de compras ya tiene precio en todo: MXN 9,285, con el taller estimado entre 1,872 y 3,131 (medio, 2,307). La mesa pasa
+a 394 × 268 × 125 mm.
 
 **La película sigue laminada (5-nov-2026, ADR-0013):** Eric preguntó por una laca en aerosol en lugar del laminado en
 frío. Se investigó con fuentes y se descartó. Corre o vela la tinta inkjet, no pega bien al PET sin lijar, se pega a sí
@@ -111,8 +112,8 @@ láser y se arma sin tornillos · 0013 la película sigue laminada: la laca en a
 - Captura de vídeo (WebM) de la proyección.
 - Dos tambores, taller:
   - Cotizar con los textos de `docs/FABRICACION-TAMBORES.md` y comparar con el rango estimado.
-  - Medir el espesor real del MDF y cortar primero las piezas de prueba (E14, E15, A06). Si no mide 5,5 mm:
-    `npm run fabricar -- --mdf=…`.
+  - Medir el espesor real del MDF y del acrílico y cortar primero las piezas de prueba (E10, E11, A10, A11). Si no
+    miden 5,5 y 3 mm: `npm run fabricar -- --mdf=… --acrilico=…`.
   - Confirmar con la pieza en mano el diámetro del barril de la lente (`--lente=`).
   - Probar en banco el collar del motor, el ajuste de los 608 y los broches.
 - Planos de taller del loop: solo la mesa de dos tambores tiene archivos de corte e impresión.

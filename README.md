@@ -15,7 +15,7 @@ Crear animación → Diseñar movimiento → Generar fotogramas → Distribuir e
 ```bash
 npm install           # enlaza ../omega con file:
 npm run dev           # http://localhost:5174
-npm test              # 121 pruebas (vitest + @napi-rs/canvas)
+npm test              # 122 pruebas (vitest + @napi-rs/canvas)
 npm run build         # tsc + vite build → dist/
 npm run captura       # capturas/*.png + report.json con Chrome headless (verificación visual)
 node scripts/bom.mjs  # docs/COMPRAS.md y fabricacion/BOM.csv de la demostración (--tambores: la de dos tambores)
@@ -80,8 +80,9 @@ La compra de electrónica por tienda está en [docs/COMPRAS-ELECTRONICA.md](docs
 **Dos tambores (ADR-0011).** La versión que se construye: la película va y viene entre dos tambores con un NEMA 17
 cada uno, y la mano del visitante sobre un sensor VL53L4CD encima de cada tambor la jala hacia él, de 6 a 30 fps.
 `?demo=tambores` la abre en el simulador y su lista de compras está en
-[docs/COMPRAS-TAMBORES.md](docs/COMPRAS-TAMBORES.md) y en `compras.html?demo=tambores`. La mesa se corta con láser en
-MDF de 5,5 mm y acrílico, y se arma sin tornillos (ADR-0012). Los archivos para el taller, los textos para cotizar y
+[docs/COMPRAS-TAMBORES.md](docs/COMPRAS-TAMBORES.md) y en `compras.html?demo=tambores`. La mesa se corta con láser (piso y
+cubierta de MDF de 5,5 mm, paredes de acrílico transparente para que se vea la electrónica) y se arma sin tornillos
+(ADR-0012). Los archivos para el taller, los textos para cotizar y
 los 12 pasos de armado están en [docs/FABRICACION-TAMBORES.md](docs/FABRICACION-TAMBORES.md) y en la pestaña *Taller*
 de la página de compras.
 

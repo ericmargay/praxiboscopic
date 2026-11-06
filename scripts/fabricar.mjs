@@ -5,9 +5,9 @@
 // armado, y un ZIP con todo. Escribe en public/fabricacion/tambores/ (lo sirve Vite y va al sitio) y copia el README a
 // docs/FABRICACION-TAMBORES.md.
 //
-//   node scripts/fabricar.mjs [--mdf=5.5] [--lente=64]
+//   node scripts/fabricar.mjs [--mdf=5.5] [--acrilico=3] [--lente=64]
 //
-// --mdf: espesor real del MDF medido con vernier (mm); --lente: diámetro del barril de la lente que se consiga (mm).
+// --mdf y --acrilico: espesores reales medidos con vernier (mm); --lente: diámetro del barril de la lente (mm).
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +17,7 @@ import Module from 'manifold-3d';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const opt = new Map(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? '1']));
 const mdfMm = opt.has('mdf') ? Number(opt.get('mdf')) : undefined;
+const acrylicMm = opt.has('acrilico') ? Number(opt.get('acrilico')) : undefined;
 const lensDiameterMm = opt.has('lente') ? Number(opt.get('lente')) : undefined;
 
 const mf = await Module();
@@ -36,7 +37,7 @@ try {
 
   const p = reelsDemoProject();
   const d = deriveProject(p);
-  const st = buildReelsStructure(p, d, { mdfMm });
+  const st = buildReelsStructure(p, d, { mdfMm, acrylicMm });
   if (st.problems.length) throw new Error(`la estructura tiene problemas:\n${st.problems.join('\n')}`);
   const parts = reelsPrintedParts(p, d, { lensDiameterMm }, st.asm);
   const laser = estimateLaser(st);
@@ -85,7 +86,7 @@ try {
           }
         if (spot) texts.push({ text: pl.label, x: spot.x, y: spot.y - h / 2, heightMm: h, anchor: 'middle', layer: 'engrave' });
       }
-      const sheet = { name: `${SHEET_MATERIALS[e.material].label} · hoja ${ns.index} de ${e.nest.sheets.length}`, widthMm: ns.sheet.widthMm, heightMm: ns.sheet.heightMm, paths, texts, material: SHEET_MATERIALS[e.material].label, thicknessMm: e.material === 'mdf' ? st.mdfMm : 3 };
+      const sheet = { name: `${SHEET_MATERIALS[e.material].label} · hoja ${ns.index} de ${e.nest.sheets.length}`, widthMm: ns.sheet.widthMm, heightMm: ns.sheet.heightMm, paths, texts, material: SHEET_MATERIALS[e.material].label, thicknessMm: e.material === 'mdf' ? st.mdfMm : e.material === 'acrilico-3' ? st.asm.base.acrT : 3 };
       const base = `laser/${LASER_PREFIX[e.material]}-hoja-${ns.index}`;
       await put(`${base}.svg`, laserSvg(sheet, { convention: 'generic' }));
       await put(`${base}.dxf`, laserDxf(sheet));

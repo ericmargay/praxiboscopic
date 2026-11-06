@@ -205,12 +205,14 @@ describe('dos tambores: la mesa', () => {
     expect(r.torque.margin).toBeGreaterThan(1.5);
   });
 
-  it('todo cabe en una base de 383 × 262 mm: sin choques, la fuente de pie atrás y los drivers delante de los motores', () => {
+  it('todo cabe en una base de 394 × 268 mm: sin choques, la fuente de pie atrás y los drivers delante de los motores', () => {
     const a = buildReelsAssembly(p, d);
     expect(reelsAssemblyProblems(a, d)).toEqual([]);
-    // a la derecha manda el 608 del pivote, con 3 mm de MDF antes de los dientes de la pared (ADR-0012)
-    expect(a.base.x1 - a.base.x0).toBeCloseTo(383.2, 0);
-    expect(a.base.z1 - a.base.z0).toBeCloseTo(262, 0);
+    // a la derecha manda el 608 del pivote, con 3 mm de MDF antes de la ranura de la pared de acrílico; piso y cubierta
+    // sobresalen 8 mm de las paredes al frente y a los lados (ADR-0012)
+    expect(a.base.x1 - a.base.x0).toBeCloseTo(394.2, 0);
+    expect(a.base.z1 - a.base.z0).toBeCloseTo(267.5, 0);
+    expect(a.base.wallT).toBe(a.base.acrT);
     expect(a.base.deckT).toBeCloseTo(2 * a.base.mdfT, 6);
     // la cara del sensor de mano queda unos 6 cm sobre la cubierta, encima de la tapa
     expect(a.sensorFaceY).toBeGreaterThan(a.flangeHighY + a.flangeT);

@@ -456,7 +456,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     };
     const cur = asmStep ? steps[asmStep - 1] : null;
     return group('Ensamble sin tornillos', [
-      el('p', { class: 'hint', text: 'La caja es de MDF de 5,5 mm cortado con láser y se arma a mano: las piezas encajan por sus dientes y la tapa trasera se aprieta con dos cuñas. Cada pieza lleva grabado su código (E: MDF, A: acrílico, N: acrílico negro); las impresas en 3D empiezan con I. El único tornillo es el prisionero del cople.' }),
+      el('p', { class: 'hint', text: 'Piso y cubierta de MDF de 5,5 mm y paredes de acrílico transparente de 3 mm, cortados con láser y armados a mano: las paredes quedan atrapadas en ranuras del piso y de la cubierta, para que se vea la electrónica, y la tapa trasera se aprieta con dos cuñas. Cada pieza lleva grabado su código (E: MDF, A: acrílico, N: acrílico negro); las impresas en 3D empiezan con I. El único tornillo es el prisionero del cople.' }),
       el('div', { class: 'btn-row' },
         button('◀', () => go((asmStep ?? n + 1) - 1), { kind: 'ghost', title: 'Paso anterior' }),
         button(asmStep ? `Paso ${asmStep} de ${n}` : `Ver los ${n} pasos`, () => go(asmStep ?? 1), { kind: asmStep ? 'default' : 'primary' }),

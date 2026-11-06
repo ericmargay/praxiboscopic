@@ -16,6 +16,12 @@ const n1 = (x: number) => (Math.round(x * 10) / 10).toString().replace('.', ',')
 const n2 = (x: number) => (Math.round(x * 100) / 100).toString().replace('.', ',');
 const money = (x: number) => `$${x.toFixed(2).replace('.', ',')}`;
 
+/** «Archivo x-hoja-1» o «Archivos x-hoja-1 y -hoja-2» */
+function sheetFiles(e: LaserEstimate | undefined, prefix: string): string {
+  const n = e?.sheets ?? 1;
+  return n === 1 ? `Archivo ${prefix}-hoja-1` : `Archivos ${prefix}-hoja-1 a -hoja-${n}`;
+}
+
 /** mensaje para cotizar el corte láser (WhatsApp o correo) */
 export function laserRequestText(st: ReelsStructure, laser: LaserEstimate[]): string {
   const L = (m: SheetMaterial) => laser.find((x) => x.material === m);
@@ -26,15 +32,15 @@ export function laserRequestText(st: ReelsStructure, laser: LaserEstimate[]): st
   const lines = [
     'Hola, buen día. Quiero cotizar un corte láser CO2 con material incluido, para recoger en CDMX.',
     '',
-    `1) MDF de ${n1(t)} mm (el que venden como «de 6»): ${mdf?.pieces ?? 0} piezas en ${mdf?.sheets ?? 0} hojas de 90 × 60 cm, unos ${Math.round(mdf?.cutM ?? 0)} m de corte. Archivos ${LASER_PREFIX.mdf}-hoja-1 y -hoja-2.`,
-    `2) Acrílico transparente de 3 mm: ${acr?.pieces ?? 0} piezas, casi todas redondas (tapas de Ø170 y bridas de Ø130, Ø64 y Ø44), unos ${Math.round(acr?.cutM ?? 0)} m de corte. Caben en media hoja de 90 × 60. Archivo ${LASER_PREFIX['acrilico-3']}-hoja-1.`,
+    `1) MDF de ${n1(t)} mm (el que venden como «de 6»): ${mdf?.pieces ?? 0} piezas (piso, cubierta en dos capas y piezas interiores) en ${mdf?.sheets ?? 0} hoja${mdf?.sheets === 1 ? '' : 's'} de 90 × 60 cm, unos ${Math.round(mdf?.cutM ?? 0)} m de corte. ${sheetFiles(mdf, LASER_PREFIX.mdf)}.`,
+    `2) Acrílico transparente de ${n1(st.asm.base.acrT)} mm: ${acr?.pieces ?? 0} piezas en ${acr?.sheets ?? 0} hoja${acr?.sheets === 1 ? '' : 's'} de 90 × 60 cm, unos ${Math.round(acr?.cutM ?? 0)} m de corte: las cuatro paredes de la caja (con dientes, van a la vista), dos tapas de Ø170 y bridas de Ø130, Ø64 y Ø44. ${sheetFiles(acr, LASER_PREFIX['acrilico-3'])}.`,
     `3) Acrílico negro de 3 mm: ${blk?.pieces ?? 0} piezas chicas (una placa de 60 × 70 mm con ventana y dos tiras de 60 × 3 mm) en un retazo de 20 × 30 cm. Archivo ${LASER_PREFIX['acrilico-negro-3']}-hoja-1.`,
     '',
     'Detalles:',
     '- Archivos a escala real en milímetros: DXF R12 (abre en AutoCAD 2010/2013, CorelDRAW y LightBurn), y los mismos en SVG y PDF. Rojo = corte, azul = marcado vectorial ligero, negro = rótulo grabado (opcional).',
     `- Las piezas encajan a presión por dientes y ranuras, sin tornillos. Los archivos ya traen compensado un kerf de ${n2(SHEET_MATERIALS.mdf.kerfMm)} mm en MDF y ${n2(SHEET_MATERIALS['acrilico-3'].kerfMm)} mm en acrílico: si el de su máquina es distinto, avísenme y se los mando ajustados.`,
-    `- Antes de cortar todo, por favor midan con vernier el espesor real del MDF y corten primero las piezas de prueba E14 y E15 (y la A06 en acrílico). Si la ranura que entra justa no es la del centro (${n1(t)} mm), les mando los archivos con el espesor que midan; se regeneran en un minuto.`,
-    '- El acrílico con su película protectora; no hace falta pulir cantos.',
+    `- Antes de cortar todo, por favor midan con vernier el espesor real del MDF y del acrílico, y corten primero las piezas de prueba E10 y E11 (MDF) y A10 y A11 (acrílico). Si la ranura que entra justa no es la del centro (${n1(t)} mm de MDF y ${n1(st.asm.base.acrT)} mm de acrílico), les mando los archivos con el espesor que midan; se regeneran en un minuto.`,
+    '- El acrílico con su película protectora por las dos caras: las paredes van a la vista y no deben rayarse. No hace falta pulir cantos.',
     '- Por favor cotícenme por separado material y minutos de corte, y el tiempo de entrega.',
     '',
     'Gracias.',
@@ -98,7 +104,7 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserEstimate[
     '',
     '# Mesa de dos tambores · paquete para los talleres',
     '',
-    `${o.date} · MDF de ${n1(st.mdfMm)} mm · ${st.parts.reduce((s, p) => s + p.qty, 0)} piezas de corte láser y ${pe.pieces} impresas en 3D. Armado a mano, sin tornillos: dientes y ranuras, dos cuñas en la tapa trasera, broches en las tapas y pegamento donde se indica. El único tornillo es el prisionero del cople de cada motor.`,
+    `${o.date} · piso y cubierta de MDF de ${n1(st.mdfMm)} mm, paredes de acrílico transparente de ${n1(st.asm.base.acrT)} mm · ${st.parts.reduce((s, p) => s + p.qty, 0)} piezas de corte láser y ${pe.pieces} impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.`,
     '',
     '## Qué hay aquí',
     '',
@@ -128,7 +134,7 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserEstimate[
     '',
     '## Piezas de corte láser',
     '',
-    'Cada pieza lleva su código grabado en la cara que no se ve con la mesa armada. Las de prueba (E14, E15, A06) se cortan primero.',
+    'Cada pieza lleva su código grabado en la cara que no se ve con la mesa armada. Las de prueba (E10, E11, A10 y A11) se cortan primero.',
     '',
     laserTableMd(st),
     '',
@@ -145,9 +151,9 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserEstimate[
     '',
     steps,
     '',
-    '## Si el MDF no mide 5,5 mm',
+    '## Si el MDF o el acrílico no miden lo que dicen',
     '',
-    'Mide el espesor con vernier en tres puntos de la hoja y regenera todo con ese valor: `node scripts/fabricar.mjs --mdf=5.7`. Dientes, ranuras, alturas y la lista de compras se recalculan.',
+    'Mide el espesor con vernier en tres puntos de cada hoja y regenera todo con esos valores: `node scripts/fabricar.mjs --mdf=5.7 --acrilico=2.8`. Dientes, ranuras, alturas y la lista de compras se recalculan.',
     '',
   ].join('\n');
 }

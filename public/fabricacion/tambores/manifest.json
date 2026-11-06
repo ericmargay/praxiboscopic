@@ -4,8 +4,6 @@
   "laser": [
     "laser/mesa-tambores-mdf-5.5mm-hoja-1.svg",
     "laser/mesa-tambores-mdf-5.5mm-hoja-1.dxf",
-    "laser/mesa-tambores-mdf-5.5mm-hoja-2.svg",
-    "laser/mesa-tambores-mdf-5.5mm-hoja-2.dxf",
     "laser/mesa-tambores-mdf-5.5mm.pdf",
     "laser/mesa-tambores-acrilico-transparente-3mm-hoja-1.svg",
     "laser/mesa-tambores-acrilico-transparente-3mm-hoja-1.dxf",
@@ -33,5 +31,5 @@
     "impresion-3d/I16-espiga.stl"
   ],
   "zip": "mesa-tambores-taller.zip",
-  "zipBytes": 2769723
+  "zipBytes": 2770126
 }

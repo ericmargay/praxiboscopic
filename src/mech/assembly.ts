@@ -117,9 +117,11 @@ export function buildAssembly(p: Project, d: Derived): Assembly {
  * la electrónica baja a la base: la fuente de pie contra la tapa trasera, un DM542 delante de cada motor y la
  * protoboard con el ESP32 al centro.
  *
- * Desde ADR-0012 la caja es de MDF de 6 mm cortado con láser y ensamblado con dientes: la cubierta son dos capas (la de
- * arriba lleva los rodamientos y la de abajo les hace tope), cada motor se para en el piso dentro de una torre que
- * también sostiene el segundo rodamiento de su tambor, y el brazo tensor gira en un hueco de la capa de arriba.
+ * Desde ADR-0012 la caja se corta con láser y se arma sin tornillos: piso y cubierta de MDF de 5,5 mm (la cubierta son
+ * dos capas: la de arriba lleva los rodamientos y la de abajo les hace tope) que sobresalen 8 mm, y paredes de acrílico
+ * transparente de 3 mm atrapadas en ranuras del piso y de la cubierta, para que se vea la electrónica. Cada motor se para
+ * en el piso dentro de una torre que también sostiene el segundo rodamiento de su tambor, y el brazo tensor gira en un
+ * hueco de la capa de arriba.
  */
 export interface ReelsAssembly {
   /** radio de las guías y alto de su cuerpo (como los rodillos del loop) */
@@ -128,13 +130,16 @@ export interface ReelsAssembly {
   filmBottom: number;
   filmTop: number;
   filmMid: number;
-  /** `deckT` = dos capas de `layerT`; `mdfT` es el espesor de todo el MDF */
-  base: Assembly['base'] & { layerT: number; mdfT: number };
+  /**
+   * `deckT` = dos capas de `layerT`; `mdfT` es el espesor del MDF y `wallT` el del acrílico de las paredes. Piso y
+   * cubierta sobresalen `inset` de las paredes al frente y a los lados; `inner` son las caras de adentro de las paredes
+   */
+  base: Assembly['base'] & { layerT: number; mdfT: number; acrT: number; inset: number; inner: { x0: number; x1: number; z0: number; z1: number } };
   /** tambor 1 (−x) y tambor 2 (+x) */
   reels: Vec2[];
   coreR: number;
   flangeR: number;
-  /** bridas de acrílico de 3 mm */
+  /** bridas de acrílico (su espesor real) */
   flangeT: number;
   /** caras de las bridas: la de abajo termina y la de arriba empieza (y) */
   flangeLowY: number;
@@ -186,13 +191,18 @@ export interface ReelsAssembly {
 
 /** espesor del MDF que se consigue en México (Trupan, Arauco): el «de 6» mide 5,5 mm */
 export const MDF_MM = 5.5;
+/** acrílico transparente de las paredes, las tapas y las bridas */
+export const ACRYLIC_MM = 3;
+/** lo que piso y cubierta sobresalen de las paredes de acrílico (frente y costados): el MDF fuera de cada ranura */
+export const WALL_INSET_MM = 8;
 
-export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: number } = {}): ReelsAssembly {
+export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: number; acrylicMm?: number } = {}): ReelsAssembly {
   const r = d.reels!;
   const g = r.design.geometry;
   const filmBottom = FILM_LIFT;
   const filmTop = FILM_LIFT + p.film.stripWidthMm;
-  const flangeT = 3;
+  const acrT = opts.acrylicMm ?? ACRYLIC_MM;
+  const flangeT = acrT;
   // bridas a 1 mm de los bordes de la película: el tambor la guía sin dejarla subir
   const flangeLowY = filmBottom - 1;
   const flangeHighY = filmTop + 1;
@@ -201,14 +211,19 @@ export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: numbe
   const mdfT = opts.mdfMm ?? MDF_MM;
   const layerT = mdfT;
   const deckT = 2 * layerT;
-  const wallT = mdfT;
+  const wallT = acrT;
+  const inset = WALL_INSET_MM;
   const floorT = mdfT;
   const innerH = 125 - deckT - floorT;
   const margin = 12;
-  // a la derecha manda el pivote: su 608 (Ø22) necesita 3 mm de MDF antes de los dientes de la pared
-  const x1 = Math.max(g.reel2.x + g.flangeR + 10, g.dancer.x + g.dancerR + 12, g.pivot.x + 14 + mdfT);
+  // a la derecha manda el pivote: su 608 (Ø22) necesita 3 mm de MDF antes de la ranura de la pared, y su copa cabe
+  // adentro. Al frente, la cara de adentro de la pared queda donde estaba (19,5 mm delante de la película)
+  const x1 = Math.max(g.reel2.x + g.flangeR + 10, g.dancer.x + g.dancerR + 12, g.pivot.x + 14) + wallT + inset;
+  const z1 = 19.5 + wallT + inset;
+  const z0 = Math.min(...reels.map((q) => q.y)) - g.flangeR - margin;
   const floorTop = -deckT - innerH;
-  const base = { x0: -x1, x1, z0: Math.min(...reels.map((q) => q.y)) - g.flangeR - margin, z1: 25, deckT, wallT, floorT, innerH, floorTop, bottom: floorTop - floorT, layerT, mdfT };
+  const inner = { x0: -x1 + inset + wallT, x1: x1 - inset - wallT, z0: z0 + wallT, z1: z1 - inset - wallT };
+  const base = { x0: -x1, x1, z0, z1, deckT, wallT, floorT, innerH, floorTop, bottom: floorTop - floorT, layerT, mdfT, acrT, inset, inner };
   // el 608 de la cubierta va en la capa de arriba (6 mm) y sobresale 1 mm; la de abajo le hace tope
   const deckBearingTopY = 7 - layerT;
   // el motor se para en el piso; el cople toma 13 mm del eje del motor y 11 del eje del tambor
@@ -233,8 +248,8 @@ export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: numbe
   // la placa del sensor apoya en la tapa; su cara queda a 3,2 mm de la tapa, bajo la ventana del capuchón
   const sensorFaceY = coverY + 3 + 3.2;
   // dentro de la base: fuente de pie contra la tapa trasera, un DM542 delante de cada motor, protoboard al centro
-  const inX1 = base.x1 - wallT - 4;
-  const psu = { x: 0, z: base.z0 + wallT + 1 + 21 };
+  const inX1 = inner.x1 - 4;
+  const psu = { x: 0, z: inner.z0 + 1 + 21 };
   const psuFrame = { x0: -58, x1: 58, z0: psu.z + 21, z1: psu.z + 21 + mdfT };
   const psuStops = [-1, 1].map((s) => ({ x: s * (99.5 + mdfT / 2), y: psu.z - 6 }));
   const dmX = inX1 - 46;
@@ -284,7 +299,7 @@ export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: numbe
   const ledPegs = [-18, 18].map((dx) => ({ x: gate.x + dx, y: gate.z - 50 }));
   const sp = pointAt(d.path, sensor.sMm);
   const f249Peg = { x: sp.position.x + 12, y: sp.position.y - 22 };
-  const lensPegs = [-30, 30].map((dx) => ({ x: gate.x + dx, y: base.z1 - 13 }));
+  const lensPegs = [-30, 30].map((dx) => ({ x: gate.x + dx, y: inner.z1 - 9 }));
   const floor = base.floorTop;
   const volumes: Rect[] = [
     ...reels.map((q, i) => rect(`motor${i + 1}`, q.x, q.y, 43, 43, floor, motor.faceY + 2)),
@@ -313,7 +328,7 @@ export function reelsAssemblyProblems(a: ReelsAssembly, d: Derived): string[] {
       const B = v[j];
       if (A.x0 < B.x1 && B.x0 < A.x1 && A.z0 < B.z1 && B.z0 < A.z1 && A.y0 < B.y1 && B.y0 < A.y1) out.push(`${A.id} choca con ${B.id}`);
     }
-  const inner = { x0: a.base.x0 + a.base.wallT, x1: a.base.x1 - a.base.wallT, z0: a.base.z0 + a.base.wallT, z1: a.base.z1 - a.base.wallT };
+  const inner = a.base.inner;
   for (const r of v) if (r.x0 < inner.x0 || r.x1 > inner.x1 || r.z0 < inner.z0 || r.z1 > inner.z1) out.push(`${r.id} se sale de la base`);
   if (a.motor.couplingY + a.motor.couplingH / 2 > a.motor.bearingPlateY[0]) out.push('el cople toca la placa del segundo rodamiento');
   if (a.motor.bearingPlateY[1] > -a.base.deckT - 5) out.push('la placa del segundo rodamiento queda pegada a la cubierta');
@@ -332,12 +347,12 @@ export function reelsAssemblyProblems(a: ReelsAssembly, d: Derived): string[] {
         const u = Math.max(0, Math.min(1, ((s.x - seg.a.x) * ex + (s.y - seg.a.y) * ey) / (ex * ex + ey * ey || 1)));
         if (Math.hypot(seg.a.x + ex * u - s.x, seg.a.y + ey * u - s.y) < pr + 2) out.push(`un poste de la tapa corta la película en (${s.x.toFixed(0)}, ${s.y.toFixed(0)})`);
       }
-      if (s.x < a.base.x0 + a.base.wallT + pr || s.x > a.base.x1 - a.base.wallT - pr || s.y < a.base.z0 + a.base.wallT + pr) out.push('un poste de la tapa queda fuera de la cubierta');
+      if (s.x < inner.x0 + pr || s.x > inner.x1 - pr || s.y < inner.z0 + pr) out.push('un poste de la tapa queda fuera de la cubierta');
       if (Math.hypot(s.x - c.x, s.y - c.z) + pr + 2 > c.r) out.push('un poste de la tapa queda en la orilla del acrílico');
     });
   // el hueco del brazo tensor no toca la guía 2 ni la orilla de la cubierta
   for (const q of a.pivotStack.pocket) {
-    if (q.x > a.base.x1 - a.base.wallT - 1) out.push('el hueco del brazo tensor llega a la pared');
+    if (q.x > inner.x1 - 3) out.push('el hueco del brazo tensor llega a la ranura de la pared');
     for (const gd of a.guides) if (Math.hypot(q.x - gd.x, q.y - gd.y) < 4 + 3) out.push('el hueco del brazo tensor toca el eje de una guía');
   }
   return out;

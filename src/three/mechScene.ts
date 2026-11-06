@@ -878,11 +878,13 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
   /** piezas de corte láser: se extruyen los mismos contornos que salen al taller y se colocan con su marco */
   function buildStructure(st: ReelsStructure): void {
     const bomOf: Record<SheetMaterial, string> = { mdf: 'laser-mdf', 'acrilico-3': 'laser-acrylic', 'acrilico-negro-3': 'laser-black' };
-    const shellIds = new Set(['E02', 'E03', 'E04', 'E07']);
-    const shellMat = new THREE.MeshStandardMaterial({ color: 0xcfc9c0, roughness: 0.85, transparent: true, opacity: shellTransparent ? 0.18 : 1, depthWrite: !shellTransparent, side: THREE.DoubleSide });
+    // paredes de acrílico transparente: «Base transparente» las deja ver a través o las vuelve opacas
+    const shellIds = new Set(['A01', 'A02', 'A03', 'A04']);
+    const shellMat = new THREE.MeshPhysicalMaterial({ color: 0xdfeef2, roughness: 0.06, metalness: 0, transparent: true, opacity: shellTransparent ? 0.14 : 1, depthWrite: !shellTransparent, side: THREE.DoubleSide });
     shellMats.push(shellMat);
     const edgeMat = new THREE.LineBasicMaterial({ color: 0x8c8379, transparent: true, opacity: 0.55 });
-    const category = (id: string): PartCategory => (id === 'A01' ? 'manos' : id.startsWith('A') ? 'transporte' : id.startsWith('N') ? 'optica' : 'estructura');
+    const edgeAcr = new THREE.LineBasicMaterial({ color: 0x7fa6b2, transparent: true, opacity: 0.7 });
+
     for (const part of st.parts) {
       if (!part.frames.length) continue;
       const shape = new THREE.Shape(part.profile.outer.map((q) => new THREE.Vector2(q.x, q.y)));
@@ -890,13 +892,13 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       const geo = new THREE.ExtrudeGeometry(shape, { depth: part.thicknessMm, bevelEnabled: false, curveSegments: 1 });
       const edges = new THREE.EdgesGeometry(geo, 25);
       const shell = shellIds.has(part.id);
-      const material = part.material === 'acrilico-3' ? mat('acrylic') : part.material === 'acrilico-negro-3' ? mat('anod') : shell ? shellMat : mat('mdf');
+      const material = shell ? shellMat : part.material === 'acrilico-3' ? mat('acrylic') : part.material === 'acrilico-negro-3' ? mat('anod') : mat('mdf');
       part.frames.forEach((f, k) => {
         const many = part.frames.length > 1;
         const g = tag(new THREE.Group(), {
           id: many ? `${part.id}-${k + 1}` : part.id,
           name: many ? `${part.id} ${part.name} (${k + 1} de ${part.frames.length})` : `${part.id} ${part.name}`,
-          category: category(part.id),
+          category: part.group as PartCategory,
           bomId: bomOf[part.material],
           notes: [part.role, `${SHEET_MATERIALS[part.material].short}, corte láser${part.glue ? ` · ${part.glue}` : ' · sin pegamento: encaja a presión'}`, `Paso ${part.step} del ensamble`],
           step: part.step,
@@ -909,7 +911,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
         mesh.castShadow = !shell;
         mesh.receiveShadow = true;
         if (shell) mesh.userData.shell = true;
-        const line = new THREE.LineSegments(edges, edgeMat);
+        const line = new THREE.LineSegments(edges, part.material === 'mdf' ? edgeMat : edgeAcr);
         line.matrixAutoUpdate = false;
         line.matrix.copy(m);
         line.raycast = () => {};
@@ -2029,7 +2031,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     setShell(t) {
       shellTransparent = t;
       for (const m of shellMats) {
-        m.opacity = t ? 0.18 : 1;
+        m.opacity = t ? (m instanceof THREE.MeshPhysicalMaterial ? 0.14 : 0.18) : 1;
         m.depthWrite = !t;
         m.needsUpdate = true;
       }

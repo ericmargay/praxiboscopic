@@ -30,45 +30,63 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
     for (const part of st.parts) for (const h of part.profile.holes ?? []) for (const q of h) expect(pointInPolygon(q, part.profile.outer), `${part.id}`).toBe(true);
   });
 
-  it('en cada arista de la caja los dientes de una cara llenan justo las muescas de la otra: ni hueco ni empalme', () => {
-    const faces = ['E01', 'E02', 'E03', 'E04', 'E05', 'E06', 'E07'].map(byId);
+  it('en cada arista de la caja los dientes de una pieza llenan las muescas de la otra: nunca se enciman y solo queda la holgura entre acrílicos', () => {
+    const faces = ['E01', 'E02', 'E03', 'A01', 'A02', 'A03', 'A04'].map(byId);
     const B = st.asm.base;
-    const t = B.mdfT;
-    const xs = [B.x0 + t / 2, B.x1 - t / 2];
-    const ys = [B.bottom + t / 2, -t / 2, -1.5 * t];
-    const zs = [B.z0 + t / 2, B.z1 - t / 2];
+    const tA = B.acrT;
+    const wx = [B.x0 + B.inset, B.x1 - B.inset];
+    const wzF = B.z1 - B.inset;
+    const xs = [wx[0] + tA / 2, wx[1] - tA / 2];
+    const ys = [B.bottom + B.mdfT / 2, -B.layerT / 2, -1.5 * B.layerT];
+    const zs = [B.z0 + tA / 2, wzF - tA / 2];
     // recorre cada arista a lo largo, en su centro, cada 1,37 mm (un paso que no cae en la frontera entre dientes)
     const samples: V3[] = [];
-    for (let x = B.x0 + 0.43; x < B.x1; x += 1.37) for (const y of ys) for (const z of zs) samples.push([x, y, z]);
-    for (let z = B.z0 + 0.43; z < B.z1; z += 1.37) for (const y of ys) for (const x of xs) samples.push([x, y, z]);
+    for (let x = wx[0] + 0.43; x < wx[1]; x += 1.37) for (const y of ys) for (const z of zs) samples.push([x, y, z]);
+    for (let z = B.z0 + 0.43; z < wzF; z += 1.37) for (const y of ys) for (const x of xs) samples.push([x, y, z]);
     for (let y = B.bottom + 0.43; y < 0; y += 1.37) for (const x of xs) for (const z of zs) samples.push([x, y, z]);
     // la ventana de cada cuña entra 0,5 mm en la tapa trasera a propósito
-    const wedge = (q: V3) => q[2] < B.z0 + t && q[1] > -2 * B.layerT && byId('E13').frames.some((f) => Math.abs(q[0] - (f.o[0] + t / 2)) < 4);
-    let checked = 0;
+    const wedge = (q: V3) => q[2] < B.z0 + tA && q[1] > -2 * B.layerT && byId('E09').frames.some((f) => Math.abs(q[0] - (f.o[0] + B.mdfT / 2)) < 4);
+    let one = 0;
+    let gaps = 0;
     for (const q of samples) {
       if (wedge(q)) continue;
       const n = faces.filter((f) => inside(f, q)).length;
-      expect(n, `(${q.map((v) => v.toFixed(1)).join(', ')})`).toBe(1);
-      checked++;
+      expect(n, `(${q.map((v) => v.toFixed(1)).join(', ')})`).toBeLessThanOrEqual(1);
+      if (n === 1) one++;
+      else gaps++;
     }
-    expect(checked).toBeGreaterThan(1500);
+    expect(one).toBeGreaterThan(1500);
+    // los huecos son la holgura de 0,1 mm entre dientes de acrílico: pocos puntos caen en ella
+    expect(gaps / (one + gaps)).toBeLessThan(0.01);
   });
 
-  it('con el MDF que se mida (5,7 mm) se redibujan ranuras, dientes y alturas', () => {
-    const s57 = buildReelsStructure(p, d, { mdfMm: 5.7 });
-    expect(s57.problems).toEqual([]);
-    expect(s57.mdfMm).toBe(5.7);
-    expect(s57.asm.base.deckT).toBeCloseTo(11.4, 6);
-    const w = (s: typeof st) => {
+  it('las paredes de acrílico quedan atrapadas: sus pestañas entran en ranuras cerradas del piso y de la cubierta', () => {
+    const B = st.asm.base;
+    expect(byId('A01').material).toBe('acrilico-3');
+    expect(byId('A04').material).toBe('acrilico-3');
+    expect(byId('E01').material).toBe('mdf');
+    // a 2 mm de la orilla, sobre la pared de enfrente, el piso es MDF continuo (la ranura no llega a la orilla)
+    for (let x = B.x0 + 20; x < B.x1 - 20; x += 3) expect(inside(byId('E01'), [x, B.bottom + B.mdfT / 2, B.z1 - 2])).toBe(true);
+  });
+
+  it('con el MDF y el acrílico que se midan (5,7 y 2,8 mm) se redibujan ranuras, dientes y alturas', () => {
+    const s2 = buildReelsStructure(p, d, { mdfMm: 5.7, acrylicMm: 2.8 });
+    expect(s2.problems).toEqual([]);
+    expect(s2.mdfMm).toBe(5.7);
+    expect(s2.asm.base.deckT).toBeCloseTo(11.4, 6);
+    const shortSides = (s: typeof st) => {
       const floor = s.parts.find((x) => x.id === 'E01')!;
-      // ranura de un costado de torre: el lado corto es el espesor
-      const slot = floor.profile.holes!.find((h) => h.length === 4)!;
-      const xs = slot.map((q) => q.x);
-      const ys = slot.map((q) => q.y);
-      return Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+      return floor.profile.holes!.filter((h) => h.length === 4).map((h) => {
+        const xs = h.map((q) => q.x);
+        const ys = h.map((q) => q.y);
+        return Math.round(Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * 100) / 100;
+      });
     };
-    expect(w(st)).toBeCloseTo(5.5, 6);
-    expect(w(s57)).toBeCloseTo(5.7, 6);
+    // ranuras de las torres (MDF) y de las paredes (acrílico)
+    expect(shortSides(st)).toContain(5.5);
+    expect(shortSides(st)).toContain(3);
+    expect(shortSides(s2)).toContain(5.7);
+    expect(shortSides(s2)).toContain(2.8);
   });
 
   it('cada pieza que va en la mesa entra en uno de los 12 pasos del ensamble', () => {
@@ -82,23 +100,23 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
   });
 
   it('las cuñas sujetan la tapa trasera: dos dientes de la cubierta la atraviesan con su ventana', () => {
-    const wedges = byId('E13');
+    const wedges = byId('E09');
     expect(wedges.frames).toHaveLength(2);
     expect(wedges.qty).toBe(4);
     // la ventana está en las dos capas de la cubierta
-    for (const id of ['E05', 'E06']) {
+    for (const id of ['E02', 'E03']) {
       const deck = byId(id);
       for (const f of wedges.frames) expect(inside(deck, [f.o[0] + st.mdfMm / 2, -st.asm.base.layerT / 2, st.asm.base.z0 - 3])).toBe(false);
     }
   });
 
-  it('todo cabe en hojas de 87 × 57 cm: dos de MDF y una de acrílico; el estimado queda en el rango de las tarifas', () => {
+  it('todo cabe en hojas de 87 × 57 cm: una de MDF y una de acrílico; el estimado queda en el rango de las tarifas', () => {
     const laser = estimateLaser(st);
     for (const e of laser) expect(e.nest.unplaced, e.material).toEqual([]);
     const mdf = laser.find((e) => e.material === 'mdf')!;
-    expect(mdf.sheets).toBe(2);
-    expect(mdf.cutM).toBeGreaterThan(15);
-    expect(mdf.mxn.mid).toBeGreaterThan(400);
+    expect(mdf.sheets).toBe(1);
+    expect(mdf.cutM).toBeGreaterThan(12);
+    expect(mdf.mxn.mid).toBeGreaterThan(300);
     expect(mdf.mxn.mid).toBeLessThan(1200);
     expect(laser.find((e) => e.material === 'acrilico-3')!.sheets).toBe(1);
     const pe = estimatePrint(reelsPrintedParts(p, d));
@@ -113,7 +131,8 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
     const laser = estimateLaser(st);
     const t = laserRequestText(st, laser);
     expect(t).toContain('MDF de 5,5 mm');
-    expect(t).toContain('E14');
+    expect(t).toContain('E10');
+    expect(t).toContain('cuatro paredes');
     expect(t).toContain('DXF R12');
     const parts = reelsPrintedParts(p, d);
     const u = printRequestText(parts, estimatePrint(parts));

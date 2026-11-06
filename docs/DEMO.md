@@ -107,7 +107,7 @@ pasar durante cada destello. Prueba el desfase del LED, la escala de tiempo a 0,
 ## 14. Dos tambores con la mano (ADR-0011)
 
 1. Abre `?demo=tambores&section=mechanical`: la película de 5 s laminada entre dos tambores, en una mesa de
-   383 × 262 mm. Arranca quieta, con el fotograma 1 en la ventana y casi toda la película en el tambor 2.
+   394 × 268 mm con paredes de acrílico. Arranca quieta, con el fotograma 1 en la ventana y casi toda la película en el tambor 2.
 2. En *Manos del visitante*, marca «Mano sobre el tambor 1» (o mantén presionada la tecla 1). Tras 150 ms la película
    arranca, llega a 24 fps en 0,4 s y corre hacia el tambor 1. La animación avanza. El tambor 1 se llena (de Ø103,6 a
    Ø109,2 mm) y gira más despacio; el 2 se vacía y gira más rápido. El destello dura 116 µs.
@@ -129,13 +129,14 @@ pasar durante cada destello. Prueba el desfase del LED, la escala de tiempo a 0,
 1. En *Mechanical Simulation*, el grupo «Ensamble sin tornillos» recorre los 12 pasos. «▶ Armar» los pasa solos. Las
    piezas de cada paso llegan desde afuera y las de pasos futuros no se ven. «Explosión» separa lo ya armado.
    `?demo=tambores&section=mechanical&ensamble=5&explosion=0.4` abre directo en un paso.
-2. Cada pieza de corte lleva su código: E en MDF, A en acrílico transparente y N en acrílico negro. Las impresas en 3D
-   empiezan con I. Selecciónala para ver qué hace, en qué paso entra y si se pega.
+2. Cada pieza de corte lleva su código: E en MDF (piso, cubierta y piezas interiores), A en acrílico transparente
+   (las cuatro paredes, tapas y bridas) y N en acrílico negro. Las impresas en 3D empiezan con I. Selecciónala para ver
+   qué hace, en qué paso entra y si se pega. «Base transparente» vuelve opacas las paredes.
 3. `compras.html?demo=tambores#fabricacion` abre la pestaña *Taller*:
    - los archivos de corte (DXF R12, SVG y PDF 1:1 por hoja);
    - los 16 STL;
    - los dos textos para copiar y mandar;
    - el rango de lo que debería costar.
 4. `npm run fabricar` vuelve a generar el paquete en `public/fabricacion/tambores/` y `docs/FABRICACION-TAMBORES.md`.
-   Si el MDF real no mide 5,5 mm: `npm run fabricar -- --mdf=5.7`. Si la lente que consigas tiene otro barril:
+   Si el MDF o el acrílico reales no miden 5,5 y 3 mm: `npm run fabricar -- --mdf=5.7 --acrilico=2.8`. Si la lente que consigas tiene otro barril:
    `--lente=62`.

@@ -1,4 +1,4 @@
-# ADR-0012 · La mesa de dos tambores se corta con láser y se arma sin tornillos
+# ADR-0012 · La mesa de dos tambores se corta con láser y se arma sin tornillos, con paredes de acrílico
 
 **Contexto.** El 5-nov-2026 Eric pidió tres cosas:
 
@@ -6,12 +6,20 @@
 - **Textos y archivos para los talleres:** qué pedirle a quien corte y a quien imprima, más los archivos de impresión.
 - **Precios aproximados:** para lo que no tenía precio, y así saber qué tan lejos quedan las cotizaciones reales.
 
+Ese mismo día Eric pidió que la caja no fuera toda de MDF: piso y cubierta de MDF y paredes transparentes, para que se vean los circuitos, encajadas sin tornillos.
+
 **Decisión.** Toda la estructura sale de `buildReelsStructure` (`src/mech/structure.ts`), que lee las posiciones de `buildReelsAssembly`.
 
-- **MDF de 5,5 mm.** En México el MDF «de 6» mide 5,5 mm (Trupan, Arauco).
-  - Ranuras, dientes y alturas se dibujan con el espesor real.
-  - Si se mide otro valor: `node scripts/fabricar.mjs --mdf=5.7`. Las piezas de prueba (E14 y E15 en MDF, A06 en acrílico) se cortan primero.
-- **Caja con dientes en sus doce aristas.**
+- **Piso y cubierta de MDF, paredes de acrílico.**
+  - Las cuatro paredes (frente A01, costados A02 y A03 y tapa trasera A04) son de acrílico transparente de 3 mm.
+  - Piso y cubierta sobresalen 8 mm de las paredes al frente y a los lados. Así sus ranuras quedan cerradas: las pestañas de las paredes entran en ellas y las paredes no pueden salirse, sin tornillos ni pegamento. En la cubierta las pestañas quedan al ras, como rayas transparentes.
+  - Entre dos piezas de acrílico, los dientes llevan 0,1 mm de holgura, porque el acrílico a presión se estrella. En el MDF entran justos.
+  - La mesa queda en 394 × 268 × 125 mm.
+
+- **MDF de 5,5 mm.** En México el MDF «de 6» mide 5,5 mm (Trupan, Arauco), y el acrílico «de 3» varía unas décimas.
+  - Ranuras, dientes y alturas se dibujan con los espesores reales.
+  - Si se miden otros valores: `node scripts/fabricar.mjs --mdf=5.7 --acrilico=2.8`. Las piezas de prueba (E10 y E11 en MDF, A10 y A11 en acrílico) se cortan primero.
+- **Caja con dientes en sus doce aristas** (ranuras cerradas en el piso y la cubierta).
   - Cada arista se divide en tramos de unos 25 mm, siempre en número impar.
   - Los tramos pares, incluidos los de las puntas, son de la cara de más prioridad: cubierta > piso > frente > tapa trasera > costados. Así ninguna esquina queda suelta.
   - Las esquinas donde se juntan tres caras son de la de más prioridad.
@@ -19,19 +27,19 @@
 - **Cubierta doble.** Dos capas de MDF pegadas con cola blanca.
   - Arriba: los 608 de los tambores, que sobresalen 1,5 mm (el cubo del tambor apoya en su pista interior), los ejes de las guías y el hueco del brazo tensor.
   - Abajo: el tope de esos 608, el 608 de arriba del pivote y los dientes de las torres y del marco de la fuente, que entran sin verse.
-- **Tapa trasera removible.** Encaja en sus dientes. Dos dientes de la cubierta la atraviesan y salen 14 mm con una ventana; ahí bajan las cuñas E13, que la aprietan.
+- **Tapa trasera removible**, de acrílico. Encaja en sus dientes. Dos dientes de la cubierta la atraviesan y salen 14 mm con una ventana; ahí bajan las cuñas E09, que la aprietan.
 - **Torre de cada motor.**
-  - Dos costados E08, el collar E09 (hueco de 42,6 mm) y la placa E10 con el segundo 608 del tambor, 25 mm abajo del de la cubierta.
+  - Dos costados E04, el collar E05 (hueco de 42,6 mm) y la placa E06 con el segundo 608 del tambor, 25 mm abajo del de la cubierta.
   - El motor se para en el piso dentro del collar: ya no hay soporte de acero.
   - El cople toma 13 mm del eje del motor y 10 del eje del tambor.
 - **Electrónica sin tornillos.**
-  - La fuente va de pie detrás del marco E11, entre los topes E12 y contra la tapa trasera.
+  - La fuente va de pie detrás del marco E07, entre los topes E08 y contra la tapa trasera.
   - Drivers, placa de expansión, reguladores y resistencia van con cinchos que pasan por ranuras del piso. La protoboard va con su adhesivo.
 - **Brazo tensor dentro de un hueco de la capa de arriba.**
   - El brazo impreso gira sobre el 608 del pivote y asoma 1,5 mm sobre la cubierta, bajo la brida del rodillo.
   - El resorte va de la mitad del brazo al ancla I15 y se ajusta desde arriba.
   - Abajo, la copa impresa I05, pegada con tres espigas, sostiene ese 608. También lleva el segundo 608 y la ranura del AS5600, a 1,5 mm del imán.
-  - **Mesa más ancha:** el 608 del pivote necesita 3 mm de MDF antes de los dientes de la pared, así que la mesa pasa a 383 × 262 × 125 mm.
+  - **Mesa más ancha:** el 608 del pivote necesita 3 mm de MDF antes de la ranura de la pared.
 - **Tapas, ventana y rodillos.**
   - Tapas de acrílico transparente de Ø170 sobre tres postes impresos con broche: dos atrás y uno al frente. Del lado de afuera de cada tambor no hay poste, porque por ahí sale la película. El poste hueco lleva el bus I2C.
   - El sensor queda bajo un capuchón impreso con un canal hasta el poste hueco.
@@ -58,7 +66,7 @@
 
 **Consecuencias.**
 
-- **Lista de compras.** `docs/COMPRAS-TAMBORES.md` ya tiene precio en todos sus renglones: MXN 9,243.
+- **Lista de compras.** `docs/COMPRAS-TAMBORES.md` ya tiene precio en todos sus renglones: MXN 9,285.
   - **Salen:**
     - Los soportes de acero de los motores y el kit de tornillos M2–M5.
     - Los renglones sueltos de tambores, guías, brazo, tapas, caja, placa de aluminio y soportes impresos.
@@ -68,15 +76,16 @@
     - Cinchos, rondanas M8, cola blanca, epóxico y cianoacrilato.
     - Un eje de 8 × 500 mm que se corta en seis tramos.
   - **Precios:** el fusible (Steren) y la tira de pines en ángulo (UNIT) ya tienen precio.
-- **Estimado del taller:** MXN 1,827 a 3,321, con 2,267 de valor medio.
-  - Corte de MDF: 711, por 19 m de corte en 2 hojas.
-  - Acrílico transparente: 255.
+- **Estimado del taller:** MXN 1,872 a 3,131, con 2,307 de valor medio.
+  - Corte de MDF: 480, por 16 m de corte en una hoja.
+  - Acrílico transparente: 528, por 11 m de corte en una hoja: las paredes, las tapas y las bridas.
   - Acrílico negro: 22, más el mínimo del taller.
-  - Impresión: 1,278, por unos 373 g y 16 h. Los núcleos de los tambores son un tercio.
+  - Impresión: 1,277, por unos 373 g y 16 h. Los núcleos de los tambores son un tercio.
 - **Película estimada:** la base, unos 7 m a ~$45/m, y el laminado en servicio, 6,1 m² a $170/m². No hay precio publicado por metro: el rollo de 56 cm × 50 m cuesta ~$1,140.
 - **Por medir en banco:**
-  - El espesor real del MDF.
+  - El espesor real del MDF y del acrílico.
   - El ajuste de los 608 en MDF (Ø22,0) y en PETG (Ø22,05).
+  - Que las pestañas de acrílico entren justas en el MDF sin estrellarse.
   - Que el collar sujete el motor sin juego; si no, cinta de espuma.
   - Que el epóxico aguante el par del tambor: hacen falta 9,7 N·cm.
   - Que los dientes de la tapa trasera no se aflojen tras varias aperturas.
