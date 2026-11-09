@@ -2,11 +2,11 @@
 
 # Mesa de dos tambores · paquete para los talleres
 
-5/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
+9/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
 
 ## Qué hay aquí
 
-- `laser/`: 9 archivos. Cada hoja en DXF R12 y SVG, y un PDF a escala 1:1 por material. Las piezas van acomodadas en hojas de 87 × 57 cm (la cama de FIC), con el kerf ya compensado.
+- `laser/`: 9 archivos. Cada hoja en DXF R12 y SVG, y un PDF a escala 1:1 por material. Las piezas van acomodadas en hojas de 90 × 60 cm (87 × 57 útiles), con el kerf ya compensado.
 - `impresion-3d/`: 16 STL, uno por pieza, ya orientados para imprimir.
 - `mesa-tambores-taller.zip`: todo lo anterior y este README, para mandarlo de una vez.
 
@@ -61,25 +61,6 @@ Detalles:
 
 Gracias.
 ```
-
-## Cuánto debería costar
-
-Estimado con las tarifas publicadas en CDMX el 5-nov-2026: corte láser de $7 a $10 por minuto (FIC cobra $9), e impresión 3D de $2,50 a $4,00 por gramo o de $1,20 a $1,80 por minuto. Una cotización fuera del rango alto pide revisar qué cobran aparte. Una por debajo del bajo suele ser solo el corte, sin material.
-
-| Trabajo | Cantidad | Bajo | Medio | Alto |
-|---|---|---|---|---|
-| Corte láser · MDF de 5,5 mm | 20 piezas · 15,8 m · 34 min · 1 hoja | $411 | $480 | $574 |
-| Corte láser · acrílico transparente de 3 mm | 18 piezas · 10,7 m · 10 min · 1 hoja | $509 | $528 | $750 |
-| Corte láser · acrílico negro de 3 mm | 3 piezas · 0,6 m · 1 min · 1 hoja | $20 | $22 | $83 |
-| Impresión 3D en PETG | 28 piezas · 373 g · 16 h | $932 | $1,277 | $1,723 |
-| **Total de taller** | | **$1,872** | **$2,307** | **$3,131** |
-
-- FIC Corte Láser (Polanco): $9/min lun–sáb de 8 a 20 h, material aparte, cama de 87 × 57 cm, recolección $60: https://fic-cortelaser.mx/
-- Otros talleres de CDMX: Estudio Aragón $6–9/min, Impresiones DE desde $8/min, Preciso $10/min: https://estudioaragon.com/
-- Velocidades de referencia de un CO2 de 100 W (Forza): MDF 6 mm 10 mm/s, acrílico 3 mm 24 mm/s; ×1,3 por traslados y perforaciones: https://support.forzalaser.com/wp-content/uploads/2025/02/PARAMETROSREFERENCIALES-FORZA100W.pdf
-- Hojas de 90 × 60 cm en FIC: MDF 5,5 mm $170, acrílico transparente 3 mm $594; acrílico de color $0,23/cm²: https://fic-cortelaser.mx/
-- Impresora 3D México (Anzures): PLA $1,20/min y PETG $1,80/min de máquina: https://www.impresora3dmexico.com.mx/precios-por-impresion-3D.php
-- Por gramo: PLA desde $2/g en MercadoLibre; el PETG cuesta 1,5 veces el PLA: https://www.mercadolibre.com.mx/
 
 ## Piezas de corte láser
 

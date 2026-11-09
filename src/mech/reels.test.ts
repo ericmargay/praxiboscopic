@@ -234,7 +234,7 @@ describe('dos tambores: la mesa', () => {
     expect(parseProject(JSON.parse(JSON.stringify(p)))).toEqual(p);
   });
 
-  it('la lista de compras: dos motores, dos drivers, trabajos de taller, brazo tensor con AS5600, sensores de mano y 12 rodamientos, todo con precio', () => {
+  it('la lista de compras: dos motores, dos drivers, trabajos de taller por cotizar, brazo tensor con AS5600, sensores de mano y 12 rodamientos', () => {
     const bom = buildBom(p, d, '5/11/2026');
     const q = (id: string) => bom.lines.find((l) => l.id === id)?.qty;
     expect(q('motor-17hs8401')).toBe(2);
@@ -248,7 +248,9 @@ describe('dos tambores: la mesa', () => {
     // sin tornillos (ADR-0012): la estructura y las piezas impresas van en cuatro trabajos de taller
     for (const id of ['laser-mdf', 'laser-acrylic', 'laser-black', 'print-petg', 'cable-ties', 'washers-m8', 'glue-wood', 'epoxy', 'dancer-spring', 'jumpers-hh']) expect(ids).toContain(id);
     for (const id of ['bracket-nema17', 'm3-kit', 'base-box', 'reels', 'rollers', 'dancer', 'reel-covers', 'gate-plate', 'printed-supports', 'control-box', 'tensioner']) expect(ids).not.toContain(id);
-    expect(bom.lines.filter((l) => l.unitCost === undefined).map((l) => l.id)).toEqual([]);
+    // los trabajos de taller y la película se cotizan: su estimado no se publica (private/costos)
+    expect(bom.lines.filter((l) => l.unitCost === undefined).map((l) => l.id).sort()).toEqual(['film-base-roll', 'film-cover', 'laser-acrylic', 'laser-black', 'laser-mdf', 'print-petg']);
+    expect(bom.markdown).not.toMatch(/FIC|Maxicopias|\$9\/min/);
     expect(bom.markdown).toContain('6.1 m');
   });
 });

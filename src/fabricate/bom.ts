@@ -15,7 +15,7 @@ import { tilePlan } from '../film/print';
 import { buildAssembly, buildReelsAssembly } from '../mech/assembly';
 import { buildReelsStructure, SHEET_MATERIALS } from '../mech/structure';
 import { reelsPrintedParts } from './printed';
-import { estimateLaser, estimatePrint, fmtMxn, fmtRange, RATE_SOURCES, SHEET_STOCK } from './estimate';
+import { laserQuantities, printQuantities } from './quantities';
 
 const READ_DATE = '2-nov-2026';
 const SHOP = 'UNIT Electronics';
@@ -175,36 +175,36 @@ type Add = (part: PartMeta, note: ShoppingNotes) => void;
 
 /**
  * Dos tambores (ADR-0011) armados sin tornillos (ADR-0012): los trabajos de taller (corte láser en MDF y acrílico,
- * impresión 3D en PETG) con su estimado, el brazo tensor con resorte y AS5600, los sensores de mano, rodamientos, ejes y
- * coples. Los precios que no salen de la lista del loop vienen de `REELS_PRICES`; los de taller, de `estimate.ts`.
+ * impresión 3D en PETG) con sus cantidades, el brazo tensor con resorte y AS5600, los sensores de mano, rodamientos, ejes
+ * y coples. Los trabajos de taller van sin precio: se cotizan, y el estimado propio no se publica (private/costos).
  */
 function addReelsMechanics(p: Project, d: Derived, r: ReelsDerived, add: Add): void {
   const st = buildReelsStructure(p, d);
   const asm = st.asm;
   const printed = reelsPrintedParts(p, d, {}, asm);
-  const laser = estimateLaser(st);
-  const pe = estimatePrint(printed);
+  const laser = laserQuantities(st);
+  const pq = printQuantities(printed);
   const L = (m: string) => laser.find((x) => x.material === m)!;
   const pieces = (m: string) => st.parts.filter((x) => x.material === m);
   const list = (m: string) => pieces(m).map((x) => `${x.id} ${x.name.toLowerCase()}${x.qty > 1 ? ` ×${x.qty}` : ''}`).join(', ');
+  const sheets = (n: number) => `${n} hoja${n === 1 ? '' : 's'}`;
   const mdf = L('mdf');
   add(
-    { id: 'laser-mdf', name: `Corte láser en ${SHEET_MATERIALS.mdf.label}: piso, cubierta doble, torres de los motores, marco y topes de la fuente, cuñas y piezas de prueba (${mdf.pieces} piezas)`, category: 'structural', qty: 1, material: 'mdf-5.5', process: 'laser', dimsMm: { x: asm.base.x1 - asm.base.x0, y: asm.base.z1 - asm.base.z0, z: 125 }, fabricate: { profile: 'outline', thicknessMm: asm.base.mdfT }, supplier: { name: 'taller de corte láser (FIC, CDMX)', url: RATE_SOURCES.laserFic.url, unitCost: Math.round(mdf.mxn.mid), currency: 'MXN' } },
-    { why: `Piso y cubierta atrapan las paredes de acrílico en sus ranuras; todo se arma a mano sin tornillos: ${list('mdf')}. Estimado ${fmtRange(mdf.mxn)}: ${mdf.cutM.toFixed(1)} m de corte, unos ${Math.round(mdf.minutes)} min a $9/min, y ${mdf.sheets} hoja${mdf.sheets === 1 ? '' : 's'} de ${SHEET_STOCK['mdf'].label} a ${fmtMxn(SHEET_STOCK['mdf'].mxn)}`, forWhat: 'Estructura', alternative: 'Pedir la cotización por minuto y llevar el MDF de Home Depot (hoja de 1,22 × 2,44 m de 5,5 mm a $279, cortada a 90 × 60)', evidence: 'estimated', evidenceDate: '5-nov-2026', need: 'taller' },
+    { id: 'laser-mdf', name: `Corte láser en ${SHEET_MATERIALS.mdf.label}: piso, cubierta doble, torres de los motores, marco y topes de la fuente, cuñas y piezas de prueba (${mdf.pieces} piezas)`, category: 'structural', qty: 1, material: 'mdf-5.5', process: 'laser', dimsMm: { x: asm.base.x1 - asm.base.x0, y: asm.base.z1 - asm.base.z0, z: 125 }, fabricate: { profile: 'outline', thicknessMm: asm.base.mdfT }, supplier: { name: 'taller de corte láser' } },
+    { why: `Piso y cubierta atrapan las paredes de acrílico en sus ranuras; todo se arma a mano sin tornillos: ${list('mdf')}. ${mdf.cutM.toFixed(1)} m de corte en ${sheets(mdf.sheets)} de 90 × 60 cm. Se cotiza con el texto de la pestaña Taller`, forWhat: 'Estructura', alternative: 'Llevar el MDF propio y pagar solo el corte', evidence: 'unverified', need: 'taller' },
   );
   const acr = L('acrilico-3');
   add(
-    { id: 'laser-acrylic', name: `Corte láser en ${SHEET_MATERIALS['acrilico-3'].label}: las cuatro paredes de la caja, tapas de los tambores y bridas (${acr.pieces} piezas)`, category: 'structural', qty: 1, material: 'acrilico-3', process: 'laser', fabricate: { profile: 'outline', thicknessMm: 3 }, supplier: { name: 'taller de corte láser (FIC, CDMX)', url: RATE_SOURCES.laserFic.url, unitCost: Math.round(acr.mxn.mid), currency: 'MXN' } },
-    { why: `${list('acrilico-3')}. Transparente para que se vean la electrónica y la película enrollada. Estimado ${fmtRange(acr.mxn)}: ${acr.cutM.toFixed(1)} m de corte (unos ${Math.round(acr.minutes)} min) y ${acr.sheets} hoja${acr.sheets === 1 ? '' : 's'} de 90 × 60 a ${fmtMxn(SHEET_STOCK['acrilico-3'].mxn)}, o el material por área si lo venden por pedazo`, forWhat: 'Paredes, tambores, guías y tapas', alternative: 'Paredes de MDF (más baratas, pero no se ve la electrónica) y bridas impresas en PETG', evidence: 'estimated', evidenceDate: '5-nov-2026', need: 'taller' },
-  );
-  const blk = L('acrilico-negro-3');
-  add(
-    { id: 'laser-black', name: `Corte láser en ${SHEET_MATERIALS['acrilico-negro-3'].label}: placa de la ventana y sus dos guías`, category: 'optical', qty: 1, material: 'acrilico-negro-3', process: 'laser', fabricate: { profile: 'outline', thicknessMm: 3 }, supplier: { name: 'taller de corte láser (FIC, CDMX)', url: RATE_SOURCES.laserFic.url, unitCost: Math.max(50, Math.round(blk.mxn.mid)), currency: 'MXN' } },
-    { why: `Máscara del fotograma de ${p.optics.gateWidthMm} × ${p.optics.gateHeightMm} mm del lado de la lámpara; las guías tocan el dorso de la película solo por los márgenes. Con el LED en destellos no hay calor que pida aluminio. Estimado ${fmtRange(blk.mxn)} más el mínimo del taller`, forWhat: 'Óptica', alternative: 'Aluminio negro de 1,5 mm con láser de fibra (Prometeus o Lasershop cotizan por proyecto)', evidence: 'estimated', evidenceDate: '5-nov-2026', need: 'taller' },
+    { id: 'laser-acrylic', name: `Corte láser en ${SHEET_MATERIALS['acrilico-3'].label}: las cuatro paredes de la caja, tapas de los tambores y bridas (${acr.pieces} piezas)`, category: 'structural', qty: 1, material: 'acrilico-3', process: 'laser', fabricate: { profile: 'outline', thicknessMm: asm.base.acrT }, supplier: { name: 'taller de corte láser' } },
+    { why: `${list('acrilico-3')}. Transparente para que se vean la electrónica y la película enrollada. ${acr.cutM.toFixed(1)} m de corte en ${sheets(acr.sheets)} de 90 × 60 cm. Se cotiza con el texto de la pestaña Taller`, forWhat: 'Paredes, tambores, guías y tapas', alternative: 'Paredes de MDF (no se ve la electrónica) y bridas impresas en PETG', evidence: 'unverified', need: 'taller' },
   );
   add(
-    { id: 'print-petg', name: `Impresión 3D en PETG: ${printed.length} piezas distintas, ${pe.pieces} en total (núcleos de los tambores, cuerpos de las guías y del rodillo tensor, brazo, copa del pivote, postes, capuchones, cabeza del LED, cuna de la lente y soportes)`, category: 'mechanical', qty: 1, material: 'petg', process: 'print3d', fabricate: { profile: 'mesh' }, supplier: { name: 'servicio de impresión 3D (CDMX)', url: RATE_SOURCES.print3d.url, unitCost: Math.round(pe.mxn.mid), currency: 'MXN' } },
-    { why: `Unos ${Math.round(pe.grams)} g de PETG y ${pe.hours.toFixed(0)} h de máquina. Estimado ${fmtRange(pe.mxn)}: de $2,5/g a $1,80/min. Lo que más pesa: ${pe.heaviest.map((h) => `${h.id} ${h.name.toLowerCase()} (${Math.round(h.grams)} g)`).join(', ')}`, forWhat: 'Tambores, guías, brazo tensor, tapas y óptica', alternative: 'Imprimir en casa (unos $110 de filamento: un rollo de PETG de 1 kg cuesta ~$295) o núcleos de los tambores con discos de MDF pegados', evidence: 'estimated', evidenceDate: '5-nov-2026', need: 'taller' },
+    { id: 'laser-black', name: `Corte láser en ${SHEET_MATERIALS['acrilico-negro-3'].label}: placa de la ventana y sus dos guías`, category: 'optical', qty: 1, material: 'acrilico-negro-3', process: 'laser', fabricate: { profile: 'outline', thicknessMm: 3 }, supplier: { name: 'taller de corte láser' } },
+    { why: `Máscara del fotograma de ${p.optics.gateWidthMm} × ${p.optics.gateHeightMm} mm del lado de la lámpara; las guías tocan el dorso de la película solo por los márgenes. Con el LED en destellos no hay calor que pida aluminio`, forWhat: 'Óptica', alternative: 'Aluminio negro de 1,5 mm con láser de fibra', evidence: 'unverified', need: 'taller' },
+  );
+  add(
+    { id: 'print-petg', name: `Impresión 3D en PETG: ${printed.length} piezas distintas, ${pq.pieces} en total (núcleos de los tambores, cuerpos de las guías y del rodillo tensor, brazo, copa del pivote, postes, capuchones, cabeza del LED, cuna de la lente y soportes)`, category: 'mechanical', qty: 1, material: 'petg', process: 'print3d', fabricate: { profile: 'mesh' }, supplier: { name: 'servicio de impresión 3D' } },
+    { why: `Unos ${Math.round(pq.grams)} g de PETG y ${pq.hours.toFixed(0)} h de máquina. Se cotiza con el texto de la pestaña Taller`, forWhat: 'Tambores, guías, brazo tensor, tapas y óptica', alternative: 'Imprimir en casa, o los núcleos de los tambores con discos de MDF pegados', evidence: 'unverified', need: 'taller' },
   );
   add(
     { id: 'dancer-spring', name: REELS_PRICES.spring.label, category: 'mechanical', qty: 1, process: 'buy', supplier: offerSupplier('spring') },
@@ -456,12 +456,12 @@ function addOpticsAndControl(p: Project, d: Derived, add: Add): void {
     // largo de la tira (con dos tambores, también sus colas transparentes) más medio metro para el empalme y las pruebas
     const meters = (reels ? reels.filmToBuyM : d.layout.totalLengthMm / 1000 + 0.5).toFixed(1);
     add(
-      { id: 'film-base-roll', name: `PET cristal de ${(lam.baseMm * 1000).toFixed(0)} µm o PVC rígido cristal calibre ${(lam.baseMm / 0.0254).toFixed(1).replace(/\.0$/, '')} (acetato), al menos ${meters} m por metro lineal`, category: 'material', qty: Math.ceil(Number(meters)), process: 'buy', supplier: { name: 'distribuidora de plásticos (por metro)', unitCost: 45, currency: 'MXN' } },
-      { why: reels ? `Base continua: ${(d.layout.totalLengthMm / 1000).toFixed(2)} m de fotogramas y dos colas transparentes de ${(reels.design.tail1Mm / 1000).toFixed(2)} y ${(reels.design.tail2Mm / 1000).toFixed(2)} m que se fijan a los núcleos. Rígido: el "plástico cristal" flexible se estira y su plastificante ataca la pintura y el adhesivo` : 'Base continua de la tira, sin empalmes intermedios. Rígido: el "plástico cristal" flexible se estira y su plastificante ataca la pintura y el adhesivo', forWhat: 'Película laminada', alternative: 'Rollo de PVC rígido calibre 5 de 56 cm × 50 m (unos $1,140 en MercadoLibre, $23/m: alcanza para ocho tiras), o las hojas transparentes empalmadas a tope: la cubierta une los tramos', evidence: 'estimated', evidenceDate: '5-nov-2026', need: 'requerido' },
+      { id: 'film-base-roll', name: `PET cristal de ${(lam.baseMm * 1000).toFixed(0)} µm o PVC rígido cristal calibre ${(lam.baseMm / 0.0254).toFixed(1).replace(/\.0$/, '')} (acetato), al menos ${meters} m por metro lineal`, category: 'material', qty: Math.ceil(Number(meters)), process: 'buy', supplier: { name: 'distribuidora de plásticos (por metro)' } },
+      { why: reels ? `Base continua: ${(d.layout.totalLengthMm / 1000).toFixed(2)} m de fotogramas y dos colas transparentes de ${(reels.design.tail1Mm / 1000).toFixed(2)} y ${(reels.design.tail2Mm / 1000).toFixed(2)} m que se fijan a los núcleos. Rígido: el "plástico cristal" flexible se estira y su plastificante ataca la pintura y el adhesivo` : 'Base continua de la tira, sin empalmes intermedios. Rígido: el "plástico cristal" flexible se estira y su plastificante ataca la pintura y el adhesivo', forWhat: 'Película laminada', alternative: 'Rollo de PVC rígido calibre 5 de 56 cm (alcanza para varias tiras), o las hojas transparentes empalmadas a tope: la cubierta une los tramos', evidence: 'unverified', need: 'requerido' },
     );
     add(
-      { id: 'film-cover', name: `Laminado en frío brillante de 75–80 µm con adhesivo acrílico, ${meters} m, pasado en laminadora de rodillos (servicio)`, category: 'material', qty: 1, process: 'buy', supplier: { name: 'tienda de rotulación o gran formato (Maxicopias: $170/m²)', url: 'https://maxicopias.com/lista-de-precios/', unitCost: Math.round(Number(meters) * 170), currency: 'MXN' } },
-      { why: `Tapa la tinta: ${reels ? 'el brazo tensor toca la cubierta y no la pintura, y en el tambor cada vuelta apoya en la anterior' : 'los rodillos de la cara de la lente tocan la cubierta y no la pintura'}. Brillante, no mate: el mate vela la imagen. Cobran por m² con un metro de ancho mínimo: ${meters} m × 1 m × $170. Dejar reposar 72 h antes de enrollar para que se vaya el plateado (aire atrapado). La laca en aerosol no lo sustituye (ADR-0013)`, forWhat: 'Película laminada', alternative: 'Rollo de laminado brillante de 33 cm (MercadoLibre, $399 el par con uno mate) aplicado a mano con espátula; o segunda capa de la base con adhesivo de transferencia', evidence: 'estimated', evidenceDate: '5-nov-2026', need: 'requerido' },
+      { id: 'film-cover', name: `Laminado en frío brillante de 75–80 µm con adhesivo acrílico, ${meters} m, pasado en laminadora de rodillos (servicio)`, category: 'material', qty: 1, process: 'buy', supplier: { name: 'tienda de rotulación o gran formato' } },
+      { why: `Tapa la tinta: ${reels ? 'el brazo tensor toca la cubierta y no la pintura, y en el tambor cada vuelta apoya en la anterior' : 'los rodillos de la cara de la lente tocan la cubierta y no la pintura'}. Brillante, no mate: el mate vela la imagen. Suelen cobrar por m² con un metro de ancho mínimo. Dejar reposar 72 h antes de enrollar para que se vaya el plateado (aire atrapado). La laca en aerosol no lo sustituye (ADR-0013)`, forWhat: 'Película laminada', alternative: 'Rollo de laminado brillante de 33 cm aplicado a mano con espátula; o segunda capa de la base con adhesivo de transferencia', evidence: 'unverified', need: 'requerido' },
     );
   }
   add(

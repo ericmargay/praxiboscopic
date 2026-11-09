@@ -13,7 +13,7 @@ import { laminatedDemoProject, reelsDemoProject } from '../core/video';
 import { buildReelsAssembly } from '../mech/assembly';
 import { buildReelsStructure, SHEET_MATERIALS } from '../mech/structure';
 import { reelsPrintedParts } from '../fabricate/printed';
-import { estimateLaser, estimatePrint, fmtMxn, RATE_SOURCES } from '../fabricate/estimate';
+import { laserQuantities, printQuantities } from '../fabricate/quantities';
 import { FAB_DIR, LASER_PREFIX, laserRequestText, printRequestText, ZIP_NAME } from '../fabricate/shops';
 import { buildParts } from '../fabricate/bom';
 import { OFFERS, UNIT_SHIPPING, type Offer } from '../fabricate/offers';
@@ -72,7 +72,7 @@ const fab = derived.reels
   ? (() => {
       const st = buildReelsStructure(project, derived);
       const printed = reelsPrintedParts(project, derived, {}, st.asm);
-      return { st, printed, laser: estimateLaser(st), pe: estimatePrint(printed) };
+      return { st, printed, laser: laserQuantities(st), pe: printQuantities(printed) };
     })()
   : null;
 if (fab && location.hash === '#fabricacion') tab = 'fab';
@@ -215,18 +215,12 @@ function fabHtml(): string {
     })
     .join('');
   const stl = printed.map((p) => `<li><a href="${base}/impresion-3d/${esc(p.file)}" download>${esc(p.file)}</a> × ${p.qty} <span class="hint">${esc(p.name)}</span></li>`).join('');
-  const row = (label: string, what: string, r: { low: number; mid: number; high: number }) => `<tr><td>${esc(label)}</td><td class="hint">${esc(what)}</td><td class="r">${fmtMxn(r.low)}</td><td class="r"><b>${fmtMxn(r.mid)}</b></td><td class="r">${fmtMxn(r.high)}</td></tr>`;
-  const sum = (k: 'low' | 'mid' | 'high') => laser.reduce((a, e) => a + e.mxn[k], 0) + pe.mxn[k];
-  const rows = [...laser.map((e) => row(`Corte láser · ${e.label}`, `${e.pieces} piezas · ${Math.round(e.minutes)} min · ${e.sheets} hoja${e.sheets === 1 ? '' : 's'}`, e.mxn)), row('Impresión 3D en PETG', `${pe.pieces} piezas · ${Math.round(pe.grams)} g · ${pe.hours.toFixed(0)} h`, pe.mxn), row('Total de taller', '', { low: sum('low'), mid: sum('mid'), high: sum('high') })].join('');
   return `<div class="why"><b>Cómo se fabrica.</b> Piso y cubierta de MDF de ${esc(String(st.mdfMm).replace('.', ','))} mm y paredes de acrílico transparente de ${esc(String(st.asm.base.acrT).replace('.', ','))} mm, cortados con láser y armados a mano, sin tornillos: las paredes quedan atrapadas en ranuras del MDF (se ve la electrónica), dos cuñas aprietan la tapa trasera y las tapas se abrochan. Las piezas que giran o sostienen se imprimen en PETG. Cada pieza lleva su código (E, A, N, I), el mismo que usan los <a href="./index.html?section=mechanical&demo=tambores&ensamble=1">12 pasos del ensamble en el simulador</a>.</div>
     <div class="fab">
-      <section><h3>1 · Corte láser</h3><p class="hint">DXF R12, SVG y PDF a escala 1:1, con las piezas acomodadas en hojas de 87 × 57 cm y el kerf compensado. Rojo corta, azul marca y negro graba el código.</p><ul>${laserLinks}</ul>
+      <section><h3>1 · Corte láser</h3><p class="hint">DXF R12, SVG y PDF a escala 1:1, con las piezas acomodadas en hojas de 90 × 60 cm y el kerf compensado. Rojo corta, azul marca y negro graba el código.</p><ul>${laserLinks}</ul>
         <div class="msg"><div class="msg-h"><b>Texto para el taller</b><button class="btn" data-copy="msg-laser">Copiar</button></div><pre id="msg-laser">${esc(laserRequestText(st, laser))}</pre></div></section>
       <section><h3>2 · Impresión 3D</h3><p class="hint">${printed.length} STL, uno por pieza, ya orientados y revisados (sólidos cerrados, sin soportes).</p><ul class="stl">${stl}</ul>
         <div class="msg"><div class="msg-h"><b>Texto para el servicio</b><button class="btn" data-copy="msg-print">Copiar</button></div><pre id="msg-print">${esc(printRequestText(printed, pe))}</pre></div></section>
-      <section class="wide"><h3>Cuánto debería costar</h3><p class="hint">Rango con las tarifas publicadas en CDMX el 5-nov-2026: sirve para saber qué tan lejos queda cada cotización. Por encima del alto, pregunta qué cobran aparte; por debajo del bajo, suele ser el corte sin material.</p>
-        <div class="list"><table><thead><tr><th>Trabajo</th><th>Cantidad</th><th class="r">Bajo</th><th class="r">Medio</th><th class="r">Alto</th></tr></thead><tbody>${rows}</tbody></table></div>
-        <ul class="hint">${Object.values(RATE_SOURCES).map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a></li>`).join('')}</ul></section>
     </div>
     <p class="fab-all"><a class="btn primary" href="${base}/${ZIP_NAME}" download>Descargar todo (ZIP)</a> <a class="btn" href="${base}/README.md" target="_blank" rel="noopener">README con piezas y pasos</a></p>`;
 }

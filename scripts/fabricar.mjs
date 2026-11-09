@@ -29,7 +29,7 @@ try {
   const { reelsDemoProject } = await load('/src/core/video.ts');
   const { buildReelsStructure, SHEET_MATERIALS } = await load('/src/mech/structure.ts');
   const { reelsPrintedParts } = await load('/src/fabricate/printed.ts');
-  const { estimateLaser, estimatePrint } = await load('/src/fabricate/estimate.ts');
+  const { laserQuantities, printQuantities } = await load('/src/fabricate/quantities.ts');
   const { FAB_DIR, LASER_PREFIX, ZIP_NAME, fabricationReadme } = await load('/src/fabricate/shops.ts');
   const { laserSvg, laserDxf, checkPrint, stlBinary, pointInPolygon, bbox } = await load('@aminoacid/omega/fabricate');
   const { buildPdf } = await load('/src/export/pdf.ts');
@@ -40,8 +40,8 @@ try {
   const st = buildReelsStructure(p, d, { mdfMm, acrylicMm });
   if (st.problems.length) throw new Error(`la estructura tiene problemas:\n${st.problems.join('\n')}`);
   const parts = reelsPrintedParts(p, d, { lensDiameterMm }, st.asm);
-  const laser = estimateLaser(st);
-  const pe = estimatePrint(parts);
+  const laser = laserQuantities(st);
+  const pe = printQuantities(parts);
   const out = path.join(root, 'public', FAB_DIR);
   await rm(out, { recursive: true, force: true });
   await mkdir(path.join(out, 'laser'), { recursive: true });
@@ -141,8 +141,9 @@ try {
   // manifiesto para la página de compras
   await writeFile(path.join(out, 'manifest.json'), JSON.stringify({ date, mdfMm: st.mdfMm, laser: laserFiles, stl: stlFiles, zip: ZIP_NAME, zipBytes: zip.length }, null, 2));
   console.log(`→ public/${FAB_DIR}: ${laserFiles.length} archivos de corte, ${stlFiles.length} STL, ${ZIP_NAME} (${(zip.length / 1e6).toFixed(1)} MB) · docs/FABRICACION-TAMBORES.md`);
-  for (const e of laser) console.log(`  ${e.label}: ${e.pieces} piezas, ${e.cutM.toFixed(1)} m, ${Math.round(e.minutes)} min, ${e.sheets} hoja(s) · $${Math.round(e.mxn.low)}–$${Math.round(e.mxn.high)}`);
-  console.log(`  impresión: ${pe.pieces} piezas, ${Math.round(pe.grams)} g, ${pe.hours.toFixed(1)} h · $${Math.round(pe.mxn.low)}–$${Math.round(pe.mxn.high)}`);
+  for (const e of laser) console.log(`  ${e.label}: ${e.pieces} piezas, ${e.cutM.toFixed(1)} m, ${e.sheets} hoja(s)`);
+  console.log(`  impresión: ${pe.pieces} piezas, ${Math.round(pe.grams)} g, ${pe.hours.toFixed(1)} h`);
+  console.log('  (los costos estimados están en private/costos: node private/costos/reporte.mjs)');
 } finally {
   await server.close();
 }

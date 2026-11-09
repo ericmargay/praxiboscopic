@@ -2,7 +2,7 @@
 // láser y el de impresión 3D, las tablas de piezas y el README del paquete (public/fabricacion/tambores). Es puro: lo
 // usan la página de compras (sección «Fabricación») y scripts/fabricar.mjs, así que los dos dicen lo mismo.
 import { SHEET_MATERIALS, type ReelsStructure, type SheetMaterial } from '../mech/structure';
-import { fmtMxn, LASER_MXN_MIN, PRINT_MXN_G, PRINT_MXN_MIN, RATE_SOURCES, type LaserEstimate, type PrintEstimate } from './estimate';
+import type { LaserQuantities, PrintQuantities } from './quantities';
 import { PETG_G_CM3, printedGrams, type PrintedPart } from './printed';
 
 /** carpeta del paquete dentro de public/ (la sirve Vite y va al sitio) */
@@ -14,16 +14,15 @@ export const ZIP_NAME = 'mesa-tambores-taller.zip';
 /** decimales con coma, como el resto de la obra */
 const n1 = (x: number) => (Math.round(x * 10) / 10).toString().replace('.', ',');
 const n2 = (x: number) => (Math.round(x * 100) / 100).toString().replace('.', ',');
-const money = (x: number) => `$${x.toFixed(2).replace('.', ',')}`;
 
 /** «Archivo x-hoja-1» o «Archivos x-hoja-1 y -hoja-2» */
-function sheetFiles(e: LaserEstimate | undefined, prefix: string): string {
+function sheetFiles(e: LaserQuantities | undefined, prefix: string): string {
   const n = e?.sheets ?? 1;
   return n === 1 ? `Archivo ${prefix}-hoja-1` : `Archivos ${prefix}-hoja-1 a -hoja-${n}`;
 }
 
 /** mensaje para cotizar el corte láser (WhatsApp o correo) */
-export function laserRequestText(st: ReelsStructure, laser: LaserEstimate[]): string {
+export function laserRequestText(st: ReelsStructure, laser: LaserQuantities[]): string {
   const L = (m: SheetMaterial) => laser.find((x) => x.material === m);
   const mdf = L('mdf');
   const acr = L('acrilico-3');
@@ -49,7 +48,7 @@ export function laserRequestText(st: ReelsStructure, laser: LaserEstimate[]): st
 }
 
 /** mensaje para cotizar la impresión 3D */
-export function printRequestText(parts: PrintedPart[], pe: PrintEstimate): string {
+export function printRequestText(parts: PrintedPart[], pe: PrintQuantities): string {
   const lines = [
     `Hola, buen día. Quiero cotizar la impresión 3D en PETG de ${parts.length} piezas distintas (${pe.pieces} en total), para recoger en CDMX.`,
     '',
@@ -86,17 +85,8 @@ export function printTableMd(parts: PrintedPart[]): string {
   return ['| Código | Archivo | Pieza | Cant. | g c/u | Caja (mm) | Cómo imprimir |', '|---|---|---|---|---|---|---|', ...rows].join('\n');
 }
 
-/** tabla de estimados (Markdown) */
-export function estimateTableMd(laser: LaserEstimate[], pe: PrintEstimate): string {
-  const rows = laser.map((e) => `| Corte láser · ${e.label} | ${e.pieces} piezas · ${n1(e.cutM)} m · ${Math.round(e.minutes)} min · ${e.sheets} hoja${e.sheets === 1 ? '' : 's'} | ${fmtMxn(e.mxn.low)} | ${fmtMxn(e.mxn.mid)} | ${fmtMxn(e.mxn.high)} |`);
-  rows.push(`| Impresión 3D en PETG | ${pe.pieces} piezas · ${Math.round(pe.grams)} g · ${pe.hours.toFixed(0)} h | ${fmtMxn(pe.mxn.low)} | ${fmtMxn(pe.mxn.mid)} | ${fmtMxn(pe.mxn.high)} |`);
-  const sum = (k: 'low' | 'mid' | 'high') => laser.reduce((s, e) => s + e.mxn[k], 0) + pe.mxn[k];
-  rows.push(`| **Total de taller** | | **${fmtMxn(sum('low'))}** | **${fmtMxn(sum('mid'))}** | **${fmtMxn(sum('high'))}** |`);
-  return ['| Trabajo | Cantidad | Bajo | Medio | Alto |', '|---|---|---|---|---|', ...rows].join('\n');
-}
-
 /** README del paquete para los talleres (también va a docs/FABRICACION-TAMBORES.md) */
-export function fabricationReadme(o: { st: ReelsStructure; laser: LaserEstimate[]; parts: PrintedPart[]; pe: PrintEstimate; files: { laser: string[]; stl: string[]; zip: string }; date: string; checks?: string[] }): string {
+export function fabricationReadme(o: { st: ReelsStructure; laser: LaserQuantities[]; parts: PrintedPart[]; pe: PrintQuantities; files: { laser: string[]; stl: string[]; zip: string }; date: string; checks?: string[] }): string {
   const { st, laser, parts, pe } = o;
   const steps = st.steps.map((s) => [`**${s.n}. ${s.title}**`, ...s.text.map((t) => `   - ${t}`), `   - Entran: ${s.parts.join(', ')}`].join('\n')).join('\n\n');
   return [
@@ -108,7 +98,7 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserEstimate[
     '',
     '## Qué hay aquí',
     '',
-    `- \`laser/\`: ${o.files.laser.length} archivos. Cada hoja en DXF R12 y SVG, y un PDF a escala 1:1 por material. Las piezas van acomodadas en hojas de 87 × 57 cm (la cama de FIC), con el kerf ya compensado.`,
+    `- \`laser/\`: ${o.files.laser.length} archivos. Cada hoja en DXF R12 y SVG, y un PDF a escala 1:1 por material. Las piezas van acomodadas en hojas de 90 × 60 cm (87 × 57 útiles), con el kerf ya compensado.`,
     `- \`impresion-3d/\`: ${o.files.stl.length} STL, uno por pieza, ya orientados para imprimir.`,
     `- \`${o.files.zip}\`: todo lo anterior y este README, para mandarlo de una vez.`,
     '',
@@ -123,14 +113,6 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserEstimate[
     '```text',
     printRequestText(parts, pe),
     '```',
-    '',
-    '## Cuánto debería costar',
-    '',
-    `Estimado con las tarifas publicadas en CDMX el 5-nov-2026: corte láser de ${fmtMxn(LASER_MXN_MIN.low)} a ${fmtMxn(LASER_MXN_MIN.high)} por minuto (FIC cobra ${fmtMxn(LASER_MXN_MIN.mid)}), e impresión 3D de ${money(PRINT_MXN_G.low)} a ${money(PRINT_MXN_G.high)} por gramo o de ${money(PRINT_MXN_MIN.low)} a ${money(PRINT_MXN_MIN.high)} por minuto. Una cotización fuera del rango alto pide revisar qué cobran aparte. Una por debajo del bajo suele ser solo el corte, sin material.`,
-    '',
-    estimateTableMd(laser, pe),
-    '',
-    ...Object.values(RATE_SOURCES).map((s) => `- ${s.label}: ${s.url}`),
     '',
     '## Piezas de corte láser',
     '',

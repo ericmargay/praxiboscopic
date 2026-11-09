@@ -36,8 +36,8 @@ Investigado con fuentes el 5-nov-2026:
 
 - **El laminado:**
   - Se deja reposar 72 h antes de enrollar, para que se vaya el plateado del aire atrapado ([PrintFinishing](https://printfinishing.com/pages/whysilvering)).
-  - Se cotiza como servicio de rotulación: 6,1 m × 1 m de ancho mínimo a $170/m², unos $1,040 (Maxicopias).
-  - La alternativa barata es un rollo brillante de 33 cm (MercadoLibre, $399 con uno mate) aplicado a mano con espátula, con más riesgo de burbujas.
+  - Se cotiza como servicio de rotulación, que suele cobrar por m² con un metro de ancho mínimo.
+  - La alternativa barata es un rollo brillante de 33 cm aplicado a mano con espátula, con más riesgo de burbujas.
 - **El dorso:** no se barniza, porque el PET desnudo es más duro que la laca. Lo que más lo roza son las guías de la ventana. En ADR-0012 son de acrílico negro y tocan solo los márgenes, con la cara de fábrica (lisa) hacia la película y las puntas redondeadas con lija fina. Si rayan, se forran con cinta de PTFE.
 - **Prueba de banco antes de usar laca en arte pintado:**
   1. **Muestras:** tiras de 40 × 300 mm por triplicado, con negro sólido y un borde fino:

@@ -51,22 +51,19 @@ Ese mismo día Eric pidió que la caja no fuera toda de MDF: piso y cubierta de 
   - Salen orientadas para imprimir sin soportes y revisadas con `checkPrint` de OMEGA.
   - En el navegador el módulo solo da nombres, medidas y el volumen estimado.
 - **Paquete para los talleres** (`npm run fabricar` → `public/fabricacion/tambores/`):
-  - DXF R12, SVG y PDF 1:1 por hoja de 87 × 57 cm (la cama de FIC). Usa el acomodo y el kerf de OMEGA y graba el código de cada pieza.
+  - DXF R12, SVG y PDF 1:1 por hoja de 90 × 60 cm (87 × 57 útiles). Usa el acomodo y el kerf de OMEGA y graba el código de cada pieza.
   - Los STL, un README con los textos para cotizar y un ZIP. El ZIP no va en git; `npm run publicar` lo arma si falta.
   - El README se copia a `docs/FABRICACION-TAMBORES.md`.
-- **Estimados** (`src/fabricate/estimate.ts`). Rango bajo–medio–alto con las tarifas publicadas en CDMX el 5-nov-2026:
-  - Corte: de $7 a $10 por minuto (FIC cobra $9). Velocidades de un CO2 de 100 W, ×1,3 por traslados.
-  - Hojas de 90 × 60 cm en FIC: MDF de 5,5 mm a $170 y acrílico transparente a $594.
-  - Impresión en PETG: de $2,50 a $4 por gramo, o de $1,20 a $1,80 por minuto.
+- **Cantidades públicas, costos privados.** `src/fabricate/quantities.ts` da lo que también dicen los textos para los talleres: metros de corte, hojas, piezas, gramos y horas de impresión. El 9-nov-2026 Eric pidió que los proveedores no vean lo que estimamos que cobran: el modelo de costos (tarifas de CDMX del 5-nov-2026) vive en `private/costos/`, que no va a git ni al sitio, y los estimados están en una página privada para comparar las cotizaciones.
 - **Simulador.**
   - La escena extruye los mismos contornos que van al taller.
   - *Ensamble sin tornillos* tiene 12 pasos (`assemblySteps`): las piezas de cada paso llegan desde afuera y hay un control de explosión.
   - `?ensamble=5&explosion=0.4` abre directo en ese paso.
-- **Compras.** La pestaña *Taller: láser e impresión 3D* trae los archivos, los dos textos para copiar y los estimados.
+- **Compras.** La pestaña *Taller: láser e impresión 3D* trae los archivos y los dos textos para copiar. Los trabajos de taller y la película van «por cotizar», sin precio.
 
 **Consecuencias.**
 
-- **Lista de compras.** `docs/COMPRAS-TAMBORES.md` ya tiene precio en todos sus renglones: MXN 9,285.
+- **Lista de compras.** En `docs/COMPRAS-TAMBORES.md` los cuatro trabajos de taller, la base de la película y el laminado van por cotizar; lo demás tiene precio de catálogo.
   - **Salen:**
     - Los soportes de acero de los motores y el kit de tornillos M2–M5.
     - Los renglones sueltos de tambores, guías, brazo, tapas, caja, placa de aluminio y soportes impresos.
@@ -76,12 +73,11 @@ Ese mismo día Eric pidió que la caja no fuera toda de MDF: piso y cubierta de 
     - Cinchos, rondanas M8, cola blanca, epóxico y cianoacrilato.
     - Un eje de 8 × 500 mm que se corta en seis tramos.
   - **Precios:** el fusible (Steren) y la tira de pines en ángulo (UNIT) ya tienen precio.
-- **Estimado del taller:** MXN 1,872 a 3,131, con 2,307 de valor medio.
-  - Corte de MDF: 480, por 16 m de corte en una hoja.
-  - Acrílico transparente: 528, por 11 m de corte en una hoja: las paredes, las tapas y las bridas.
-  - Acrílico negro: 22, más el mínimo del taller.
-  - Impresión: 1,277, por unos 373 g y 16 h. Los núcleos de los tambores son un tercio.
-- **Película estimada:** la base, unos 7 m a ~$45/m, y el laminado en servicio, 6,1 m² a $170/m². No hay precio publicado por metro: el rollo de 56 cm × 50 m cuesta ~$1,140.
+- **Trabajo de taller:**
+  - MDF: 16 m de corte en una hoja.
+  - Acrílico transparente: 11 m de corte en una hoja, con las paredes, las tapas y las bridas.
+  - Acrílico negro: dos piezas chicas.
+  - Impresión: unos 373 g y 16 h; los núcleos de los tambores son un tercio.
 - **Por medir en banco:**
   - El espesor real del MDF y del acrílico.
   - El ajuste de los 608 en MDF (Ø22,0) y en PETG (Ø22,05).

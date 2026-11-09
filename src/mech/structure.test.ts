@@ -3,7 +3,7 @@ import { pointInPolygon } from '@aminoacid/omega/fabricate';
 import { deriveProject } from '../core/project';
 import { reelsDemoProject } from '../core/video';
 import { buildReelsStructure, type LaserPart, type V3 } from './structure';
-import { estimateLaser, estimatePrint } from '../fabricate/estimate';
+import { laserQuantities, printQuantities } from '../fabricate/quantities';
 import { reelsPrintedParts } from '../fabricate/printed';
 import { laserRequestText, printRequestText } from '../fabricate/shops';
 
@@ -110,34 +110,32 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
     }
   });
 
-  it('todo cabe en hojas de 87 × 57 cm: una de MDF y una de acrílico; el estimado queda en el rango de las tarifas', () => {
-    const laser = estimateLaser(st);
+  it('todo cabe en hojas de 87 × 57 cm: una de MDF y una de acrílico; la impresión pesa unos 370 g', () => {
+    const laser = laserQuantities(st);
     for (const e of laser) expect(e.nest.unplaced, e.material).toEqual([]);
     const mdf = laser.find((e) => e.material === 'mdf')!;
     expect(mdf.sheets).toBe(1);
     expect(mdf.cutM).toBeGreaterThan(12);
-    expect(mdf.mxn.mid).toBeGreaterThan(300);
-    expect(mdf.mxn.mid).toBeLessThan(1200);
     expect(laser.find((e) => e.material === 'acrilico-3')!.sheets).toBe(1);
-    const pe = estimatePrint(reelsPrintedParts(p, d));
-    expect(pe.pieces).toBe(28);
-    expect(pe.grams).toBeGreaterThan(250);
-    expect(pe.grams).toBeLessThan(550);
-    expect(pe.mxn.low).toBeLessThan(pe.mxn.mid);
-    expect(pe.mxn.mid).toBeLessThan(pe.mxn.high);
+    const pq = printQuantities(reelsPrintedParts(p, d));
+    expect(pq.pieces).toBe(28);
+    expect(pq.grams).toBeGreaterThan(250);
+    expect(pq.grams).toBeLessThan(550);
   });
 
   it('los textos para los talleres dicen material, archivos, kerf y piezas de prueba', () => {
-    const laser = estimateLaser(st);
+    const laser = laserQuantities(st);
     const t = laserRequestText(st, laser);
     expect(t).toContain('MDF de 5,5 mm');
     expect(t).toContain('E10');
     expect(t).toContain('cuatro paredes');
     expect(t).toContain('DXF R12');
     const parts = reelsPrintedParts(p, d);
-    const u = printRequestText(parts, estimatePrint(parts));
+    const u = printRequestText(parts, printQuantities(parts));
     expect(u).toContain('PETG');
     expect(u).toContain('I01-nucleo-tambor.stl × 2');
     expect(u).toContain('Ø22,05');
+    // lo que se manda a los talleres no lleva precios ni tarifas
+    for (const txt of [t, u]) expect(txt).not.toMatch(/\$|MXN|FIC/);
   });
 });

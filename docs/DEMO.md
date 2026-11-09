@@ -135,8 +135,10 @@ pasar durante cada destello. Prueba el desfase del LED, la escala de tiempo a 0,
 3. `compras.html?demo=tambores#fabricacion` abre la pestaña *Taller*:
    - los archivos de corte (DXF R12, SVG y PDF 1:1 por hoja);
    - los 16 STL;
-   - los dos textos para copiar y mandar;
-   - el rango de lo que debería costar.
+   - los dos textos para copiar y mandar.
+
+   El sitio no muestra lo que estimamos que cobrarán los talleres: esos rangos están en la página privada de costos
+   (`node private/costos/reporte.mjs`).
 4. `npm run fabricar` vuelve a generar el paquete en `public/fabricacion/tambores/` y `docs/FABRICACION-TAMBORES.md`.
    Si el MDF o el acrílico reales no miden 5,5 y 3 mm: `npm run fabricar -- --mdf=5.7 --acrilico=2.8`. Si la lente que consigas tiene otro barril:
    `--lente=62`.
