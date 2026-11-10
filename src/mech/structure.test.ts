@@ -30,6 +30,21 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
     for (const part of st.parts) for (const h of part.profile.holes ?? []) for (const q of h) expect(pointInPolygon(q, part.profile.outer), `${part.id}`).toBe(true);
   });
 
+  it('las marcas de grabado caen sobre material: dentro de la pieza y sin tocar ningún hueco', () => {
+    const near = (a: { x: number; y: number }, poly: { x: number; y: number }[]) => poly.some((b, i) => {
+      const c = poly[(i + 1) % poly.length];
+      const L2 = (c.x - b.x) ** 2 + (c.y - b.y) ** 2 || 1;
+      const s = Math.max(0, Math.min(1, ((a.x - b.x) * (c.x - b.x) + (a.y - b.y) * (c.y - b.y)) / L2));
+      return Math.hypot(a.x - b.x - s * (c.x - b.x), a.y - b.y - s * (c.y - b.y)) < 1;
+    });
+    for (const part of st.parts) for (const m of part.marks) for (const q of m) {
+      expect(pointInPolygon(q, part.profile.outer), `${part.id}: marca fuera de la pieza`).toBe(true);
+      for (const h of part.profile.holes ?? []) expect(pointInPolygon(q, h) || near(q, h), `${part.id}: marca sobre un hueco o a menos de 1 mm`).toBe(false);
+    }
+    // la E10 numera sus cinco ranuras de cada fila con 1 a 5 rayitas
+    expect(byId('E10').marks.length).toBe(2 * (1 + 2 + 3 + 4 + 5));
+  });
+
   it('en cada arista de la caja los dientes de una pieza llenan las muescas de la otra: nunca se enciman y solo queda la holgura entre acrílicos', () => {
     const faces = ['E01', 'E02', 'E03', 'A01', 'A02', 'A03', 'A04'].map(byId);
     const B = st.asm.base;

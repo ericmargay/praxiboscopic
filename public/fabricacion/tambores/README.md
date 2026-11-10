@@ -2,7 +2,7 @@
 
 # Mesa de dos tambores · paquete para los talleres
 
-9/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
+10/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
 
 ## Qué hay aquí
 

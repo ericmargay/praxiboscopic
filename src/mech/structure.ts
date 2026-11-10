@@ -552,7 +552,9 @@ export function buildReelsStructure(p: Project, d: Derived, opts: StructureOptio
   const n1 = (x: number) => String(Math.round(x * 10) / 10).replace('.', ',');
   const testPlate = freeform('E10', 'Pieza de prueba (ranuras, 608 y eje)', 'mdf', t, [], rectC({ x: 50, y: 41 }, 100, 82), testHoles, { step: 0, explode: [0, 0, 0], role: `Se corta primero. La llave E11 (MDF) va de canto en la fila de abajo y la A11 (acrílico) en la de en medio: se elige la ranura que entra justa. Con un 608 se prueba el barreno del rodamiento y con el eje el de 8 mm. Si la buena no es la del centro (${n1(t)} y ${n1(tA)} mm, 22,0 y 7,9 mm), se regeneran los archivos con lo medido` });
   testPlate.qty = 1;
-  testPlate.marks = [22, 44].flatMap((yy) => fits.map((_, k) => rectC({ x: 10 + k * 16, y: yy - 13 }, 1, 2 + 2 * k)));
+  // la ranura k lleva k + 1 rayitas de 3 mm en el hueco libre de su lado (entre las filas o junto al borde), sin tocar
+  // ninguna ranura: las filas quedan a 22 mm y las ranuras miden 12, así que sobran 10 mm entre una fila y otra
+  testPlate.marks = [22, 44].flatMap((yy) => fits.flatMap((_, k) => Array.from({ length: k + 1 }, (_, j) => rectC({ x: 10 + k * 16 + (j - k / 2) * 1.6, y: yy - 11 }, 0.6, 3))));
   const testKey = freeform('E11', 'Llave de prueba (MDF)', 'mdf', t, [], rectC({ x: 0, y: 0 }, 30, 12), [], { step: 0, explode: [0, 0, 0], role: 'Tira del mismo MDF: se mete de canto en las ranuras de abajo de la E10' });
 
   // --- acrílico transparente: tapas y bridas ----------------------------------------------------------------------------
