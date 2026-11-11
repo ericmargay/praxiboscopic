@@ -11,6 +11,7 @@ laser-acrylic,"Corte láser en acrílico transparente de 3 mm: las cuatro parede
 laser-mdf,"Corte láser en MDF de 5,5 mm: piso, cubierta doble, torres de los motores, marco y topes de la fuente, cuñas y piezas de prueba (20 piezas)",structural,1,mdf-5.5,laser,394.16x267.5x125,taller de corte láser,,,,,
 epoxy,Epóxico transparente de 5 minutos (J-B Weld ClearWeld),structural,1,,buy,,Home Depot,,https://www.homedepot.com.mx/s/resistol%20850,109,109,MXN
 glue-wood,"Resistol 850 (cola blanca para madera), 250 g",structural,1,,buy,,Home Depot,,https://www.homedepot.com.mx/s/resistol%20850,89,89,MXN
+rubber-feet,"Topes autoadheribles transparentes de Ø10 × 3 mm (Handy Home, 18 piezas)",structural,1,,buy,,Home Depot,605178,https://www.homedepot.com.mx/s/tope%20autoadherible,93,93,MXN
 led-caps,Capacitor electrolítico 1000 µF 50 V,electronic,3,,buy,,UNIT Electronics,CAP-1000U-50V,https://uelectronics.com/producto/capacitor-electrolitico-50v/,6,18,MXN
 ceramic-caps,Capacitores 100 nF cerámico y 10 µF 50 V,electronic,2,,buy,,UNIT Electronics,CAP-100N + CAP-10U,,3,6,MXN
 led-heatsink,Disipador de aluminio 40 × 40 × 20 mm,electronic,1,,buy,,UNIT Electronics,DIS-40X40,,35,35,MXN

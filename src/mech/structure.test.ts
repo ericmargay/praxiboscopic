@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pointInPolygon } from '@aminoacid/omega/fabricate';
 import { deriveProject } from '../core/project';
 import { reelsDemoProject } from '../core/video';
-import { buildReelsStructure, type LaserPart, type V3 } from './structure';
+import { buildReelsStructure, REELS_FEET, type LaserPart, type V3 } from './structure';
 import { laserQuantities, printQuantities } from '../fabricate/quantities';
 import { reelsPrintedParts } from '../fabricate/printed';
 import { laserRequestText, printRequestText } from '../fabricate/shops';
@@ -43,6 +43,28 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
     }
     // la E10 numera sus cinco ranuras de cada fila con 1 a 5 rayitas
     expect(byId('E10').marks.length).toBe(2 * (1 + 2 + 3 + 4 + 5));
+    // el piso no lleva marcas: su cara marcada queda dentro de la caja y se vería a través del acrílico
+    expect(byId('E01').marks).toEqual([]);
+  });
+
+  it('las cuatro patas van bajo el piso, en material: lejos de las orillas y de las ranuras de los cinchos', () => {
+    const floor = byId('E01');
+    const f = floor.frames[0];
+    const B = st.asm.base;
+    expect(st.feet).toHaveLength(4);
+    for (const q of st.feet) {
+      // centro de la pata en el plano del piso y su contorno cada 15°
+      const c = { x: q.x - f.o[0], z: q.z - f.o[2] };
+      const local = (x: number, z: number) => ({ x: x * f.u[0] + z * f.u[2], y: x * f.v[0] + z * f.v[2] });
+      const R = REELS_FEET.diameterMm / 2 + 2;
+      for (let k = 0; k < 24; k++) {
+        const a = (k * Math.PI) / 12;
+        const pt = local(c.x + R * Math.cos(a), c.z + R * Math.sin(a));
+        expect(pointInPolygon(pt, floor.profile.outer), 'pata fuera del piso').toBe(true);
+        for (const h of floor.profile.holes ?? []) expect(pointInPolygon(pt, h), 'pata sobre una ranura').toBe(false);
+      }
+      expect(Math.min(q.x - B.x0, B.x1 - q.x, q.z - B.z0, B.z1 - q.z)).toBeCloseTo(REELS_FEET.insetMm, 6);
+    }
   });
 
   it('en cada arista de la caja los dientes de una pieza llenan las muescas de la otra: nunca se enciman y solo queda la holgura entre acrílicos', () => {

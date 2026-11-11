@@ -33,6 +33,13 @@ export const SHEET_MATERIALS: Record<SheetMaterial, { label: string; short: stri
   'acrilico-negro-3': { label: 'acrílico negro de 3 mm', short: 'Acrílico negro 3 mm', thicknessMm: 3, kerfMm: 0.15 },
 };
 
+/**
+ * patas de hule autoadheribles bajo las cuatro esquinas del piso (Handy Home 605178: Ø10 × 3 mm). Solo la tira de los
+ * cinchos pasa por debajo del piso (1,2 mm; el amarre va arriba), así que con 3 mm la mesa no cojea. No se marcan en el
+ * piso: el láser marca la cara de arriba, que queda dentro de la caja y se ve a través del acrílico
+ */
+export const REELS_FEET = { insetMm: 18, diameterMm: 10, heightMm: 3 } as const;
+
 /** grupo de la pieza en el árbol del simulador */
 export type PartGroup = 'estructura' | 'transporte' | 'manos' | 'optica';
 
@@ -73,6 +80,8 @@ export interface ReelsStructure {
   asm: ReelsAssembly;
   parts: LaserPart[];
   steps: AssemblyStep[];
+  /** centros de las patas de hule bajo el piso (x, z de la mesa) */
+  feet: { x: number; z: number }[];
   /** espesor del MDF con el que se dibujaron las ranuras */
   mdfMm: number;
   /** contornos que no salieron como un solo polígono (vacío = todo bien) */
@@ -446,9 +455,9 @@ export function buildReelsStructure(p: Project, d: Derived, opts: StructureOptio
   });
   tie(a.res10.x, a.res10.y - 14, 'x');
   tie(a.res10.x, a.res10.y + 14, 'x');
-  const feet = [-1, 1].flatMap((sx) => [-1, 1].map((sz) => ({ x: (x0 + x1) / 2 + sx * ((x1 - x0) / 2 - 18), y: (zK + zF) / 2 + sz * ((zF - zK) / 2 - 18) })));
-  const floor = flat('E01', 'Piso', 'mdf', t, [fFloor], faceOutline('floor', fFloor, [footprint(faceOf('floor'))]), floorHoles, { step: 1, explode: [0, -1, 0], role: 'Base de todo: en sus ranuras entran las paredes de acrílico, las torres de los motores, el marco y los topes de la fuente; los cinchos de los drivers y de las tarjetas pasan por sus ranuras chicas. Sobresale 8 mm de las paredes al frente y a los lados' }, problems);
-  floor.marks = feet.map((q) => mapPoly(circle(q, 16), (r) => floorXZ({ x: r.x, y: r.y })));
+  const fi = REELS_FEET.insetMm;
+  const feet = [-1, 1].flatMap((sx) => [-1, 1].map((sz) => ({ x: (x0 + x1) / 2 + sx * ((x1 - x0) / 2 - fi), z: (zK + zF) / 2 + sz * ((zF - zK) / 2 - fi) })));
+  const floor = flat('E01', 'Piso', 'mdf', t, [fFloor], faceOutline('floor', fFloor, [footprint(faceOf('floor'))]), floorHoles, { step: 1, explode: [0, -1, 0], role: `Base de todo: en sus ranuras entran las paredes de acrílico, las torres de los motores, el marco y los topes de la fuente; los cinchos de los drivers y de las tarjetas pasan por sus ranuras chicas. Sobresale 8 mm de las paredes al frente y a los lados. Por abajo lleva cuatro patas de hule a ${fi} mm de las orillas` }, problems);
 
   // --- A01–A03 paredes de acrílico y A04 tapa trasera ------------------------------------------------------------------
   const wallRole = 'Transparente para que se vea la electrónica. Sus pestañas entran en ranuras cerradas del piso y de la cubierta, que la atrapan: no lleva tornillos ni pegamento. Con las otras paredes encaja con 0,1 mm de holgura (el acrílico a presión se estrella)';
@@ -593,15 +602,15 @@ export function buildReelsStructure(p: Project, d: Derived, opts: StructureOptio
   rails.group = 'optica';
   const parts = [floor, deckTop, deckLow, towerSide, collar, bearingPlate, psuFrame, psuStop, wedges, testPlate, testKey, front, left, right, back, covers, flangeLow, flangeHigh, guideFlange, dancerFlange, acrylicTest, acrylicKey, gatePlate, rails];
   for (const pt of parts) if (!pt.profile.outer.length) problems.push(`${pt.id} ${pt.name}: sin contorno`);
-  return { asm: a, parts, steps: assemblySteps(), mdfMm: t, problems };
+  return { asm: a, parts, steps: assemblySteps(), feet, mdfMm: t, problems };
 }
 
 /** el orden de armado: lo mismo que muestra la vista «Ensamble» y lo que dice docs/FABRICACION-TAMBORES.md */
 export function assemblySteps(): AssemblyStep[] {
   return [
-    { n: 1, title: 'Piso, torres y marco de la fuente', text: ['Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.', 'Armar cada torre: dos costados E04 con su collar E05 en las ranuras de abajo.', 'Encajar las dos torres, el marco E07 y los dos topes E08 en las ranuras del piso E01.'], parts: ['E01', 'E04', 'E05', 'E07', 'E08'] },
+    { n: 1, title: 'Piso, torres y marco de la fuente', text: ['Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.', `Pegar las cuatro patas de hule por abajo del piso E01, en las esquinas, con el centro a ${REELS_FEET.insetMm} mm de las dos orillas.`, 'Armar cada torre: dos costados E04 con su collar E05 en las ranuras de abajo.', 'Encajar las dos torres, el marco E07 y los dos topes E08 en las ranuras del piso E01.'], parts: ['E01', 'rubber-feet', 'E04', 'E05', 'E07', 'E08'] },
     { n: 2, title: 'Motores, coples y segundo 608', text: ['Bajar cada motor por el collar hasta el piso, con el conector hacia la muesca del costado.', 'Poner el cople en el eje del motor (13 mm de eje dentro del cople) y apretar su prisionero.', 'Meter un 608 a presión en cada placa E06 y encajarla en las ranuras de arriba de la torre: los costados se abren un poco.'], parts: ['motor-17hs8401', 'coupling-5-8', 'E06', 'bearing-608'] },
-    { n: 3, title: 'Electrónica en el piso', text: ['La fuente de pie detrás del marco E07, entre los topes.', 'Cada DM542 delante de su motor con dos cinchos; la placa de expansión con el ESP32, los reguladores y la resistencia con un cincho cada uno.', 'La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.'], parts: ['psu-24v-5a', 'driver-dm542', 'esp32-expansion', 'esp32', 'buck-lm2596', 'led-resistor', 'breadboard-kit', 'cable-ties'] },
+    { n: 3, title: 'Electrónica en el piso', text: ['La fuente de pie detrás del marco E07, entre los topes.', 'Cada DM542 delante de su motor con dos cinchos; la placa de expansión con el ESP32, los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.', 'La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.'], parts: ['psu-24v-5a', 'driver-dm542', 'esp32-expansion', 'esp32', 'buck-lm2596', 'led-resistor', 'breadboard-kit', 'cable-ties'] },
     { n: 4, title: 'Paredes de acrílico', text: ['Quitar la película protectora de la cara de adentro de cada pared; la de afuera, al final.', 'Encajar el frente A01 y los costados A02 y A03 en las ranuras del piso: las esquinas entran holgadas, no se fuerzan ni se pegan.'], parts: ['A01', 'A02', 'A03'] },
     { n: 5, title: 'Cubierta doble', text: ['Pegar la copa impresa del pivote (I05) bajo la contracubierta E03 con sus tres espigas y epóxico.', 'Bajar la E03 sobre las pestañas de las paredes, las torres y el marco de la fuente: cada una entra en su ranura y las paredes quedan atrapadas.', 'Meter a presión los dos 608 de los tambores en la cubierta E02, poner cola blanca en su cara de abajo y bajarla sobre la E03 con los ejes de las guías como guía; prensar con peso una hora. Las pestañas de acrílico quedan al ras.', 'Meter el 608 de arriba del pivote desde el hueco: apoya en la copa.'], parts: ['E02', 'E03', 'I05', 'bearing-608', 'glue-wood'] },
     { n: 6, title: 'Tambores', text: ['Pegar con epóxico cada núcleo impreso (I01) a su eje de 100 mm, con 2 mm de eje arriba.', 'Pegar la brida de abajo A06 (barreno de 11,7) y la de arriba A07 (8,2) a las orillas del núcleo.', 'Bajar cada tambor por su 608 de la cubierta y el de la torre hasta el cople y apretar el prisionero: el cubo apoya en la pista interior del 608.'], parts: ['I01', 'A06', 'A07', 'shaft-8mm', 'epoxy'] },

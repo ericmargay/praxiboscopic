@@ -13,7 +13,7 @@ import { mediumById } from '../optics/medium';
 import { opticsReport } from '../optics/projector';
 import { tilePlan } from '../film/print';
 import { buildAssembly, buildReelsAssembly } from '../mech/assembly';
-import { buildReelsStructure, SHEET_MATERIALS } from '../mech/structure';
+import { buildReelsStructure, REELS_FEET, SHEET_MATERIALS } from '../mech/structure';
 import { reelsPrintedParts } from './printed';
 import { laserQuantities, printQuantities } from './quantities';
 
@@ -72,7 +72,7 @@ interface ReelsPrice {
   evidence: NonNullable<ShoppingNotes['evidence']>;
   date?: string;
 }
-export const REELS_PRICES: Record<'vl53l4cd' | 'vl53l0x' | 'as5600' | 'spring' | 'jumpersHH' | 'm3kit' | 'headers' | 'fuse' | 'ties' | 'washers' | 'woodGlue' | 'epoxy' | 'caGlue' | 'shaftRod', ReelsPrice> = {
+export const REELS_PRICES: Record<'vl53l4cd' | 'vl53l0x' | 'as5600' | 'spring' | 'jumpersHH' | 'm3kit' | 'headers' | 'fuse' | 'ties' | 'feet' | 'washers' | 'woodGlue' | 'epoxy' | 'caGlue' | 'shaftRod', ReelsPrice> = {
   // nadie lo vende en México: Amazon trae el de SparkFun con impuestos incluidos (Pololu y DigiKey, en OFFERS)
   vl53l4cd: { label: 'Sensor de distancia VL53L4CD en placa Qwiic (SparkFun SEN-18993)', shop: 'Amazon México', sku: 'B09YWNL4BN', unitCost: 500.18, url: 'https://www.amazon.com.mx/dp/B09YWNL4BN', evidence: 'read', date: '5-nov-2026' },
   vl53l0x: { label: 'Sensor de distancia VL53L0X en placa (GY-VL53L0XV2)', shop: SHOP, sku: 'VL53L0X', unitCost: 47, url: `${U}vl53l0x-medidor-de-distancia-laser-i2c-940nm-tof/`, evidence: 'estimated', date: '5-nov-2026' },
@@ -86,6 +86,8 @@ export const REELS_PRICES: Record<'vl53l4cd' | 'vl53l0x' | 'as5600' | 'spring' |
   fuse: { label: 'Fusible de 500 mA de 5 × 20 mm con portafusible en línea (Steren FEUR .5 + FUS-AUE)', shop: 'Steren', sku: 'FEUR .5 + FUS-AUE', unitCost: 33, url: 'https://www.steren.com.mx/catalogsearch/result/?q=fusible', evidence: 'read', date: '5-nov-2026' },
   // sin precio publicado a la vista: estimados de ferretería
   ties: { label: 'Cinchos de nylon de 3,6 × 150 mm (bolsa de 100)', shop: 'ferretería / Steren', unitCost: 45, evidence: 'estimated', date: '5-nov-2026' },
+  // la página escribe «$9300» sin el punto decimal, como en el resto de sus precios
+  feet: { label: 'Topes autoadheribles transparentes de Ø10 × 3 mm (Handy Home, 18 piezas)', shop: 'Home Depot', sku: '605178', unitCost: 93, url: 'https://www.homedepot.com.mx/s/tope%20autoadherible', evidence: 'read', date: '11-nov-2026' },
   washers: { label: 'Rondanas planas M8 (DIN 125, 1,6 mm), bolsa de 10', shop: 'ferretería', unitCost: 20, evidence: 'estimated', date: '5-nov-2026' },
   woodGlue: { label: 'Resistol 850 (cola blanca para madera), 250 g', shop: 'Home Depot', unitCost: 89, url: 'https://www.homedepot.com.mx/s/resistol%20850', evidence: 'read', date: '5-nov-2026' },
   epoxy: { label: 'Epóxico transparente de 5 minutos (J-B Weld ClearWeld)', shop: 'Home Depot', unitCost: 109, url: 'https://www.homedepot.com.mx/s/resistol%20850', evidence: 'read', date: '5-nov-2026' },
@@ -280,6 +282,10 @@ function addStructure(p: Project, d: Derived, add: Add): void {
     add(
       { id: 'cable-ties', name: REELS_PRICES.ties.label, category: 'structural', qty: 1, process: 'buy', supplier: offerSupplier('ties') },
       { why: 'Pasan por las ranuras chicas del piso: sujetan los dos drivers, la placa de expansión, los reguladores y la resistencia, el F249 a su brazo y el cable de CA en la tapa trasera', forWhat: 'Montaje', alternative: 'Cinchos de velcro, que se reusan', evidence: REELS_PRICES.ties.evidence, evidenceDate: REELS_PRICES.ties.date, need: 'requerido' },
+    );
+    add(
+      { id: 'rubber-feet', name: REELS_PRICES.feet.label, category: 'structural', qty: 1, process: 'buy', supplier: offerSupplier('feet') },
+      { why: `Cuatro, bajo las esquinas del piso a ${REELS_FEET.insetMm} mm de las orillas: la tira de los cinchos pasa por debajo y sin patas la mesa cojea. Sobran 14 de la bolsa`, forWhat: 'Estructura', alternative: `Cualquier tope de hule adhesivo de 8 a 20 mm de diámetro y al menos ${REELS_FEET.heightMm} mm de alto`, evidence: REELS_PRICES.feet.evidence, evidenceDate: REELS_PRICES.feet.date, need: 'requerido' },
     );
     add(
       { id: 'washers-m8', name: REELS_PRICES.washers.label, category: 'mechanical', qty: 1, process: 'buy', supplier: offerSupplier('washers') },

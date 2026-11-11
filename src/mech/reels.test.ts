@@ -246,7 +246,7 @@ describe('dos tambores: la mesa', () => {
     expect(q('as5600')).toBe(1);
     const ids = bom.lines.map((l) => l.id);
     // sin tornillos (ADR-0012): la estructura y las piezas impresas van en cuatro trabajos de taller
-    for (const id of ['laser-mdf', 'laser-acrylic', 'laser-black', 'print-petg', 'cable-ties', 'washers-m8', 'glue-wood', 'epoxy', 'dancer-spring', 'jumpers-hh']) expect(ids).toContain(id);
+    for (const id of ['laser-mdf', 'laser-acrylic', 'laser-black', 'print-petg', 'cable-ties', 'rubber-feet', 'washers-m8', 'glue-wood', 'epoxy', 'dancer-spring', 'jumpers-hh']) expect(ids).toContain(id);
     for (const id of ['bracket-nema17', 'm3-kit', 'base-box', 'reels', 'rollers', 'dancer', 'reel-covers', 'gate-plate', 'printed-supports', 'control-box', 'tensioner']) expect(ids).not.toContain(id);
     // los trabajos de taller y la película se cotizan: su estimado no se publica (private/costos)
     expect(bom.lines.filter((l) => l.unitCost === undefined).map((l) => l.id).sort()).toEqual(['film-base-roll', 'film-cover', 'laser-acrylic', 'laser-black', 'laser-mdf', 'print-petg']);

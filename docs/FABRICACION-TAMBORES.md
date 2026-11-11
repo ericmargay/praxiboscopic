@@ -2,7 +2,7 @@
 
 # Mesa de dos tambores · paquete para los talleres
 
-10/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
+11/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
 
 ## Qué hay aquí
 
@@ -68,7 +68,7 @@ Cada pieza lleva su código grabado en la cara que no se ve con la mesa armada. 
 
 | Código | Pieza | Cant. | Material | mm | Paso | Qué hace |
 |---|---|---|---|---|---|---|
-| E01 | Piso | 1 | MDF 5,5 mm | 394 × 268 | 1 | Base de todo: en sus ranuras entran las paredes de acrílico, las torres de los motores, el marco y los topes de la fuente; los cinchos de los drivers y de las tarjetas pasan por sus ranuras chicas. Sobresale 8 mm de las paredes al frente y a los lados |
+| E01 | Piso | 1 | MDF 5,5 mm | 394 × 268 | 1 | Base de todo: en sus ranuras entran las paredes de acrílico, las torres de los motores, el marco y los topes de la fuente; los cinchos de los drivers y de las tarjetas pasan por sus ranuras chicas. Sobresale 8 mm de las paredes al frente y a los lados. Por abajo lleva cuatro patas de hule a 18 mm de las orillas |
 | E02 | Cubierta (capa de arriba) | 1 | MDF 5,5 mm | 394 × 282 | 5 | Lleva los dos 608 de los tambores, los ejes de las guías y el hueco donde gira el brazo tensor; todo lo de arriba se posiciona con ella · Cola blanca en toda la cara de abajo, con los 608 ya puestos: queda pegada a la contracubierta |
 | E03 | Contracubierta (capa de abajo) | 1 | MDF 5,5 mm | 394 × 282 | 5 | Le hace tope a los 608 de la capa de arriba, lleva el 608 de arriba del pivote y recibe las pestañas de las paredes, las torres y el marco de la fuente |
 | E04 | Costado de torre | 4 | MDF 5,5 mm | 54 × 120 | 1 | Cuatro iguales: dos por motor. Abajo entran en el piso, arriba en la contracubierta; sostienen el collar del motor y la placa del segundo 608. La muesca de abajo deja salir el conector del motor |
@@ -141,9 +141,10 @@ Los mismos pasos que muestra *Mechanical Simulation → Ensamble sin tornillos* 
 
 **1. Piso, torres y marco de la fuente**
    - Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.
+   - Pegar las cuatro patas de hule por abajo del piso E01, en las esquinas, con el centro a 18 mm de las dos orillas.
    - Armar cada torre: dos costados E04 con su collar E05 en las ranuras de abajo.
    - Encajar las dos torres, el marco E07 y los dos topes E08 en las ranuras del piso E01.
-   - Entran: E01, E04, E05, E07, E08
+   - Entran: E01, rubber-feet, E04, E05, E07, E08
 
 **2. Motores, coples y segundo 608**
    - Bajar cada motor por el collar hasta el piso, con el conector hacia la muesca del costado.
@@ -153,7 +154,7 @@ Los mismos pasos que muestra *Mechanical Simulation → Ensamble sin tornillos* 
 
 **3. Electrónica en el piso**
    - La fuente de pie detrás del marco E07, entre los topes.
-   - Cada DM542 delante de su motor con dos cinchos; la placa de expansión con el ESP32, los reguladores y la resistencia con un cincho cada uno.
+   - Cada DM542 delante de su motor con dos cinchos; la placa de expansión con el ESP32, los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.
    - La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.
    - Entran: psu-24v-5a, driver-dm542, esp32-expansion, esp32, buck-lm2596, led-resistor, breadboard-kit, cable-ties
 

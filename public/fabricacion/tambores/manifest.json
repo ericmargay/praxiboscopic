@@ -1,5 +1,5 @@
 {
-  "date": "10/11/2026",
+  "date": "11/11/2026",
   "mdfMm": 5.5,
   "laser": [
     "laser/mesa-tambores-mdf-5.5mm-hoja-1.svg",
@@ -31,5 +31,5 @@
     "impresion-3d/I16-espiga.stl"
   ],
   "zip": "mesa-tambores-taller.zip",
-  "zipBytes": 2781755
+  "zipBytes": 2761381
 }

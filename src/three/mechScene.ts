@@ -17,7 +17,7 @@ import { handRangeMm, livePath, type HandInput, type ReelLive } from '../mech/re
 import { motorOf } from '../mech/transport';
 import { opticsReport } from '../optics/projector';
 import { BREADBOARD, box, breadboardHole, buildAcrylicBox, buildHand, buildKind, buildMagnet, buildReel, buildRoller, buildSpool, buildSpring, cyl, EXPANSION, KINDS, localBox, mat, type KindSpec, type PartCategory } from './parts';
-import { buildReelsStructure, SHEET_MATERIALS, type AssemblyStep, type ReelsStructure, type SheetMaterial } from '../mech/structure';
+import { buildReelsStructure, REELS_FEET, SHEET_MATERIALS, type AssemblyStep, type ReelsStructure, type SheetMaterial } from '../mech/structure';
 import { reelsPrintedParts } from '../fabricate/printed';
 
 const MM = 0.001;
@@ -550,11 +550,11 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     staticGroup.add(baseG);
   }
 
-  /** suelo: cuadrícula de 10 mm sobre la mesa de trabajo */
-  function buildGround(B: Assembly['base']): void {
+  /** suelo: cuadrícula de 10 mm sobre la mesa de trabajo, a la altura de las patas bajo el piso */
+  function buildGround(B: Assembly['base'], feetMm = 4): void {
     const cx = (B.x0 + B.x1) / 2;
     const cz = (B.z0 + B.z1) / 2;
-    const floorY = B.bottom - 4;
+    const floorY = B.bottom - feetMm;
     const gridSize = Math.max(900, Math.ceil((Math.max(B.x1 - B.x0, B.z1 - B.z0) + 400) / 100) * 100);
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(gridSize, gridSize), new THREE.ShadowMaterial({ opacity: 0.18 }));
     ground.rotation.x = -Math.PI / 2;
@@ -942,7 +942,10 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       return q ? `${q.id} ${q.name}, impresa en PETG: ${q.role}` : id;
     };
     buildStructure(st);
-    buildGround(B);
+    buildGround(B, REELS_FEET.heightMm);
+    const feet = tag(new THREE.Group(), { id: 'rubber-feet', name: 'Patas de hule', category: 'estructura', bomId: 'rubber-feet', notes: [`Cuatro topes adhesivos de Ø${REELS_FEET.diameterMm} × ${REELS_FEET.heightMm} mm bajo las esquinas del piso, a ${REELS_FEET.insetMm} mm de las orillas: por debajo solo pasa la tira de los cinchos`], step: 1, explode: [0, -1, 0] });
+    for (const q of st.feet) feet.add(cyl(REELS_FEET.diameterMm / 2, REELS_FEET.heightMm, mat('rubber'), q.x, B.bottom - REELS_FEET.heightMm / 2, q.z, 24));
+    staticGroup.add(feet);
     const bearing = (parentObj: THREE.Object3D, y: number, id: string, step?: number) => {
       const b = tag(buildKind('bearing'), { id, name: 'Rodamiento 608ZZ', category: 'transporte', kind: 'bearing', bomId: 'bearing-608', ...(step ? { step, explode: [0, 1, 0] as [number, number, number] } : {}) });
       b.position.y = y;
