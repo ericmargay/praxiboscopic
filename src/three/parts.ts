@@ -6,6 +6,7 @@
 // Convención: el origen de cada pieza está en el centro de su cara de apoyo (abajo), salvo que el tipo diga otra cosa.
 // Las medidas marcadas `approx` no vienen de una hoja de datos: hay que confirmarlas con la pieza en mano.
 import * as THREE from 'three';
+import { PSU_MM } from '../mech/assembly';
 
 export type PartCategory = 'estructura' | 'transporte' | 'manos' | 'pelicula' | 'optica' | 'control' | 'potencia' | 'cableado';
 
@@ -229,13 +230,11 @@ function buildDm542(): THREE.Group {
 
 // --- fuente conmutada 24 V 5 A ---------------------------------------------------------------------------------------
 function buildPsu(): THREE.Group {
-  const L = 199;
-  const W = 98;
-  const H = 42;
+  const { l: L, w: W, h: H } = PSU_MM;
   const g = group(box(L, H, W, mat('alu'), 0, H / 2, 0));
-  // perforado superior
+  // perforado superior, hasta la regleta
   const pts: [number, number, number][] = [];
-  for (let i = 0; i < 14; i++) for (let j = 0; j < 7; j++) pts.push([-L / 2 + 30 + i * 9, H + 0.05, -W / 2 + 14 + j * 11]);
+  for (let i = 0; -L / 2 + 30 + i * 9 < L / 2 - 20; i++) for (let j = 0; j < 7; j++) pts.push([-L / 2 + 30 + i * 9, H + 0.05, -W / 2 + 14 + j * 11]);
   g.add(instanced(new THREE.CylinderGeometry(2.6, 2.6, 0.2, 6), mat('hole'), pts));
   // regleta de 7 bornes en el extremo +x
   g.add(box(12, 14, 80, mat('black'), L / 2 - 6, H - 7, 0));
@@ -351,8 +350,8 @@ function buildRes10w(): THREE.Group {
   return g;
 }
 function buildResistor(): THREE.Group {
-  // 1/4 W acostada entre dos agujeros a 10,16 mm
-  const body = cyl(1.2, 6.3, mat('label'), 0, 3.5, 0, 14);
+  // 1/2 W acostada entre dos agujeros a 10,16 mm, con las patas dobladas a ras del cuerpo
+  const body = cyl(1.6, 9, mat('label'), 0, 3.5, 0, 14);
   body.rotation.z = Math.PI / 2;
   const lead = cyl(0.3, 10.2, mat('tin'), 0, 3.5, 0, 8);
   lead.rotation.z = Math.PI / 2;
@@ -718,18 +717,17 @@ export const KINDS: Record<string, KindSpec> = {
     realMm: [118, 75.5, 34],
     material: 'Carcasa de aluminio anodizado (disipador)',
     specs: ['20–50 V DC · hasta 4,2 A', 'Microstepping por interruptores DIP', 'Entradas optoacopladas de 5 V'],
-    pins: ['PUL+ / DIR+ a 5 V', 'PUL− / DIR− a los colectores de los S8050', 'A+ A− B+ B− al motor', '+V y GND a 24 V'],
+    pins: ['PUL+ / DIR+ a 5 V', 'PUL− / DIR− a los colectores de los 2N3904', 'A+ A− B+ B− al motor', '+V y GND a 24 V'],
     source: 'Hoja de datos de Leadshine DM542 (118 × 75,5 × 34 mm)',
     build: buildDm542,
   },
   psu: {
-    name: 'Fuente conmutada 24 V 5 A (UE-120-24)',
-    realMm: [199, 98, 42],
-    material: 'Chasis de lámina perforada',
-    specs: ['Entrada 100–240 V AC', 'Salida 24 V · 5 A · 120 W', 'Ajuste fino de voltaje con potenciómetro'],
-    pins: ['L · N · tierra (cable AC)', '+V / −V a DM542, LM2596 y riel del LED'],
-    source: 'Formato habitual de las fuentes de 120 W; UNIT no publica medidas',
-    approx: true,
+    name: 'Fuente conmutada Mean Well LRS-150F-24',
+    realMm: [PSU_MM.l, PSU_MM.w, PSU_MM.h],
+    material: 'Chasis metálico perforado, sin ventilador',
+    specs: ['Entrada automática 100–240 V AC, sin selector', 'Salida 24 V · 6,5 A · 150 W', 'Ajuste fino de 21,6 a 28,8 V con potenciómetro', 'En la mesa de dos tambores va de pie, pegada al piso con cinta doble cara: los topes se cortaron para una de 199 mm'],
+    pins: ['L · N · tierra (cable AC: el hilo verde a ⏚)', '+V / −V a DM542, LM2596 y riel del LED'],
+    source: 'Ficha de UNIT (13-nov-2026): 159 × 97 × 30 mm, 411 g; la posición de la regleta es aproximada',
     build: buildPsu,
   },
   lm2596: {
@@ -746,8 +744,8 @@ export const KINDS: Record<string, KindSpec> = {
     name: 'ESP32 DevKitC V4 (WROOM-32D)',
     realMm: [54.4, 27.9, 10],
     material: 'PCB negra con módulo blindado',
-    specs: ['Se programa desde el IDE de Arduino: hace de «Arduino» en este montaje', 'Temporizadores de hardware para los pasos y el pulso del LED', 'Filas de pines a 25,4 mm: en una protoboard no deja agujeros libres en uno de los lados; por eso va en su placa de expansión'],
-    pins: ['GPIO25 → PUL (por S8050)', 'GPIO26 → DIR (por S8050)', 'GPIO27 → LIN del IR2101', 'GPIO34 ← salida del sensor F249', '5V y GND desde el LM2596 de 5 V'],
+    specs: ['Se programa desde el IDE de Arduino: hace de «Arduino» en este montaje', 'Temporizadores de hardware para los pasos y el pulso del LED', 'Filas de pines a 25,4 mm: en una protoboard no deja agujeros libres en uno de los lados; por eso va en su placa de expansión o suelto, con jumpers hembra en sus pines'],
+    pins: ['GPIO25 → PUL (por 2N3904)', 'GPIO26 → DIR (por 2N3904)', 'GPIO27 → LIN del IR2101', 'GPIO34 ← salida del sensor F249', '5V y GND desde el LM2596 de 5 V'],
     source: 'Documentación de Espressif (ESP32-DevKitC V4)',
     build: buildEsp32,
   },
@@ -788,11 +786,11 @@ export const KINDS: Record<string, KindSpec> = {
     source: 'Hoja de datos de Infineon (PDIP-8)',
     build: buildDip8,
   },
-  s8050: {
-    name: 'Transistor NPN S8050 (TO-92)',
+  npn: {
+    name: 'Transistor NPN 2N3904 (TO-92)',
     realMm: [4.8, 3.8, 8],
     material: 'Encapsulado TO-92',
-    specs: ['Convierte 3,3 V del ESP32 en las entradas de 5 V del DM542', 'Base con 1 kΩ'],
+    specs: ['Convierte 3,3 V del ESP32 en las entradas de 5 V del DM542', 'Base con 1 kΩ', 'Patas E-B-C con la cara plana al frente, como el S8050 de TO-92'],
     pins: ['E → GND', 'B ← GPIO por 1 kΩ', 'C → PUL− o DIR−'],
     source: 'Encapsulado TO-92 estándar',
     build: buildTo92,
@@ -818,10 +816,10 @@ export const KINDS: Record<string, KindSpec> = {
     build: buildRes10w,
   },
   resistor: {
-    name: 'Resistencia 1/4 W',
-    realMm: [6.3, 2.4, 2.4],
-    material: 'Película de carbón',
-    specs: ['1 kΩ en las bases de los S8050; 10 Ω y 10 kΩ en la compuerta del MOSFET'],
+    name: 'Resistencia de precisión 1/2 W 1 %',
+    realMm: [9, 3.2, 3.2],
+    material: 'Película metálica',
+    specs: ['1 kΩ en las bases de los 2N3904; 10 Ω y 10 kΩ en la compuerta del MOSFET', 'Cuerpo de 9 mm: se doblan las patas a ras para que entren en agujeros a 10,16 mm'],
     build: buildResistor,
   },
   led10: {
@@ -957,7 +955,7 @@ export function localBox(root: THREE.Object3D): THREE.Box3 {
 export const BOM_KIND: Record<string, string> = {
   'motor-17hs8401': 'nema17',
   'driver-dm542': 'dm542',
-  'npn-s8050': 's8050',
+  'npn-2n3904': 'npn',
   'bracket-nema17': 'bracket',
   rollers: 'roller',
   'bearing-608': 'bearing',

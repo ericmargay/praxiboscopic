@@ -27,7 +27,7 @@ Actualizado: 5/11/2026. Puente entre sesiones: la siguiente arranca leyendo este
 | Dos tambores con la mano (ADR-0011) | Implementado: recorrido abierto entre dos tambores con radio que crece al enrollar, colas transparentes, brazo tensor y AS5600; programa del ESP32 (`ReelController`: dos sensores de mano, filtro, espera, rampa de 2 m/s², frenado antes del final, paro con un fotograma centrado, dos manos, invitar, regresar sola); destello de 0,1 mm / v y cuadro fijo a 200 Hz; mesa de 394 × 268 mm con la electrónica dentro y a la vista (ADR-0012); escena 3D con tambores que giran y se llenan, tapas, sensores, conos y la mano del visitante; laboratorio con la planta de los tambores; lista de compras propia (`compras.html?demo=tambores`, `docs/COMPRAS-TAMBORES.md`) | `src/mech/reels.ts`, `reels.test.ts`, `capturas/tambores*.png` |
 | Mesa de dos tambores sin tornillos (ADR-0012) | Implementado: la estructura se calcula desde el ensamble (`buildReelsStructure`): piso y cubierta doble de MDF de 5,5 mm y paredes de acrílico transparente de 3 mm atrapadas en ranuras del MDF (una prueba recorre las aristas: ninguna pieza se encima y entre acrílicos solo queda su holgura de 0,1 mm), tapa trasera de acrílico con cuñas, cuatro patas de hule bajo el piso (sin marcarlas: el láser marca la cara de adentro), torres de los motores, marco y topes de la fuente, tapas y bridas de acrílico, ventana de acrílico negro y piezas de prueba. 16 piezas impresas en PETG modeladas con manifold-3d y revisadas con `checkPrint`. `npm run fabricar` escribe DXF R12, SVG y PDF 1:1 por hoja, los STL, el README con los textos para los talleres y un ZIP en `public/fabricacion/tambores/`. Cantidades de taller (`quantities.ts`); los costos estimados, en privado (`private/costos/`). En el simulador, *Ensamble sin tornillos* tiene 12 pasos con explosión (`?ensamble=N&explosion=x`). La página de compras tiene la pestaña *Taller* | `src/mech/structure.ts`, `src/fabricate/printed.ts`, `src/fabricate/quantities.ts`, `src/fabricate/shops.ts`, `scripts/fabricar.mjs`, `structure.test.ts`, `printed.test.ts`, `capturas/tambores-ensamble*.png` |
 | Espacio interior del loop | Implementado: `interiorClearance` mide fondo y ancho reales dentro del loop y `deriveProject` marca error si la linterna o el tambor no caben | `src/mech/path.ts`, `project.test.ts` |
-| Pruebas y capturas | 124 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
+| Pruebas y capturas | 125 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
 
 ## Decisiones tomadas (ADR en docs/adr)
 
@@ -46,6 +46,14 @@ piezas que giran o sostienen son de PETG, entre bridas de acrílico. El único t
 Los archivos y el README para los talleres se generan con `npm run fabricar` (`docs/FABRICACION-TAMBORES.md`). La lista
 de compras lleva los trabajos de taller y la película por cotizar (9-nov-2026: los proveedores ven el sitio, así que
 los estimados viven en `private/costos/` y en una página privada). La mesa pasa a 394 × 268 × 125 mm.
+
+**Compra de la electrónica (13-nov-2026):** con las piezas ya cortadas e impresas, Eric armó el carrito de UNIT y la
+lista quedó con lo que hay. La UE-120-24 se agotó y la de 25 A no cabe; va la Mean Well LRS-150F-24 (159 × 97 × 30 mm),
+de pie en el mismo hueco y pegada al piso con cinta doble cara, porque los topes se cortaron para una de 199 mm (una
+prueba revisa que quepa sin mover el marco ni los topes). El S8050 de UNIT era de montaje superficial: va el 2N3904 en
+TO-92. La tira de pines, en escuadra. Las resistencias, de 1/2 W. La varilla, de acero 1045 sin cromar de 60 cm. Los
+608 se piden en Amazon. El cable dúplex de 18 AWG, el fusible, los cinchos y la cinta son de Steren. El ESP32, la protoboard y
+los jumpers ya los tenía Eric; la placa de expansión queda como opcional.
 
 **La película sigue laminada (5-nov-2026, ADR-0013):** Eric preguntó por una laca en aerosol en lugar del laminado en
 frío. Se investigó con fuentes y se descartó. Corre o vela la tinta inkjet, no pega bien al PET sin lijar, se pega a sí

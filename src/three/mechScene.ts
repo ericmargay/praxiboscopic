@@ -11,7 +11,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { Derived, Project } from '../core/project';
 import type { CanvasLike, FrameSet } from '../frames/generator';
-import { buildAssembly, buildReelsAssembly, type Assembly, type ReelsAssembly } from '../mech/assembly';
+import { buildAssembly, buildReelsAssembly, PSU_MM, type Assembly, type ReelsAssembly } from '../mech/assembly';
 import { pointAt, type PathGeometry, type PathPoint, type Vec2 } from '../mech/path';
 import { handRangeMm, livePath, type HandInput, type ReelLive } from '../mech/reels';
 import { motorOf } from '../mech/transport';
@@ -449,7 +449,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       staticGroup.add(o);
       return o;
     };
-    const psu = place(tag(buildKind('psu'), { id: 'psu', name: 'Fuente 24 V 5 A', category: 'potencia', kind: 'psu', bomId: 'psu-24v-5a' }), a.psu.x, floorTop, a.psu.z);
+    const psu = place(tag(buildKind('psu'), { id: 'psu', name: 'Fuente Mean Well 24 V 6,5 A', category: 'potencia', kind: 'psu', bomId: 'psu-24v-5a' }), a.psu.x, floorTop, a.psu.z);
     const dm = place(tag(buildKind('dm542'), { id: 'dm542', name: 'Driver DM542', category: 'potencia', kind: 'dm542', bomId: 'driver-dm542', notes: ['Interruptores DIP: 1/16 de paso y corriente de 1,8 A (verificar la tabla impresa en el driver)'] }), a.dm542.x, floorTop, a.dm542.z);
     const bucks = a.bucks.map((b) => place(tag(buildKind('lm2596'), { id: `buck-${b.volts}v`, name: `Regulador LM2596 a ${b.volts} V`, category: 'potencia', kind: 'lm2596', bomId: 'buck-lm2596', notes: [b.volts === 5 ? 'Alimenta ESP32, sensor y las entradas del driver' : 'Alimenta el IR2101'] }), b.x, floorTop, b.z));
     const fuseG = tag(new THREE.Group(), { id: 'fuse', name: 'Portafusible con fusible rápido de 500 mA', category: 'potencia', bomId: 'led-fuse', notes: ['En la línea de 24 V del LED, antes de los capacitores', 'Modelo aproximado'] });
@@ -506,8 +506,8 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       o.position.set(h.x, BREADBOARD.h, h.z);
       caps.add(o);
     }
-    const npns = [54, 59].map((c, k) => onBB(tag(buildKind('s8050'), { id: `s8050-${k ? 'dir' : 'pul'}`, name: `Transistor S8050 · ${k ? 'DIR' : 'PUL'}`, category: 'control', kind: 's8050', bomId: 'npn-s8050', notes: ['El tercero de la lista es repuesto'] }), c, 'c'));
-    const smallR = tag(new THREE.Group(), { id: 'small-resistors', name: 'Resistencias 1/4 W', category: 'control', kind: 'resistor', bomId: 'small-resistors' });
+    const npns = [54, 59].map((c, k) => onBB(tag(buildKind('npn'), { id: `npn-${k ? 'dir' : 'pul'}`, name: `Transistor 2N3904 · ${k ? 'DIR' : 'PUL'}`, category: 'control', kind: 'npn', bomId: 'npn-2n3904', notes: ['El tercero de la lista es repuesto'] }), c, 'c'));
+    const smallR = tag(new THREE.Group(), { id: 'small-resistors', name: 'Resistencias 1/2 W', category: 'control', kind: 'resistor', bomId: 'small-resistors' });
     bb.add(smallR);
     for (const [c, row] of [[16, 'h'], [18, 'b'], [52, 'a'], [57, 'a']] as const) {
       const o = buildKind('resistor');
@@ -830,7 +830,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     down(rail('b+', 4), anchorPos(bucks[0], 'OUT+'), 0xe07b26, 0.65, wires.control);
     down(rail('b+', 62), anchorPos(bucks[1], 'OUT+'), 0x7b4bb3, 0.65, wires.control);
     down(rail('b-', 4), anchorPos(bucks[0], 'OUT-'), 0x222222, 0.65, wires.control);
-    // S8050 → PUL− y DIR− del driver; 5 V a PUL+ y DIR+
+    // 2N3904 → PUL− y DIR− del driver; 5 V a PUL+ y DIR+
     down(hole(55, 'd'), anchorPos(dm, 'PUL-'), 0x2b8a4b, 0.65, wires.control, true);
     down(hole(60, 'd'), anchorPos(dm, 'DIR-'), 0x2a6fb5, 0.65, wires.control, true);
     down(hole(5, 'b+'), anchorPos(dm, 'PUL+'), 0xe07b26, 0.65, wires.control, true);
@@ -1169,9 +1169,9 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       return o;
     };
     const el = (id: string, name: string, extra: Partial<Omit<PartNode, 'visible'>> = {}) => ({ id, name, category: 'potencia' as PartCategory, step: 3, explode: [0, 1, 0] as [number, number, number], ...extra });
-    const psu = tag(buildKind('psu'), el('psu', 'Fuente 24 V 5 A', { kind: 'psu', bomId: 'psu-24v-5a', notes: ['De pie detrás del marco E11, entre los topes E12 y contra la tapa trasera: no lleva tornillos', 'Alimenta los dos DM542, el LED y los reguladores'] }));
+    const psu = tag(buildKind('psu'), el('psu', 'Fuente Mean Well LRS-150F-24', { kind: 'psu', bomId: 'psu-24v-5a', notes: ['De pie detrás del marco E07, contra la tapa trasera y centrada entre los topes E08: no lleva tornillos', `Mide ${PSU_MM.l} mm y los topes se cortaron para una de 199: va pegada al piso con dos tiras de cinta doble cara`, 'Alimenta los dos DM542, el LED y los reguladores'] }));
     psu.rotation.x = Math.PI / 2;
-    psu.position.set(a.psu.x, floorTop + 49, a.psu.z - 21);
+    psu.position.set(a.psu.x, floorTop + PSU_MM.w / 2, a.psu.z - PSU_MM.h / 2);
     staticGroup.add(psu);
     const dms = a.dm542.map((m, i) => put(tag(buildKind('dm542'), el(`dm542-${i + 1}`, `Driver DM542 · motor ${i + 1}`, { kind: 'dm542', bomId: 'driver-dm542', notes: ['Dos cinchos por las ranuras del piso, sobre sus pestañas', 'Interruptores DIP: 1/16 de paso y 1,8 A (verificar la tabla impresa en el driver)'] })), m.x, floorTop, m.z, m.rotY));
     const bucks = a.bucks.map((b) => put(tag(buildKind('lm2596'), el(`buck-${b.volts}v`, `Regulador LM2596 a ${b.volts} V`, { kind: 'lm2596', bomId: 'buck-lm2596', notes: [b.volts === 5 ? 'Alimenta el ESP32, el sensor de marcas y las entradas de los drivers' : 'Alimenta el IR2101', 'Un cincho por las ranuras del piso'] })), b.x, floorTop, b.z));
@@ -1181,7 +1181,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     fuseG.add(holder);
     fuseG.userData.anchors = { in: new THREE.Vector3(-16, 7, 0), out: new THREE.Vector3(16, 7, 0) };
     put(fuseG, a.fuse.x, floorTop, a.fuse.z);
-    const bb = put(tag(buildKind('breadboard'), el('breadboard', 'Protoboard 830 puntos', { category: 'control', kind: 'breadboard', bomId: 'breadboard-kit', notes: ['Pegada al piso con su propio adhesivo', 'Lleva el driver del LED y los cuatro S8050 de los dos drivers'] })), a.breadboard.x, floorTop, a.breadboard.y);
+    const bb = put(tag(buildKind('breadboard'), el('breadboard', 'Protoboard 830 puntos', { category: 'control', kind: 'breadboard', bomId: 'breadboard-kit', notes: ['Pegada al piso con su propio adhesivo', 'Lleva el driver del LED y los cuatro 2N3904 de los dos drivers'] })), a.breadboard.x, floorTop, a.breadboard.y);
     const exp = put(tag(buildKind('expansion'), el('esp32-expansion', 'Placa de expansión del ESP32', { category: 'control', kind: 'expansion', bomId: 'esp32-expansion', notes: ['Dos cinchos por sus barrenos de esquina'] })), a.expansion.x, floorTop, a.expansion.y);
     const esp = tag(buildKind('esp32'), { id: 'esp32', name: 'ESP32 DevKitC V4 («el Arduino»)', category: 'control', kind: 'esp32', bomId: 'esp32', notes: ['Lee las dos manos, el brazo tensor y las marcas; mueve los dos motores con la misma rampa y dispara el LED', 'GPIO25/26 → motor 1 · GPIO32/33 → motor 2 · GPIO27 → LED · GPIO34 ← marcas · GPIO21/22 I2C · GPIO4 → XSHUT del sensor 2'] });
     esp.position.set(0, EXPANSION.socketTop + 2.5, 0);
@@ -1204,8 +1204,8 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       caps.add(o);
     }
     const npnCols = [50, 54, 58, 62];
-    npnCols.forEach((col, k) => onBB(tag(buildKind('s8050'), { id: `s8050-${k}`, name: `Transistor S8050 · ${k % 2 ? 'DIR' : 'PUL'} del motor ${k < 2 ? 1 : 2}`, category: 'control', kind: 's8050', bomId: 'npn-s8050', notes: ['El quinto de la lista es repuesto'] }), col, 'c'));
-    const smallR = tag(new THREE.Group(), { id: 'small-resistors', name: 'Resistencias 1/4 W', category: 'control', kind: 'resistor', bomId: 'small-resistors' });
+    npnCols.forEach((col, k) => onBB(tag(buildKind('npn'), { id: `npn-${k}`, name: `Transistor 2N3904 · ${k % 2 ? 'DIR' : 'PUL'} del motor ${k < 2 ? 1 : 2}`, category: 'control', kind: 'npn', bomId: 'npn-2n3904', notes: ['El quinto de la lista es repuesto'] }), col, 'c'));
+    const smallR = tag(new THREE.Group(), { id: 'small-resistors', name: 'Resistencias 1/2 W', category: 'control', kind: 'resistor', bomId: 'small-resistors' });
     bb.add(smallR);
     for (const [col, row] of [[16, 'h'], [18, 'b'], [48, 'a'], [52, 'a'], [56, 'a'], [60, 'a']] as const) {
       const o = buildKind('resistor');

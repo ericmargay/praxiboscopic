@@ -18,27 +18,34 @@ import { reelsPrintedParts } from './printed';
 import { laserQuantities, printQuantities } from './quantities';
 
 const READ_DATE = '2-nov-2026';
+/** precios confirmados en el carrito de UNIT que armó Eric */
+const CART_DATE = '13-nov-2026';
 const SHOP = 'UNIT Electronics';
 const U = 'https://uelectronics.com/producto/';
 
 /** precios de UNIT Electronics (MXN) */
 const UNIT = {
   motor17hs8401: { sku: '17HS8401', unitCost: 225, url: `${U}nema-17-motor-a-pasos-17hs8401/`, label: 'Nema 17 17HS8401 1,8 A 5,5 kg·cm' },
-  dm542: { sku: 'DM542', unitCost: 219, url: undefined, label: 'Driver DM542 20–50 V 4,2 A' },
+  dm542: { sku: 'AR3025', unitCost: 219, url: `${U}dm542-driver-para-motor-a-pasos-dc-20-50v-4-2a/`, label: 'Driver DM542 20–50 V 4,2 A' },
   bracket17: { sku: 'SOP-N17', unitCost: 25, url: `${U}soporte-de-acero-para-motor-nema-17/`, label: 'Soporte de acero para motor Nema 17' },
   coupling: { sku: 'D19L25-5x8', unitCost: 33, url: undefined, label: 'Cople flexible D19L25 de aluminio 5 × 8 mm' },
-  psu24: { sku: 'UE-120-24', unitCost: 210, url: `${U}fuente-conmutada-24v-5a/`, label: 'Fuente conmutada 24 V 5 A 120 W' },
+  // la UE-120-24 (24 V 5 A, 198 × 98 × 42) se agotó; la de 25 A (215 × 115 × 50) no cabe en el hueco de 199 × 43 × 108,5
+  psu24: { sku: 'LRS-150F-24', unitCost: 515, url: `${U}lrs-150f-24-fuente-conmutada-24v-6-5a-mean-well/`, label: 'Fuente conmutada Mean Well LRS-150F-24: 24 V 6,5 A, 159 × 97 × 30 mm, sin ventilador' },
   buck: { sku: 'AR0150', unitCost: 36, url: `${U}modulo-regulador-ajustable-lm2596-dc-dc-step-down-3a-1-25-30v/`, label: 'Regulador LM2596 step down 3 A' },
   esp32: { sku: 'ESP32-DevKitC-V4', unitCost: 145, url: `${U}esp32-devkitc-v4-esp32-wroom-32d-32u/`, label: 'ESP32 DevKitC V4 WROOM-32D' },
-  sensor: { sku: 'F249', unitCost: 20, url: `${U}sensor-de-velocidad-f249-3-3v-5v/`, label: 'Sensor de barrera F249 3,3–5 V' },
+  sensor: { sku: 'F249', unitCost: 21, url: `${U}sensor-de-velocidad-f249-3-3v-5v/`, label: 'Sensor de barrera F249 3,3–5 V' },
   led10: { sku: 'LED-10W-BF', unitCost: 26, url: `${U}led-blanco-frio-de-potencia-10w-50w-y-100w/`, label: 'LED blanco frío de potencia 10 W, emisor 10,8 × 10,8 mm' },
   mosfet: { sku: 'IRLZ44N', unitCost: 12, url: `${U}transistor-irlz44/`, label: 'MOSFET IRLZ44N 55 V 47 A' },
   gateDriver: { sku: 'IR2101PBF', unitCost: 50, url: `${U}ir2101-driver-dip-8-ir2101pbf/`, label: 'Driver de compuerta IR2101 DIP-8' },
-  npn: { sku: 'S8050', unitCost: 2, url: `${U}transistor-npn-500ma-25v-s8050/`, label: 'Transistor NPN S8050' },
-  cap: { sku: 'CAP-1000U-50V', unitCost: 6, url: `${U}capacitor-electrolitico-50v/`, label: 'Capacitor electrolítico 1000 µF 50 V' },
-  resistor: { sku: 'RES-AL-10W', unitCost: 32, url: `${U}resistencia-de-aluminio-10w/`, label: 'Resistencia de aluminio 10 W, 3,3 Ω (confirmar valor disponible)' },
+  cap: { sku: 'AR1136', unitCost: 6, url: `${U}capacitor-electrolitico-50v/`, label: 'Capacitor electrolítico 1000 µF 50 V' },
+  // en la misma ficha del electrolítico se elige el de 10 µF ($1)
+  ceramics: { sku: 'AR0265 + AR1136', unitCost: 1, url: `${U}capacitor-ceramico-100nf-0-1uf-104/`, label: 'Capacitor cerámico 100 nF (104) y electrolítico 10 µF 50 V (en la ficha del de 1000 µF)' },
+  // 1 kΩ a 0,80, 10 Ω a 0,40 y 10 kΩ a 0,70: los seis suman 4,20. De 1/4 W no había todos los valores
+  resistors: { sku: 'RES-1/2W-1%', unitCost: 0.7, url: undefined, label: 'Resistencias de precisión 1/2 W 1 %: 3 × 1 kΩ, 1 × 10 Ω, 2 × 10 kΩ' },
+  heatsink: { sku: 'DIS-40X40', unitCost: 33, url: undefined, label: 'Disipador de aluminio 40 × 40 × 20 mm' },
+  resistor: { sku: 'RES-AL-10W', unitCost: 32, url: `${U}resistencia-de-aluminio-10w/`, label: 'Resistencia de aluminio 10 W, 3,3 Ω' },
   bearing: { sku: '608ZZ-7', unitCost: 8, url: `${U}608zz-7-rodamiento-tipo-balero-de-8-x-22-x-7-mm/`, label: 'Rodamiento 608ZZ 8 × 22 × 7 mm' },
-  cable: { sku: 'AC-1.8', unitCost: 93, url: undefined, label: 'Cable de alimentación universal AC 1,8 m' },
+  cable: { sku: 'AR4597', unitCost: 93, url: `${U}cable-de-alimentacion-universal-ac-1-8m/`, label: 'Cable de alimentación universal AC 1,8 m' },
 } as const;
 
 /**
@@ -49,12 +56,16 @@ const UNIT_EST = {
   expansion: { sku: 'UNIT-EXP-ESP32-38', unitCost: 89, url: `${U}unit-placa-de-expansion-para-esp32-38-pines/`, label: 'UNIT Placa de expansión para ESP32 de 38 pines' },
   breadboardKit: { sku: 'KIT-PROTO-830-MB102', unitCost: 150, url: `${U}kit-protoboard-830-puntos-fuente-mb102-65-cables-dupont-m-m/`, label: 'Kit protoboard 830 puntos + fuente MB102 + 65 jumpers macho-macho' },
   jumpersHM: { sku: 'JMP-HM-40', unitCost: 45, url: undefined, label: 'Jumpers dupont hembra-macho 20 cm (40 piezas)' },
-  heatsink: { sku: 'DIS-40X40', unitCost: 35, url: undefined, label: 'Disipador de aluminio 40 × 40 × 20 mm' },
-  resistors: { sku: 'RES-1/4W', unitCost: 1, url: undefined, label: 'Resistencias 1/4 W: 3 × 1 kΩ, 1 × 10 Ω, 2 × 10 kΩ' },
-  ceramics: { sku: 'CAP-100N + CAP-10U', unitCost: 3, url: undefined, label: 'Capacitores 100 nF cerámico y 10 µF 50 V' },
+  // el S8050 de UNIT es de montaje superficial (SOT-23); el 2N3904 viene en TO-92, con las patas E-B-C del S8050 de TO-92
+  npn: { sku: '2N3904', unitCost: 2, url: `${U}2n3904-transistor-bjt-npn-40v-to-92/`, label: 'Transistor NPN 2N3904 (TO-92, de patitas)' },
   standoffs: { sku: 'SEP-M3-40', unitCost: 7, url: undefined, label: 'Separador hexagonal de latón M3 × 40 mm (macho-hembra)' },
-  wire: { sku: 'CAB-18AWG', unitCost: 15, url: undefined, label: 'Cable 18 AWG rojo y negro (por metro)' },
 } as const;
+
+/** Steren (leído en steren.com.mx el 13-nov-2026, precios con IVA): el cable de 16 y 18 AWG de silicón se agotó en UNIT */
+const STEREN = {
+  wire: { sku: 'POT18BI-500 VTA', unitCost: 15, url: 'https://www.steren.com.mx/cable-duplex-500-m-18-awg-bicolor-vta.html', label: 'Cable dúplex 18 AWG bicolor, 100 % cobre (por metro: cada metro trae el hilo + y el −)' },
+} as const;
+const steren = (k: keyof typeof STEREN) => ({ name: 'Steren', sku: STEREN[k].sku, url: STEREN[k].url, unitCost: STEREN[k].unitCost, currency: 'MXN' as const });
 const unitEst = (k: keyof typeof UNIT_EST) => ({ name: SHOP, sku: UNIT_EST[k].sku, url: UNIT_EST[k].url, unitCost: UNIT_EST[k].unitCost, currency: 'MXN' as const });
 
 const unit = (k: keyof typeof UNIT) => ({ name: SHOP, sku: UNIT[k].sku, url: UNIT[k].url, unitCost: UNIT[k].unitCost, currency: 'MXN' as const });
@@ -72,32 +83,39 @@ interface ReelsPrice {
   evidence: NonNullable<ShoppingNotes['evidence']>;
   date?: string;
 }
-export const REELS_PRICES: Record<'vl53l4cd' | 'vl53l0x' | 'as5600' | 'spring' | 'jumpersHH' | 'm3kit' | 'headers' | 'fuse' | 'ties' | 'feet' | 'washers' | 'woodGlue' | 'epoxy' | 'caGlue' | 'shaftRod', ReelsPrice> = {
+export const REELS_PRICES: Record<'vl53l4cd' | 'vl53l0x' | 'as5600' | 'spring' | 'jumpersHH' | 'm3kit' | 'headers' | 'fuse' | 'ties' | 'psuTape' | 'feet' | 'bearings' | 'washers' | 'woodGlue' | 'epoxy' | 'caGlue' | 'shaftRod', ReelsPrice> = {
   // nadie lo vende en México: Amazon trae el de SparkFun con impuestos incluidos (Pololu y DigiKey, en OFFERS)
   vl53l4cd: { label: 'Sensor de distancia VL53L4CD en placa Qwiic (SparkFun SEN-18993)', shop: 'Amazon México', sku: 'B09YWNL4BN', unitCost: 500.18, url: 'https://www.amazon.com.mx/dp/B09YWNL4BN', evidence: 'read', date: '5-nov-2026' },
-  vl53l0x: { label: 'Sensor de distancia VL53L0X en placa (GY-VL53L0XV2)', shop: SHOP, sku: 'VL53L0X', unitCost: 47, url: `${U}vl53l0x-medidor-de-distancia-laser-i2c-940nm-tof/`, evidence: 'estimated', date: '5-nov-2026' },
-  as5600: { label: 'Encoder magnético AS5600 de 12 bits en módulo I2C, con imán', shop: SHOP, sku: 'AS5600', unitCost: 52, url: `${U}as5600-encoder-magnetico-12-bits/`, evidence: 'estimated', date: '5-nov-2026' },
-  spring: { label: 'Kit de resortes de compresión y extensión, 200 piezas', shop: SHOP, sku: 'AR3384', unitCost: 162, url: `${U}resortes-de-compresion-y-extension-200-piezas/`, evidence: 'estimated', date: '5-nov-2026' },
-  jumpersHH: { label: 'Jumpers dupont hembra-hembra de 30 cm (40 piezas)', shop: SHOP, sku: 'DUPONT-30-HH', unitCost: 20, url: `${U}cables-dupont-extra-largos-30cm-hh-mh-mm/`, evidence: 'estimated', date: '5-nov-2026' },
+  vl53l0x: { label: 'Sensor de distancia VL53L0X en placa (GY-VL53L0XV2)', shop: SHOP, sku: 'VL53L0X', unitCost: 47, url: `${U}vl53l0x-medidor-de-distancia-laser-i2c-940nm-tof/`, evidence: 'read', date: CART_DATE },
+  as5600: { label: 'Encoder magnético AS5600 de 12 bits en módulo I2C, con imán', shop: SHOP, sku: 'AS5600', unitCost: 52, url: `${U}as5600-encoder-magnetico-12-bits/`, evidence: 'read', date: CART_DATE },
+  spring: { label: 'Kit de resortes de compresión y extensión, 200 piezas', shop: SHOP, sku: 'AR3384', unitCost: 162, url: `${U}resortes-de-compresion-y-extension-200-piezas/`, evidence: 'read', date: CART_DATE },
+  jumpersHH: { label: 'Jumpers dupont hembra-hembra de 30 cm (40 piezas)', shop: SHOP, sku: 'DUPONT-30-HH', unitCost: 20, url: `${U}cables-dupont-extra-largos-30cm-hh-mh-mm/`, evidence: 'read', date: CART_DATE },
   m3kit: { label: 'Kit de 1260 tornillos M2 a M5 con tuercas y rondanas', shop: SHOP, unitCost: 341, url: 'https://uelectronics.com/categoria-producto/kits/robotica-kits/', evidence: 'estimated', date: '5-nov-2026' },
-  // la página dio 403: precio del extracto del buscador (tira en escuadra de 40 pines, con IVA)
-  headers: { label: 'Tira de pines macho en ángulo recto de 2,54 mm (40 pines)', shop: SHOP, unitCost: 3, url: 'https://uelectronics.com/?s=tira+de+pines', evidence: 'estimated', date: '5-nov-2026' },
-  // Steren: fusible FEUR .5 (5 × 20 mm) $4 y portafusible en línea FUS-AUE $29
-  fuse: { label: 'Fusible de 500 mA de 5 × 20 mm con portafusible en línea (Steren FEUR .5 + FUS-AUE)', shop: 'Steren', sku: 'FEUR .5 + FUS-AUE', unitCost: 33, url: 'https://www.steren.com.mx/catalogsearch/result/?q=fusible', evidence: 'read', date: '5-nov-2026' },
-  // sin precio publicado a la vista: estimados de ferretería
-  ties: { label: 'Cinchos de nylon de 3,6 × 150 mm (bolsa de 100)', shop: 'ferretería / Steren', unitCost: 45, evidence: 'estimated', date: '5-nov-2026' },
+  // la L20 de la misma tienda es recta: con ella los cables salen hacia la mano y el capuchón no cierra
+  headers: { label: 'Tira header macho de 40 pines de 2,54 mm en escuadra (ángulo recto)', shop: SHOP, unitCost: 3, url: `${U}header-macho-tira-40-pines-2-54mm-en-escuadra/`, evidence: 'read', date: CART_DATE },
+  // Steren: fusible europeo FEUR .5 (5 × 20 mm, rápido) $4 y portafusible de línea europeo de bayoneta FUS-AUE $29
+  fuse: { label: 'Fusible de 500 mA de 5 × 20 mm con portafusible en línea (Steren FEUR .5 + FUS-AUE)', shop: 'Steren', sku: 'FEUR .5 + FUS-AUE', unitCost: 33, url: 'https://www.steren.com.mx/catalogsearch/result/?q=fusible', evidence: 'read', date: CART_DATE },
+  ties: { label: 'Cinchos sujetacables cortos de 3,6 × 150 mm, negros (bolsa de 100)', shop: 'Steren', sku: 'TY24NE', unitCost: 39, url: 'https://www.steren.com.mx/bolsa-de-100-cinchos-sujetacables-cortos-color-negro.html', evidence: 'read', date: CART_DATE },
+  // Steren no tiene cinta de espuma; la de gel aguanta 1 kg por cada 10 cm y se despega sin romper el MDF. 63 en el Buen Fin
+  psuTape: { label: 'Cinta doble cara de gel «nano stick» de 3 m', shop: 'Steren', sku: 'PT-500', unitCost: 79, url: 'https://www.steren.com.mx/nano-cinta-magica-doble-cara-reutilizable-de-3-m.html', evidence: 'read', date: CART_DATE },
   // la página escribe «$9300» sin el punto decimal, como en el resto de sus precios
   feet: { label: 'Topes autoadheribles transparentes de Ø10 × 3 mm (Handy Home, 18 piezas)', shop: 'Home Depot', sku: '605178', unitCost: 93, url: 'https://www.homedepot.com.mx/s/tope%20autoadherible', evidence: 'read', date: '11-nov-2026' },
+  // UNIT ya no los tiene: Jectse en Amazon, leído en la página que vio Eric
+  bearings: { label: 'Rodamientos 608ZZ de 8 × 22 × 7 mm, paquete de 10 (Jectse)', shop: 'Amazon México', unitCost: 203, url: 'https://www.amazon.com.mx/s?k=608ZZ+rodamiento+10+piezas', evidence: 'read', date: CART_DATE },
   washers: { label: 'Rondanas planas M8 (DIN 125, 1,6 mm), bolsa de 10', shop: 'ferretería', unitCost: 20, evidence: 'estimated', date: '5-nov-2026' },
   woodGlue: { label: 'Resistol 850 (cola blanca para madera), 250 g', shop: 'Home Depot', unitCost: 89, url: 'https://www.homedepot.com.mx/s/resistol%20850', evidence: 'read', date: '5-nov-2026' },
   epoxy: { label: 'Epóxico transparente de 5 minutos (J-B Weld ClearWeld)', shop: 'Home Depot', unitCost: 109, url: 'https://www.homedepot.com.mx/s/resistol%20850', evidence: 'read', date: '5-nov-2026' },
   caGlue: { label: 'Cianoacrilato (Kola Loka o similar), 2 tubos', shop: 'papelería / ferretería', unitCost: 40, evidence: 'estimated', date: '5-nov-2026' },
-  shaftRod: { label: 'Eje lineal de acero Ø8 × 500 mm (varilla rectificada), cortado en 6 tramos', shop: 'UNIT Electronics / MercadoLibre', unitCost: 150, evidence: 'estimated', date: '5-nov-2026' },
+  // UNIT no tiene eje lineal cromado de 8 mm; la de 45 cm no alcanza para los seis tramos con lo que se come la segueta
+  shaftRod: { label: 'Varilla lisa de acero 1045 de Ø8 × 600 mm (sin cromar), cortada en 6 tramos', shop: SHOP, unitCost: 28, url: `${U}varilla-lisa-de-8mm-de-acero-1045/`, evidence: 'read', date: CART_DATE },
 };
 const offerSupplier = (k: keyof typeof REELS_PRICES) => {
   const x = REELS_PRICES[k];
   return { name: x.shop, sku: x.sku, url: x.url, unitCost: x.unitCost, currency: 'MXN' as const };
 };
+
+/** 608 de la mesa de dos tambores: 2 por tambor, 2 por guía, 2 en el rodillo tensor y 2 en el pivote */
+export const REELS_BEARINGS = 12;
 
 export interface BomBundle {
   parts: PartMeta[];
@@ -127,7 +145,7 @@ function motorPart(motor: MotorModel, transport: Project['transport'], reels?: R
     forWhat: reels ? 'Los dos tambores' : 'Rodillo motriz del loop de película',
     alternative: 'Nema 17 17HS4401 (MXN 156) si hay existencias en sucursal; 17HS4023 (MXN 145) es débil para este margen',
     evidence: unitMotor ? 'read' : motor.supplier?.unitCost ? 'estimated' : 'unverified',
-    evidenceDate: unitMotor ? READ_DATE : undefined,
+    evidenceDate: unitMotor ? CART_DATE : undefined,
     need: 'requerido',
   };
   return { part, note };
@@ -151,11 +169,11 @@ export function buildParts(p: Project, d: Derived): { parts: PartMeta[]; notes: 
   if (motor.type === 'stepper') {
     add(
       { id: 'driver-dm542', name: UNIT.dm542.label, category: 'electronic', qty: nMotors, process: 'buy', supplier: unit('dm542') },
-      { why: reels ? 'Uno por motor, con 1/16 de paso: los dos siguen la misma rampa. Exige fuente de al menos 20 V' : 'Microstepping suave para reducir la vibración de la película; exige fuente de al menos 20 V', forWhat: reels ? 'Motores de los tambores' : 'Motor del transporte', alternative: reels ? 'TMC2209 (UNIT, de 87 a 99; existencias por confirmar): silencioso y va en la protoboard, si la prueba de banco muestra que alcanza el par a 1,2 A. TB6600 (MXN 140), más barato' : 'TB6600 (MXN 140), más barato y con microstepping menos fino', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+      { why: reels ? 'Uno por motor, con 1/16 de paso: los dos siguen la misma rampa. Exige fuente de al menos 20 V' : 'Microstepping suave para reducir la vibración de la película; exige fuente de al menos 20 V', forWhat: reels ? 'Motores de los tambores' : 'Motor del transporte', alternative: reels ? 'TMC2209 (UNIT, de 87 a 99; existencias por confirmar): silencioso y va en la protoboard, si la prueba de banco muestra que alcanza el par a 1,2 A. TB6600 (MXN 140), más barato' : 'TB6600 (MXN 140), más barato y con microstepping menos fino', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
-      { id: 'npn-s8050', name: `${UNIT.npn.label} (PUL y DIR de 3,3 V a las entradas de 5 V ${reels ? 'de cada driver' : 'del driver'})`, category: 'electronic', qty: 2 * nMotors + 1, process: 'buy', supplier: unit('npn') },
-      { why: `Las entradas optoacopladas del DM542 esperan 5 V; el ESP32 da 3,3 V. Dos por driver y uno de repuesto`, forWhat: reels ? 'Señales a los dos drivers' : 'Señales al driver', alternative: 'Buffer 74HCT245', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+      { id: 'npn-2n3904', name: `${UNIT_EST.npn.label} (PUL y DIR de 3,3 V a las entradas de 5 V ${reels ? 'de cada driver' : 'del driver'})`, category: 'electronic', qty: 2 * nMotors + 1, process: 'buy', supplier: unitEst('npn') },
+      { why: `Las entradas optoacopladas del DM542 esperan 5 V; el ESP32 da 3,3 V. Dos por driver y uno de repuesto. Patas E-B-C con la cara plana al frente; a cada entrada le bastan unos 15 mA`, forWhat: reels ? 'Señales a los dos drivers' : 'Señales al driver', alternative: 'S8050 o 2N2222A en TO-92 (de algunos fabricantes, el 2N2222A trae las patas C-B-E); buffer 74HCT245', evidence: 'estimated', evidenceDate: CART_DATE, need: 'requerido' },
     );
     if (!reels && motor.body.wMm <= 43)
       add(
@@ -232,16 +250,16 @@ function addReelsMechanics(p: Project, d: Derived, r: ReelsDerived, add: Add): v
     );
   const bearing = BEARINGS.find((b) => b.id === '608') ?? BEARINGS[0];
   add(
-    { id: `bearing-${bearing.id}`, name: UNIT.bearing.label, category: 'mechanical', qty: 12, process: 'buy', dimsMm: { x: bearing.odMm, y: bearing.odMm, z: bearing.widthMm }, massG: bearing.massG, supplier: unit('bearing') },
-    { why: 'Dos por tambor (en la cubierta y en la placa de su torre), dos por guía, dos en el rodillo del brazo tensor y dos en el pivote (contracubierta y copa)', forWhat: 'Tambores, guías y brazo tensor', alternative: 'Bujes de bronce 8 × 12 × 8 (más fricción)', evidence: 'estimated', evidenceDate: READ_DATE, need: 'requerido' },
+    { id: `bearing-${bearing.id}`, name: REELS_PRICES.bearings.label, category: 'mechanical', qty: Math.ceil(REELS_BEARINGS / 10), process: 'buy', dimsMm: { x: bearing.odMm, y: bearing.odMm, z: bearing.widthMm }, massG: bearing.massG, supplier: offerSupplier('bearings') },
+    { why: `Se usan ${REELS_BEARINGS}: dos por tambor (en la cubierta y en la placa de su torre), dos por guía, dos en el rodillo del brazo tensor y dos en el pivote (contracubierta y copa). Los que sobran quedan de repuesto`, forWhat: 'Tambores, guías y brazo tensor', alternative: 'Un paquete de 16 o 20 si sale más barato por pieza; bujes de bronce 8 × 12 × 8 (más fricción)', evidence: REELS_PRICES.bearings.evidence, evidenceDate: REELS_PRICES.bearings.date, need: 'requerido' },
   );
   add(
-    { id: 'shaft-8mm', name: REELS_PRICES.shaftRod.label, category: 'mechanical', qty: 1, process: 'buy', dimsMm: { x: 8, y: 8, z: 500 }, supplier: offerSupplier('shaftRod') },
-    { why: 'Seis tramos con segueta: 2 de 100 mm (tambores, pegados al núcleo; bajan al cople), 2 de 70 mm (guías, pegados a la cubierta), 1 de 65 mm (rodillo tensor) y 1 de 40 mm (pivote). Suman 445 mm', forWhat: 'Tambores, guías y brazo tensor', alternative: 'Tramos de varilla rectificada de ferretería', evidence: REELS_PRICES.shaftRod.evidence, evidenceDate: REELS_PRICES.shaftRod.date, need: 'requerido' },
+    { id: 'shaft-8mm', name: REELS_PRICES.shaftRod.label, category: 'mechanical', qty: 1, process: 'buy', dimsMm: { x: 8, y: 8, z: 600 }, supplier: offerSupplier('shaftRod') },
+    { why: 'Seis tramos con segueta: 2 de 100 mm (tambores, pegados al núcleo; bajan al cople), 2 de 70 mm (guías, pegados a la cubierta), 1 de 65 mm (rodillo tensor) y 1 de 40 mm (pivote). Suman 445 mm. Antes de cortar, probar que entre en un 608 y en el cople. Sin cromo se oxida: limpiarla con un poco de aceite y limar un bisel en cada punta', forWhat: 'Tambores, guías y brazo tensor', alternative: 'Eje lineal cromado de Ø8, más duro: se corta con disco, no con segueta', evidence: REELS_PRICES.shaftRod.evidence, evidenceDate: REELS_PRICES.shaftRod.date, need: 'requerido' },
   );
   add(
     { id: 'coupling-5-8', name: UNIT.coupling.label, category: 'mechanical', qty: 2, process: 'buy', supplier: unit('coupling') },
-    { why: 'Une el eje de cada motor con el de su tambor tolerando desalineación. Sus prisioneros son los únicos tornillos de la mesa', forWhat: 'Transmisión', alternative: 'Cople rígido, solo si la alineación es muy buena', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+    { why: 'Une el eje de cada motor con el de su tambor tolerando desalineación. Sus prisioneros son los únicos tornillos de la mesa', forWhat: 'Transmisión', alternative: 'Cople rígido, solo si la alineación es muy buena', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
   );
 }
 
@@ -281,7 +299,7 @@ function addStructure(p: Project, d: Derived, add: Add): void {
     // la estructura va en el corte láser; aquí solo lo que la arma sin tornillos
     add(
       { id: 'cable-ties', name: REELS_PRICES.ties.label, category: 'structural', qty: 1, process: 'buy', supplier: offerSupplier('ties') },
-      { why: 'Pasan por las ranuras chicas del piso: sujetan los dos drivers, la placa de expansión, los reguladores y la resistencia, el F249 a su brazo y el cable de CA en la tapa trasera', forWhat: 'Montaje', alternative: 'Cinchos de velcro, que se reusan', evidence: REELS_PRICES.ties.evidence, evidenceDate: REELS_PRICES.ties.date, need: 'requerido' },
+      { why: 'Pasan por las ranuras chicas del piso: sujetan los dos drivers, el ESP32 (o su placa de expansión), los reguladores y la resistencia, el F249 a su brazo y el cable de CA en la tapa trasera', forWhat: 'Montaje', alternative: 'Cinchos de velcro, que se reusan', evidence: REELS_PRICES.ties.evidence, evidenceDate: REELS_PRICES.ties.date, need: 'requerido' },
     );
     add(
       { id: 'rubber-feet', name: REELS_PRICES.feet.label, category: 'structural', qty: 1, process: 'buy', supplier: offerSupplier('feet') },
@@ -350,39 +368,39 @@ function addOpticsAndControl(p: Project, d: Derived, add: Add): void {
   if (p.strobeKind === 'led') {
     add(
       { id: 'led-10w', name: UNIT.led10.label, category: 'electronic', qty: 3, process: 'buy', supplier: unit('led10') },
-      { why: `Emisor pequeño: la lente admite ~${(p.optics.condenserEfficiency * 100).toFixed(0)} % de su luz, frente a ~8 % del LED de 100 W (emisor de 24,6 mm); dos son repuesto para las pruebas de sobrecorriente`, forWhat: 'Fuente de luz', alternative: 'LED de 100 W (MXN 78), que exige un riel de unos 48 V', evidence: 'estimated', evidenceDate: READ_DATE, need: 'requerido' },
+      { why: `Emisor pequeño: la lente admite ~${(p.optics.condenserEfficiency * 100).toFixed(0)} % de su luz, frente a ~8 % del LED de 100 W (emisor de 24,6 mm); dos son repuesto para las pruebas de sobrecorriente`, forWhat: 'Fuente de luz', alternative: 'LED de 100 W (MXN 78), que exige un riel de unos 48 V', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
-      { id: 'led-heatsink', name: UNIT_EST.heatsink.label, category: 'electronic', qty: 1, process: 'buy', supplier: unitEst('heatsink') },
-      { why: 'Base térmica del LED; la potencia media es pequeña, así que no hace falta ventilador', forWhat: 'Fuente de luz', alternative: 'Placa de aluminio de 3 mm', evidence: 'estimated', need: 'requerido' },
+      { id: 'led-heatsink', name: UNIT.heatsink.label, category: 'electronic', qty: 1, process: 'buy', supplier: unit('heatsink') },
+      { why: 'Base térmica del LED; la potencia media es pequeña, así que no hace falta ventilador', forWhat: 'Fuente de luz', alternative: 'Placa de aluminio de 3 mm', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
       { id: 'led-mosfet', name: UNIT.mosfet.label, category: 'electronic', qty: 2, process: 'buy', supplier: unit('mosfet') },
-      { why: 'Interruptor del pulso de unos 4 A', forWhat: 'Driver del LED', alternative: 'IRFZ44N solo con 10–12 V de compuerta', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+      { why: 'Interruptor del pulso de unos 4 A', forWhat: 'Driver del LED', alternative: 'IRFZ44N solo con 10–12 V de compuerta', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
       { id: 'led-gate-driver', name: UNIT.gateDriver.label, category: 'electronic', qty: 1, process: 'buy', supplier: unit('gateDriver') },
-      { why: 'Da 12 V a la compuerta con flancos rápidos desde la señal de 3,3 V; usar el canal bajo (confirmar umbral de entrada en la hoja de datos)', forWhat: 'Driver del LED', alternative: 'TC4420, que no encontré en UNIT', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+      { why: 'Da 12 V a la compuerta con flancos rápidos desde la señal de 3,3 V; usar el canal bajo (confirmar umbral de entrada en la hoja de datos)', forWhat: 'Driver del LED', alternative: 'TC4420, que no encontré en UNIT', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
       { id: 'led-caps', name: UNIT.cap.label, category: 'electronic', qty: 3, process: 'buy', supplier: unit('cap') },
-      { why: 'Entregan el pico de corriente junto al LED; la fuente solo repone el promedio', forWhat: 'Driver del LED', alternative: 'Cualquier electrolítico de al menos 35 V', evidence: 'estimated', evidenceDate: READ_DATE, need: 'requerido' },
+      { why: 'Entregan el pico de corriente junto al LED; la fuente solo repone el promedio. Los de 50 V tienen margen de sobra sobre 24 V', forWhat: 'Driver del LED', alternative: 'Cualquier electrolítico de al menos 35 V', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
       { id: 'led-resistor', name: UNIT.resistor.label, category: 'electronic', qty: 1, process: 'buy', supplier: unit('resistor') },
-      { why: 'Limita el pulso: (24 V − unos 12 V) / 3,3 Ω ≈ 3,6 A. Empieza con más ohms y baja midiendo', forWhat: 'Driver del LED', alternative: 'Cemento 5 W de 2,2 Ω en serie', evidence: 'estimated', evidenceDate: READ_DATE, need: 'requerido' },
+      { why: 'Limita el pulso: (24 V − unos 12 V) / 3,3 Ω ≈ 3,6 A. Empieza con más ohms y baja midiendo', forWhat: 'Driver del LED', alternative: 'Cemento 5 W de 2,2 Ω en serie', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
-      { id: 'small-resistors', name: UNIT_EST.resistors.label, category: 'electronic', qty: 6, process: 'buy', supplier: unitEst('resistors') },
-      { why: '1 kΩ en las bases de los S8050, 10 Ω entre el IR2101 y la compuerta, 10 kΩ de compuerta a tierra y en LIN', forWhat: 'Driver del LED y señales', alternative: 'Surtido de resistencias 1/4 W', evidence: 'estimated', need: 'requerido' },
+      { id: 'small-resistors', name: UNIT.resistors.label, category: 'electronic', qty: 6, process: 'buy', supplier: unit('resistors') },
+      { why: `1 kΩ en las bases de los ${UNIT_EST.npn.sku}, 10 Ω entre el IR2101 y la compuerta, 10 kΩ de compuerta a tierra y en LIN. Las de 1/2 W son un poco más grandes y entran igual en la protoboard`, forWhat: 'Driver del LED y señales', alternative: 'Las mismas en 1/4 W, si hay todos los valores', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
-      { id: 'ceramic-caps', name: UNIT_EST.ceramics.label, category: 'electronic', qty: 2, process: 'buy', supplier: unitEst('ceramics') },
-      { why: 'Desacoplo del IR2101 junto a su pin VCC', forWhat: 'Driver del LED', alternative: 'Cualquier 100 nF de 25 V o más', evidence: 'estimated', need: 'requerido' },
+      { id: 'ceramic-caps', name: UNIT.ceramics.label, category: 'electronic', qty: 2, process: 'buy', supplier: unit('ceramics') },
+      { why: 'Desacoplo del IR2101 junto a su pin VCC: uno de cada valor', forWhat: 'Driver del LED', alternative: 'Cualquier 100 nF de 25 V o más', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
       { id: 'led-fuse', name: `${REELS_PRICES.fuse.label}, antes de los capacitores`, category: 'electronic', qty: 1, process: 'buy', supplier: offerSupplier('fuse') },
-      { why: 'Si el MOSFET queda en corto, corta antes de quemar el LED y la resistencia. La ficha de Steren no dice si es rápido: el Bussmann GMA-500mA sí lo es ($26,60 + IVA en Electrónica Universal)', forWhat: 'Seguridad', alternative: 'Fusible reajustable de corriente similar', evidence: REELS_PRICES.fuse.evidence, evidenceDate: REELS_PRICES.fuse.date, need: 'requerido' },
+      { why: 'Si el MOSFET queda en corto, corta antes de quemar el LED y la resistencia. El FEUR .5 es de fusión rápida', forWhat: 'Seguridad', alternative: 'Bussmann GMA-500mA ($26,60 + IVA en Electrónica Universal); fusible reajustable de corriente similar', evidence: REELS_PRICES.fuse.evidence, evidenceDate: REELS_PRICES.fuse.date, need: 'requerido' },
     );
   } else {
     add(
@@ -406,7 +424,7 @@ function addOpticsAndControl(p: Project, d: Derived, add: Add): void {
   );
   add(
     { id: 'esp32-expansion', name: UNIT_EST.expansion.label, category: 'electronic', qty: 1, process: 'buy', supplier: unitEst('expansion') },
-    { why: 'Las filas del DevKitC están a 25,4 mm: en una protoboard uno de sus lados queda sin agujeros libres. La placa expone cada GPIO con su voltaje y tierra', forWhat: 'Control', alternative: 'Dos protoboards de 400 puntos separadas para que cada fila quede en una', evidence: 'estimated', need: 'requerido' },
+    { why: 'Las filas del DevKitC están a 25,4 mm: en una protoboard uno de sus lados queda sin agujeros libres. La placa expone cada GPIO con su voltaje y tierra. Sin ella, el ESP32 va suelto con jumpers hembra en sus pines y un cincho', forWhat: 'Control', alternative: 'Jumpers hembra directo a los pines del ESP32; o dos protoboards de 400 puntos separadas para que cada fila quede en una', evidence: 'estimated', need: 'opcional' },
   );
   add(
     { id: 'breadboard-kit', name: UNIT_EST.breadboardKit.label, category: 'electronic', qty: 1, process: 'buy', supplier: unitEst('breadboardKit') },
@@ -422,25 +440,30 @@ function addOpticsAndControl(p: Project, d: Derived, add: Add): void {
       { why: 'El bus I2C, 13 cables: 4 al AS5600 y 9 a los sensores de mano (el del tambor 2 lleva además su XSHUT). Para llegar a las tapas, unos 50 cm, cada uno va empalmado con uno hembra-macho de 20 cm', forWhat: 'Cableado', alternative: 'Cable de 6 hilos calibre 26 con terminales dupont hembra', evidence: REELS_PRICES.jumpersHH.evidence, evidenceDate: REELS_PRICES.jumpersHH.date, need: 'requerido' },
     );
   add(
-    { id: 'wire-18awg', name: UNIT_EST.wire.label, category: 'wiring', qty: reels ? 5 : 4, process: 'buy', supplier: unitEst('wire') },
-    { why: reels ? 'Lleva 24 V a los dos drivers y la corriente del LED; los jumpers delgados se quedan para las señales' : 'Lleva 24 V y la corriente del LED; los jumpers delgados se quedan para las señales', forWhat: 'Cableado', alternative: 'Cable de bocina 2 × 18 AWG', evidence: 'estimated', need: 'requerido' },
+    { id: 'wire-18awg', name: STEREN.wire.label, category: 'wiring', qty: reels ? 3 : 2, process: 'buy', supplier: steren('wire') },
+    { why: `${reels ? 'Lleva 24 V a los dos drivers y la corriente del LED' : 'Lleva 24 V y la corriente del LED'}: la mesa toma menos de 3 A y el 18 AWG sobra. Los dos hilos se separan con la uña; los jumpers delgados se quedan para las señales. En el LM2596 se suelda sobre el pad`, forWhat: 'Cableado', alternative: 'Dúplex polarizado POP18 transparente ($19/m en Steren; el hilo estañado es el −). El de 14 AWG también sirve, pero no entra en los agujeros del LM2596', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
   );
   if (p.film.syncMarks.enabled)
     add(
       { id: 'sensor-f249', name: `${UNIT.sensor.label} (la marca negra interrumpe el haz)`, category: 'electronic', qty: 2, process: 'buy', supplier: unit('sensor') },
-      { why: 'Cada marca de fotograma dispara el destello: el error de diámetro o el patinaje ya no producen deriva. Probar con la tinta real: muchas son transparentes al infrarrojo', forWhat: 'Sincronía', alternative: 'Módulo KY-010', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+      { why: 'Cada marca de fotograma dispara el destello: el error de diámetro o el patinaje ya no producen deriva. Probar con la tinta real: muchas son transparentes al infrarrojo', forWhat: 'Sincronía', alternative: 'Módulo KY-010', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
   add(
     { id: 'psu-24v-5a', name: UNIT.psu24.label, category: 'electronic', qty: 1, process: 'buy', supplier: unit('psu24') },
-    { why: reels ? 'Alimenta los dos drivers y el LED: los motores toman en promedio menos de 1 A cada uno y el DM542 no arranca con 12 V' : 'Alimenta driver y LED; el DM542 no arranca con 12 V', forWhat: 'Alimentación', alternative: 'Mean Well LRS-75-24 (MXN 318), de mejor calidad', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+    { why: `${reels ? 'Alimenta los dos drivers y el LED: los motores toman en promedio menos de 1 A cada uno y el DM542 no arranca con 12 V' : 'Alimenta driver y LED; el DM542 no arranca con 12 V'}. Entrada automática de 100 a 240 V, sin selector${reels ? '. Va de pie en el hueco de 199 × 43 mm entre los topes E08 y el marco E07, con 108,5 mm de alto: sobra holgura, así que se pega al piso con cinta doble cara' : ''}`, forWhat: 'Alimentación', alternative: 'Mean Well LRS-100-24 (4,5 A, 129 × 97 × 30 mm). La de 25 A de UNIT (215 × 115 × 50 mm) no cabe', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
   );
+  if (reels)
+    add(
+      { id: 'psu-tape', name: REELS_PRICES.psuTape.label, category: 'structural', qty: 1, process: 'buy', supplier: offerSupplier('psuTape') },
+      { why: 'Dos tiras de 14 cm bajo la fuente: los topes E08 se cortaron para una de 199 mm y la LRS-150F-24 mide 159, así que sin cinta se corre al mover la mesa. Se despega sin romper el MDF', forWhat: 'Fuente', alternative: 'Cinta doble cara de espuma para montaje (3M) de ferretería', evidence: REELS_PRICES.psuTape.evidence, evidenceDate: REELS_PRICES.psuTape.date, need: 'requerido' },
+    );
   add(
     { id: 'buck-lm2596', name: `${UNIT.buck.label} (uno a 5 V y otro a 12 V)`, category: 'electronic', qty: 2, process: 'buy', supplier: unit('buck') },
-    { why: '5 V para ESP32, sensor y señales; 12 V para el IR2101', forWhat: 'Alimentación', alternative: 'MP1584EN', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+    { why: '5 V para ESP32, sensor y señales; 12 V para el IR2101', forWhat: 'Alimentación', alternative: 'MP1584EN', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
   );
   add(
     { id: 'ac-cable', name: UNIT.cable.label, category: 'wiring', qty: 1, process: 'buy', supplier: unit('cable') },
-    { why: 'Alimentación de la fuente', forWhat: 'Alimentación', alternative: 'Cualquier cable IEC C13', evidence: 'read', evidenceDate: READ_DATE, need: 'requerido' },
+    { why: 'Alimentación de la fuente: se corta el conector C13 y se atornillan fase (L), neutro (N) y el hilo verde a tierra (⏚) de la fuente', forWhat: 'Alimentación', alternative: 'Cualquier cable IEC C13 de tres hilos', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
   );
 
   // película

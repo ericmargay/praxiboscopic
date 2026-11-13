@@ -102,7 +102,7 @@ export function buildAssembly(p: Project, d: Derived): Assembly {
   const volumes: Rect[] = [
     rect('motor', motor.x, motor.z, 49, 49, motor.faceY - 48, -deckT),
     rect('bundle', cx, cz, 16, 16, -30, -deckT),
-    rect('psu', psu.x, psu.z, 199, 98, base.floorTop, base.floorTop + 42),
+    rect('psu', psu.x, psu.z, PSU_MM.l, PSU_MM.w, base.floorTop, base.floorTop + PSU_MM.h),
     rect('dm542', dm542.x, dm542.z, 132, 92, base.floorTop, base.floorTop + 34),
     ...bucks.map((b, i) => rect(`buck${i}`, b.x, b.z, 43, 21, base.floorTop, base.floorTop + 16)),
     rect('fuse', fuse.x, fuse.z, 30, 14, base.floorTop, base.floorTop + 14),
@@ -195,6 +195,11 @@ export const MDF_MM = 5.5;
 export const ACRYLIC_MM = 3;
 /** lo que piso y cubierta sobresalen de las paredes de acrílico (frente y costados): el MDF fuera de cada ranura */
 export const WALL_INSET_MM = 8;
+/**
+ * fuente Mean Well LRS-150F-24 (ficha de UNIT, 13-nov-2026): largo × ancho × alto acostada. En la mesa de dos tambores va
+ * de pie: el ancho queda de alto y el alto, de fondo. Sustituye a la UE-120-24 de 199 × 98 × 42, que se agotó
+ */
+export const PSU_MM = { l: 159, w: 97, h: 30 } as const;
 
 export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: number; acrylicMm?: number } = {}): ReelsAssembly {
   const r = d.reels!;
@@ -249,9 +254,12 @@ export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: numbe
   const sensorFaceY = coverY + 3 + 3.2;
   // dentro de la base: fuente de pie contra la tapa trasera, un DM542 delante de cada motor, protoboard al centro
   const inX1 = inner.x1 - 4;
-  const psu = { x: 0, z: inner.z0 + 1 + 21 };
-  const psuFrame = { x0: -58, x1: 58, z0: psu.z + 21, z1: psu.z + 21 + mdfT };
-  const psuStops = [-1, 1].map((s) => ({ x: s * (99.5 + mdfT / 2), y: psu.z - 6 }));
+  // el hueco de la fuente, ya cortado para una de 199 × 42: 199 mm entre los topes y 42 mm de la tapa trasera al marco.
+  // La LRS-150F-24 es más chica: va contra la tapa trasera, centrada y pegada al piso con cinta doble cara
+  const psuBayZ = inner.z0 + 1 + 21;
+  const psuFrame = { x0: -58, x1: 58, z0: psuBayZ + 21, z1: psuBayZ + 21 + mdfT };
+  const psuStops = [-1, 1].map((s) => ({ x: s * (99.5 + mdfT / 2), y: psuBayZ - 6 }));
+  const psu = { x: 0, z: inner.z0 + 1 + PSU_MM.h / 2 };
   const dmX = inX1 - 46;
   const dm542 = [
     { x: -dmX, z: -60, rotY: Math.PI / 2 },
@@ -304,7 +312,7 @@ export function buildReelsAssembly(p: Project, d: Derived, opts: { mdfMm?: numbe
   const volumes: Rect[] = [
     ...reels.map((q, i) => rect(`motor${i + 1}`, q.x, q.y, 43, 43, floor, motor.faceY + 2)),
     ...towers.flatMap((t, i) => t.sideX.map((x, k) => rect(`torre${i + 1}-${k + 1}`, x, (t.z0 + t.z1) / 2, mdfT, t.z1 - t.z0, floor, -deckT))),
-    rect('psu', psu.x, psu.z, 199, 42, floor, floor + 98),
+    rect('psu', psu.x, psu.z, PSU_MM.l, PSU_MM.h, floor, floor + PSU_MM.w),
     rect('marco-fuente', 0, (psuFrame.z0 + psuFrame.z1) / 2, psuFrame.x1 - psuFrame.x0, mdfT, floor, -deckT),
     ...psuStops.map((s, i) => rect(`tope-fuente${i + 1}`, s.x, s.y, mdfT, 30, floor, floor + 20)),
     ...dm542.map((m, i) => rect(`dm542-${i + 1}`, m.x, m.z, 92, 132, floor, floor + 34)),

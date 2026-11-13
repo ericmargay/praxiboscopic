@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveProject, parseProject } from '../core/project';
 import { reelsDemoProject, reelsProject } from '../core/video';
-import { buildBom } from '../fabricate/bom';
+import { buildBom, REELS_BEARINGS } from '../fabricate/bom';
 import { buildReelsAssembly, reelsAssemblyProblems } from './assembly';
 import { pointAt } from './path';
 import { defaultReelControl, HAND_SENSORS, handFps, livePath, openPointAt, ReelController, reelEvents, reelPose, woundAngle, woundRadius, type HandInput } from './reels';
@@ -234,19 +234,20 @@ describe('dos tambores: la mesa', () => {
     expect(parseProject(JSON.parse(JSON.stringify(p)))).toEqual(p);
   });
 
-  it('la lista de compras: dos motores, dos drivers, trabajos de taller por cotizar, brazo tensor con AS5600, sensores de mano y 12 rodamientos', () => {
+  it('la lista de compras: dos motores, dos drivers, trabajos de taller por cotizar, brazo tensor con AS5600, sensores de mano y 12 rodamientos en paquetes de 10', () => {
     const bom = buildBom(p, d, '5/11/2026');
     const q = (id: string) => bom.lines.find((l) => l.id === id)?.qty;
     expect(q('motor-17hs8401')).toBe(2);
     expect(q('driver-dm542')).toBe(2);
-    expect(q('npn-s8050')).toBe(5);
+    expect(q('npn-2n3904')).toBe(5);
     expect(q('coupling-5-8')).toBe(2);
-    expect(q('bearing-608')).toBe(12);
+    expect(REELS_BEARINGS).toBe(12);
+    expect(q('bearing-608')).toBe(2);
     expect(q('hand-sensor')).toBe(2);
     expect(q('as5600')).toBe(1);
     const ids = bom.lines.map((l) => l.id);
     // sin tornillos (ADR-0012): la estructura y las piezas impresas van en cuatro trabajos de taller
-    for (const id of ['laser-mdf', 'laser-acrylic', 'laser-black', 'print-petg', 'cable-ties', 'rubber-feet', 'washers-m8', 'glue-wood', 'epoxy', 'dancer-spring', 'jumpers-hh']) expect(ids).toContain(id);
+    for (const id of ['laser-mdf', 'laser-acrylic', 'laser-black', 'print-petg', 'cable-ties', 'psu-tape', 'rubber-feet', 'washers-m8', 'glue-wood', 'epoxy', 'dancer-spring', 'jumpers-hh']) expect(ids).toContain(id);
     for (const id of ['bracket-nema17', 'm3-kit', 'base-box', 'reels', 'rollers', 'dancer', 'reel-covers', 'gate-plate', 'printed-supports', 'control-box', 'tensioner']) expect(ids).not.toContain(id);
     // los trabajos de taller y la película se cotizan: su estimado no se publica (private/costos)
     expect(bom.lines.filter((l) => l.unitCost === undefined).map((l) => l.id).sort()).toEqual(['film-base-roll', 'film-cover', 'laser-acrylic', 'laser-black', 'laser-mdf', 'print-petg']);

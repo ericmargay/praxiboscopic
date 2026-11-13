@@ -3,6 +3,7 @@ import { pointInPolygon } from '@aminoacid/omega/fabricate';
 import { deriveProject } from '../core/project';
 import { reelsDemoProject } from '../core/video';
 import { buildReelsStructure, REELS_FEET, type LaserPart, type V3 } from './structure';
+import { PSU_MM } from './assembly';
 import { laserQuantities, printQuantities } from '../fabricate/quantities';
 import { reelsPrintedParts } from '../fabricate/printed';
 import { laserRequestText, printRequestText } from '../fabricate/shops';
@@ -65,6 +66,18 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
       }
       expect(Math.min(q.x - B.x0, B.x1 - q.x, q.z - B.z0, B.z1 - q.z)).toBeCloseTo(REELS_FEET.insetMm, 6);
     }
+  });
+
+  it('la fuente LRS-150F-24 cabe de pie en el hueco ya cortado: entre los topes E08, entre la tapa trasera y el marco E07 y bajo la cubierta', () => {
+    const a = st.asm;
+    const B = a.base;
+    // el hueco se cortó para la UE-120-24 de 199 × 42 mm: los topes y el marco no se mueven
+    for (const s of a.psuStops) expect(Math.abs(s.x) - st.mdfMm / 2).toBeCloseTo(99.5, 6);
+    expect(a.psuFrame.z0 - B.inner.z0).toBeCloseTo(43, 6);
+    for (const s of a.psuStops) expect(Math.abs(s.x) - st.mdfMm / 2).toBeGreaterThan(PSU_MM.l / 2);
+    expect(a.psu.z - PSU_MM.h / 2).toBeGreaterThanOrEqual(B.inner.z0);
+    expect(a.psu.z + PSU_MM.h / 2).toBeLessThanOrEqual(a.psuFrame.z0);
+    expect(B.floorTop + PSU_MM.w).toBeLessThan(-B.deckT);
   });
 
   it('en cada arista de la caja los dientes de una pieza llenan las muescas de la otra: nunca se enciman y solo queda la holgura entre acrílicos', () => {

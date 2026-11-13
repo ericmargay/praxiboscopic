@@ -246,7 +246,7 @@ function render(): void {
   const full = tab === 'alt' || tab === 'check' || tab === 'fab';
   if (!full && !sel && innerWidth >= 1100) sel = all.find(pass)?.id ?? null;
   const app = $('#app')!;
-  app.innerHTML = `<header><div><h1>Praxiboscopic · Lista de compras</h1><div class="sub">${esc(project.name)}${fromDemo ? ' (demostración)' : ''} · MXN antes de envío · precios de UNIT del 2 y del 5-nov-2026: confírmalos en el carrito</div></div>
+  app.innerHTML = `<header><div><h1>Praxiboscopic · Lista de compras</h1><div class="sub">${esc(project.name)}${fromDemo ? ' (demostración)' : ''} · MXN antes de envío · precios de UNIT leídos del 2 al 13-nov-2026: confírmalos en el carrito</div></div>
       <div class="bar"><a class="btn" href="./index.html?section=mechanical${simDemo}">← Simulador 3D</a><button class="btn" id="csv">Descargar CSV</button><button class="btn" id="print">Imprimir</button></div></header>
     <div class="tiers">
       <div class="tier on"><span class="tag">Recomendada</span><span class="l">UNIT Electronics</span><span class="n">${mxn(total(unitRows))}</span><span class="d">${unitRows.length} renglones · casi toda la electrónica</span></div>

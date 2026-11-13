@@ -2,7 +2,7 @@
 
 # Mesa de dos tambores · paquete para los talleres
 
-11/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
+13/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
 
 ## Qué hay aquí
 
@@ -153,10 +153,10 @@ Los mismos pasos que muestra *Mechanical Simulation → Ensamble sin tornillos* 
    - Entran: motor-17hs8401, coupling-5-8, E06, bearing-608
 
 **3. Electrónica en el piso**
-   - La fuente de pie detrás del marco E07, entre los topes.
-   - Cada DM542 delante de su motor con dos cinchos; la placa de expansión con el ESP32, los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.
+   - La fuente de pie detrás del marco E07, con los bornes hacia él, la espalda a 4 mm de la orilla trasera del piso (donde va la tapa) y centrada entre los topes E08. Mide 159 mm y los topes se cortaron para una de 199, así que se pega al piso con dos tiras de cinta doble cara.
+   - Cada DM542 delante de su motor con dos cinchos; el ESP32 (en su placa de expansión, o suelto con jumpers hembra en sus pines), los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.
    - La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.
-   - Entran: psu-24v-5a, driver-dm542, esp32-expansion, esp32, buck-lm2596, led-resistor, breadboard-kit, cable-ties
+   - Entran: psu-24v-5a, psu-tape, driver-dm542, esp32-expansion, esp32, buck-lm2596, led-resistor, breadboard-kit, cable-ties
 
 **4. Paredes de acrílico**
    - Quitar la película protectora de la cara de adentro de cada pared; la de afuera, al final.
