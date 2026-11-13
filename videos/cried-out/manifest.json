@@ -1,0 +1,111 @@
+{
+  "name": "cried-out",
+  "title": "Personality · Cried Out (LumenTrack)",
+  "source": "LumenTrack ID- Personality - Cried OutLink in bio for music and video downloads 🙏.mp4",
+  "sourceFps": 30,
+  "sourceFrames": 217,
+  "frames": 217,
+  "loopDuplicateDropped": false,
+  "durationS": 7.233333333333333,
+  "widthPx": 360,
+  "heightPx": 640,
+  "sequence": {
+    "base": "videos/cried-out/f",
+    "count": 217,
+    "digits": 4,
+    "ext": ".jpg"
+  },
+  "color": "YUV bt709 rango limitado → sRGB rango completo, JPEG 4:4:4",
+  "palette": [
+    {
+      "hex": "#0b0a07",
+      "rgb": [
+        11,
+        10,
+        7
+      ],
+      "share": 0.4689964157706093
+    },
+    {
+      "hex": "#0503f5",
+      "rgb": [
+        5,
+        3,
+        245
+      ],
+      "share": 0.24085381464413722
+    },
+    {
+      "hex": "#ec0a15",
+      "rgb": [
+        236,
+        10,
+        21
+      ],
+      "share": 0.10561059907834101
+    },
+    {
+      "hex": "#0f0b74",
+      "rgb": [
+        15,
+        11,
+        116
+      ],
+      "share": 0.06692652329749103
+    },
+    {
+      "hex": "#ea06bb",
+      "rgb": [
+        234,
+        6,
+        187
+      ],
+      "share": 0.04195084485407066
+    },
+    {
+      "hex": "#7a07ea",
+      "rgb": [
+        122,
+        7,
+        234
+      ],
+      "share": 0.03437019969278034
+    },
+    {
+      "hex": "#eba811",
+      "rgb": [
+        235,
+        168,
+        17
+      ],
+      "share": 0.01661546338965694
+    },
+    {
+      "hex": "#1ed314",
+      "rgb": [
+        30,
+        211,
+        20
+      ],
+      "share": 0.010528673835125449
+    },
+    {
+      "hex": "#b2426d",
+      "rgb": [
+        178,
+        66,
+        109
+      ],
+      "share": 0.008963133640552996
+    },
+    {
+      "hex": "#1b88bf",
+      "rgb": [
+        27,
+        136,
+        191
+      ],
+      "share": 0.005184331797235023
+    }
+  ]
+}
