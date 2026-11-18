@@ -183,7 +183,9 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
     const parts = reelsPrintedParts(p, d);
     const u = printRequestText(parts, printQuantities(parts));
     expect(u).toContain('PETG');
-    expect(u).toContain('I01-nucleo-tambor.stl × 2');
+    // cada archivo trae todas sus copias y lo dice en el nombre: en la primera impresión llegó una de cada
+    expect(u).toContain('I01-nucleo-tambor-2-piezas.stl (2 piezas en el archivo)');
+    expect(u).toContain('se imprime cada archivo una sola vez');
     expect(u).toContain('Ø22,05');
     // lo que se manda a los talleres no lleva precios ni tarifas
     for (const txt of [t, u]) expect(txt).not.toMatch(/\$|MXN|FIC/);

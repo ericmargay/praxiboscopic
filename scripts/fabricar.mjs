@@ -5,9 +5,11 @@
 // armado, y un ZIP con todo. Escribe en public/fabricacion/tambores/ (lo sirve Vite y va al sitio) y copia el README a
 // docs/FABRICACION-TAMBORES.md.
 //
-//   node scripts/fabricar.mjs [--mdf=5.5] [--acrilico=3] [--lente=64]
+//   node scripts/fabricar.mjs [--mdf=5.5] [--acrilico=3] [--lente=64] [--faltan=una-de-cada | --faltan=I01:1,I08:3]
 //
 // --mdf y --acrilico: espesores reales medidos con vernier (mm); --lente: diámetro del barril de la lente (mm).
+// Cada STL trae ya todas las copias de su pieza acomodadas en la cama. --faltan arma además impresion-3d/reposicion/ y
+// mesa-tambores-reposicion.zip con solo las copias que faltan («una-de-cada»: lo que falta si llegó una de cada pieza).
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +30,7 @@ try {
   const { deriveProject } = await load('/src/core/project.ts');
   const { reelsDemoProject } = await load('/src/core/video.ts');
   const { buildReelsStructure, SHEET_MATERIALS } = await load('/src/mech/structure.ts');
-  const { reelsPrintedParts } = await load('/src/fabricate/printed.ts');
+  const { reelsPrintedParts, printPlate, stlName } = await load('/src/fabricate/printed.ts');
   const { laserQuantities, printQuantities } = await load('/src/fabricate/quantities.ts');
   const { FAB_DIR, LASER_PREFIX, ZIP_NAME, fabricationReadme } = await load('/src/fabricate/shops.ts');
   const { laserSvg, laserDxf, checkPrint, stlBinary, pointInPolygon, bbox } = await load('@aminoacid/omega/fabricate');
@@ -112,23 +114,69 @@ try {
   }
 
   // --- impresión 3D ----------------------------------------------------------------------------------------------------
+  const meshOf = (m) => {
+    const mesh = m.getMesh();
+    const positions = new Float32Array(mesh.numVert * 3);
+    for (let i = 0; i < mesh.numVert; i++) for (let k = 0; k < 3; k++) positions[i * 3 + k] = mesh.vertProperties[i * mesh.numProp + k];
+    return { positions, indices: mesh.triVerts };
+  };
+  /** el STL con `qty` copias de la pieza, revisado */
+  const plateStl = (part, qty) => {
+    const m = printPlate(mf, part, qty);
+    if (m.status() !== 'NoError') throw new Error(`${part.id}: sólido inválido (${m.status()})`);
+    const tm = meshOf(m);
+    m.delete();
+    if (!checkPrint(tm, { printer: 'bambu-a1', filament: 'petg', infill: 0.2 }).stats.watertight) throw new Error(`${part.id}: la malla no es estanca`);
+    return stlBinary(tm, { header: `Praxiboscopic ${part.id} ${part.name} x${qty}` });
+  };
   const stlFiles = [];
   const checks = [];
   for (const part of parts) {
     const m = part.build(mf);
     if (m.status() !== 'NoError') throw new Error(`${part.id}: sólido inválido (${m.status()})`);
-    const mesh = m.getMesh();
-    const positions = new Float32Array(mesh.numVert * 3);
-    for (let i = 0; i < mesh.numVert; i++) for (let k = 0; k < 3; k++) positions[i * 3 + k] = mesh.vertProperties[i * mesh.numProp + k];
-    const tm = { positions, indices: mesh.triVerts };
-    const r = checkPrint(tm, { printer: 'bambu-a1', filament: 'petg', infill: 0.2 });
+    const r = checkPrint(meshOf(m), { printer: 'bambu-a1', filament: 'petg', infill: 0.2 });
+    m.delete();
     if (!r.stats.watertight) throw new Error(`${part.id}: la malla no es estanca`);
     const rel = `impresion-3d/${part.file}`;
-    await put(rel, stlBinary(tm, { header: `Praxiboscopic ${part.id} ${part.name}` }));
+    await put(rel, plateStl(part, part.qty));
     stlFiles.push(rel);
     const notes = r.warnings.filter((w) => !/pared mínima/.test(w) || !/broche|I08|I09|I10/.test(part.id + part.role));
-    checks.push(`${part.id} ${part.name}: estanca, ${Math.abs(r.stats.volumeCm3).toFixed(1)} cm³, ${r.grams.estimated} g y ${Math.round(r.timeMin.estimated)} min cada una en una Bambu A1${notes.length ? ` · ${notes.join(' · ')}` : ''}`);
-    m.delete();
+    checks.push(`${part.id} ${part.name}: estanca, ${Math.abs(r.stats.volumeCm3).toFixed(1)} cm³, ${r.grams.estimated} g y ${Math.round(r.timeMin.estimated)} min cada una en una Bambu A1${part.qty > 1 ? `; el archivo trae las ${part.qty}` : ''}${notes.length ? ` · ${notes.join(' · ')}` : ''}`);
+  }
+
+  // --- reposición: solo las copias que faltan ----------------------------------------------------------------------
+  let reposicion = null;
+  if (opt.has('faltan')) {
+    const spec = opt.get('faltan');
+    const want = spec === 'una-de-cada' ? parts.filter((q) => q.qty > 1).map((q) => [q.id, q.qty - 1]) : spec.split(',').map((s) => s.split(':')).map(([id, n]) => [id.trim().toUpperCase(), Number(n ?? 1)]);
+    const files = [];
+    const lines = [];
+    await mkdir(path.join(out, 'impresion-3d', 'reposicion'), { recursive: true });
+    for (const [id, n] of want) {
+      const part = parts.find((q) => q.id === id);
+      if (!part || !(n >= 1)) throw new Error(`--faltan: no entiendo «${id}:${n}»`);
+      const name = stlName(part, n);
+      const data = plateStl(part, n);
+      await writeFile(path.join(out, 'impresion-3d', 'reposicion', name), data);
+      files.push({ name: `impresion-3d/reposicion/${name}`, data });
+      lines.push(`- ${name}: ${n} × ${part.id} ${part.name} (van ${part.qty} en total)`);
+    }
+    const pieces = want.reduce((s, [, n]) => s + n, 0);
+    const leeme = [
+      `Reposición de piezas impresas · mesa de dos tambores · ${new Date().toLocaleDateString('es-MX')}`,
+      '',
+      `Faltan ${pieces} piezas en ${want.length} archivos. Cada archivo ya trae todas las copias que faltan de su pieza: se imprime una sola vez, sin multiplicar.`,
+      '',
+      ...lines,
+      '',
+      'Mismos ajustes que la primera vez: PETG, boquilla de 0,4 mm, capa de 0,2 mm, 3 perímetros y 20 % de relleno, sin soportes.',
+      '',
+    ].join('\n');
+    files.push({ name: 'impresion-3d/reposicion/LEEME.txt', data: new TextEncoder().encode(leeme) });
+    await writeFile(path.join(out, 'impresion-3d', 'reposicion', 'LEEME.txt'), leeme);
+    const zipR = zipStore(files.map((f) => ({ name: `mesa-tambores-reposicion/${f.name.replace('impresion-3d/reposicion/', '')}`, data: f.data })));
+    await writeFile(path.join(out, 'mesa-tambores-reposicion.zip'), zipR);
+    reposicion = { zip: 'mesa-tambores-reposicion.zip', pieces, files: files.map((f) => f.name) };
   }
 
   // --- README, docs y ZIP -------------------------------------------------------------------------------------------
@@ -139,10 +187,11 @@ try {
   const zip = zipStore([...files].map(([name, data]) => ({ name: `mesa-tambores/${name}`, data })));
   await writeFile(path.join(out, ZIP_NAME), zip);
   // manifiesto para la página de compras
-  await writeFile(path.join(out, 'manifest.json'), JSON.stringify({ date, mdfMm: st.mdfMm, laser: laserFiles, stl: stlFiles, zip: ZIP_NAME, zipBytes: zip.length }, null, 2));
+  await writeFile(path.join(out, 'manifest.json'), JSON.stringify({ date, mdfMm: st.mdfMm, laser: laserFiles, stl: stlFiles, zip: ZIP_NAME, zipBytes: zip.length, ...(reposicion ? { reposicion } : {}) }, null, 2));
   console.log(`→ public/${FAB_DIR}: ${laserFiles.length} archivos de corte, ${stlFiles.length} STL, ${ZIP_NAME} (${(zip.length / 1e6).toFixed(1)} MB) · docs/FABRICACION-TAMBORES.md`);
   for (const e of laser) console.log(`  ${e.label}: ${e.pieces} piezas, ${e.cutM.toFixed(1)} m, ${e.sheets} hoja(s)`);
-  console.log(`  impresión: ${pe.pieces} piezas, ${Math.round(pe.grams)} g, ${pe.hours.toFixed(1)} h`);
+  console.log(`  impresión: ${pe.pieces} piezas en ${stlFiles.length} archivos (cada uno con todas sus copias), ${Math.round(pe.grams)} g, ${pe.hours.toFixed(1)} h`);
+  if (reposicion) console.log(`  reposición: ${reposicion.pieces} piezas en ${reposicion.files.length - 1} archivos → ${reposicion.zip}`);
   console.log('  (los costos estimados están en private/costos: node private/costos/reporte.mjs)');
 } finally {
   await server.close();

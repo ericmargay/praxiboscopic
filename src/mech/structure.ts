@@ -74,6 +74,18 @@ export interface AssemblyStep {
   text: string[];
   /** piezas de corte (E/A/N), impresas (I) y compradas (id de la lista de compras) que entran en este paso */
   parts: string[];
+  /** lo que no se corta ni se imprime y no se ve con la mesa armada (pegamentos, cintas, cinchos, rondanas): el modelo lo
+   * marca en color durante el ensamble */
+  supplies: StepSupply[];
+}
+
+export interface StepSupply {
+  /** marcador en el modelo 3D (la escena lo dibuja donde va) */
+  id: string;
+  /** renglón de la lista de compras; sin él, no está en la lista */
+  bomId?: string;
+  what: string;
+  where: string;
 }
 
 export interface ReelsStructure {
@@ -607,19 +619,70 @@ export function buildReelsStructure(p: Project, d: Derived, opts: StructureOptio
 
 /** el orden de armado: lo mismo que muestra la vista «Ensamble» y lo que dice docs/FABRICACION-TAMBORES.md */
 export function assemblySteps(): AssemblyStep[] {
+  const epoxy = (id: string, where: string): StepSupply => ({ id, bomId: 'epoxy', what: 'Epóxico', where });
+  const ca = (id: string, where: string): StepSupply => ({ id, bomId: 'ca-glue', what: 'Cianoacrilato', where });
   return [
-    { n: 1, title: 'Piso, torres y marco de la fuente', text: ['Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.', `Pegar las cuatro patas de hule por abajo del piso E01, en las esquinas, con el centro a ${REELS_FEET.insetMm} mm de las dos orillas.`, 'Armar cada torre: dos costados E04 con su collar E05 en las ranuras de abajo.', 'Encajar las dos torres, el marco E07 y los dos topes E08 en las ranuras del piso E01.'], parts: ['E01', 'rubber-feet', 'E04', 'E05', 'E07', 'E08'] },
-    { n: 2, title: 'Motores, coples y segundo 608', text: ['Bajar cada motor por el collar hasta el piso, con el conector hacia la muesca del costado.', 'Poner el cople en el eje del motor (13 mm de eje dentro del cople) y apretar su prisionero.', 'Meter un 608 a presión en cada placa E06 y encajarla en las ranuras de arriba de la torre: los costados se abren un poco.'], parts: ['motor-17hs8401', 'coupling-5-8', 'E06', 'bearing-608'] },
-    { n: 3, title: 'Electrónica en el piso', text: [`La fuente de pie detrás del marco E07, con los bornes hacia él, la espalda a ${ACRYLIC_MM + 1} mm de la orilla trasera del piso (donde va la tapa) y centrada entre los topes E08. Mide ${PSU_MM.l} mm y los topes se cortaron para una de 199, así que se pega al piso con dos tiras de cinta doble cara.`, 'Cada DM542 delante de su motor con dos cinchos; el ESP32 (en su placa de expansión, o suelto con jumpers hembra en sus pines), los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.', 'La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.'], parts: ['psu-24v-5a', 'psu-tape', 'driver-dm542', 'esp32-expansion', 'esp32', 'buck-lm2596', 'led-resistor', 'breadboard-kit', 'cable-ties'] },
-    { n: 4, title: 'Paredes de acrílico', text: ['Quitar la película protectora de la cara de adentro de cada pared; la de afuera, al final.', 'Encajar el frente A01 y los costados A02 y A03 en las ranuras del piso: las esquinas entran holgadas, no se fuerzan ni se pegan.'], parts: ['A01', 'A02', 'A03'] },
-    { n: 5, title: 'Cubierta doble', text: ['Pegar la copa impresa del pivote (I05) bajo la contracubierta E03 con sus tres espigas y epóxico.', 'Bajar la E03 sobre las pestañas de las paredes, las torres y el marco de la fuente: cada una entra en su ranura y las paredes quedan atrapadas.', 'Meter a presión los dos 608 de los tambores en la cubierta E02, poner cola blanca en su cara de abajo y bajarla sobre la E03 con los ejes de las guías como guía; prensar con peso una hora. Las pestañas de acrílico quedan al ras.', 'Meter el 608 de arriba del pivote desde el hueco: apoya en la copa.'], parts: ['E02', 'E03', 'I05', 'bearing-608', 'glue-wood'] },
-    { n: 6, title: 'Tambores', text: ['Pegar con epóxico cada núcleo impreso (I01) a su eje de 100 mm, con 2 mm de eje arriba.', 'Pegar la brida de abajo A06 (barreno de 11,7) y la de arriba A07 (8,2) a las orillas del núcleo.', 'Bajar cada tambor por su 608 de la cubierta y el de la torre hasta el cople y apretar el prisionero: el cubo apoya en la pista interior del 608.'], parts: ['I01', 'A06', 'A07', 'shaft-8mm', 'epoxy'] },
-    { n: 7, title: 'Guías y brazo tensor', text: ['Pegar con epóxico los ejes de 70 mm de las guías en la cubierta, a plomo.', 'Rondana M8, guía (I02 con dos 608 y sus bridas A08) y tapón I07.', 'Brazo I04 pegado al eje del pivote, eje del rodillo en su casquillo, rodillo I03 con sus 608 y bridas A09, tapón I07.', 'Resorte del brazo a la mitad del brazo y al ancla I15; tapa del imán (I06) en la punta de abajo del eje y el AS5600 en la ranura de la copa.'], parts: ['I02', 'I03', 'I04', 'I06', 'I07', 'I15', 'A08', 'A09', 'washers-m8', 'dancer-spring', 'as5600'] },
-    { n: 8, title: 'Ventana, LED, sensor de marcas y lente', text: ['Pegar las dos guías N02 a la placa N01 y encajarla en su ranura.', 'Cabeza del LED (I11) con el disipador, el LED y el tubo del condensador (I12); brazo del sensor de marcas (I14) con el F249.', 'Cuna de la lente (I13) en sus dos ranuras del frente: se corre ±3 mm para enfocar.'], parts: ['N01', 'N02', 'I11', 'I12', 'I13', 'I14', 'led-10w', 'led-heatsink', 'condenser', 'sensor-f249', 'lens-50mm'] },
-    { n: 9, title: 'Postes', text: ['Pegar con epóxico las espigas de los cuatro postes (I08) y los dos postes huecos (I09) en la cubierta.', 'Pasar el bus I2C de cada sensor por su poste hueco.'], parts: ['I08', 'I09', 'jumpers-hh'] },
-    { n: 10, title: 'Tapas y sensores de mano', text: ['Abrochar cada tapa A05 en sus tres postes (la del tambor 2, volteada).', 'Poner cada VL53L4CD con su tira de pines en ángulo y cubrirlo con su capuchón con canal (I10): el canal tapa los cables hasta el poste hueco.'], parts: ['A05', 'I10', 'hand-sensor', 'pin-headers'] },
-    { n: 11, title: 'Película', text: ['Meter la punta de la cola del tambor 1 en la ranura de su núcleo y enrollarla; pasar la película por la guía 1, la ventana, la guía 2 y el rodillo tensor hasta el tambor 2.', 'Con el programa en banco, tensar a 1,5 N y probar las dos manos.'], parts: ['film'] },
-    { n: 12, title: 'Tapa trasera y cuñas', text: ['Empujar la tapa trasera A04 sobre los dientes del piso, de los costados y de la cubierta.', 'Bajar las dos cuñas E09 por las ventanas de los dientes de la cubierta hasta que aprieten. Quitar la película protectora de afuera de las paredes.'], parts: ['A04', 'E09'] },
+    { n: 1, title: 'Piso, torres y marco de la fuente', text: ['Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.', `Pegar las cuatro patas de hule por abajo del piso E01, en las esquinas, con el centro a ${REELS_FEET.insetMm} mm de las dos orillas.`, 'Armar cada torre: dos costados E04 con su collar E05 en las ranuras de abajo.', 'Encajar las dos torres, el marco E07 y los dos topes E08 en las ranuras del piso E01.'], parts: ['E01', 'rubber-feet', 'E04', 'E05', 'E07', 'E08'], supplies: [] },
+    { n: 2, title: 'Motores, coples y segundo 608', text: ['Bajar cada motor por el collar hasta el piso, con el conector hacia la muesca del costado.', 'Poner el cople en el eje del motor (13 mm de eje dentro del cople) y apretar su prisionero.', 'Meter un 608 a presión en cada placa E06 y encajarla en las ranuras de arriba de la torre: los costados se abren un poco.'], parts: ['motor-17hs8401', 'coupling-5-8', 'E06', 'bearing-608'], supplies: [] },
+    {
+      n: 3,
+      title: 'Electrónica en el piso',
+      text: [`La fuente de pie detrás del marco E07, con los bornes hacia él, la espalda a ${ACRYLIC_MM + 1} mm de la orilla trasera del piso (donde va la tapa) y centrada entre los topes E08. Mide ${PSU_MM.l} mm y los topes se cortaron para una de 199, así que se pega al piso con dos tiras de cinta doble cara.`, 'Cada DM542 delante de su motor con dos cinchos; el ESP32 (en su placa de expansión, o suelto con jumpers hembra en sus pines), los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.', 'La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.'],
+      parts: ['psu-24v-5a', 'psu-tape', 'driver-dm542', 'esp32-expansion', 'esp32', 'buck-lm2596', 'led-resistor', 'breadboard-kit', 'cable-ties'],
+      supplies: [
+        { id: 'psu-tape', bomId: 'psu-tape', what: 'Cinta doble cara de gel', where: 'Dos tiras de 14 cm entre la fuente y el piso, a lo largo' },
+        { id: 'cable-ties', bomId: 'cable-ties', what: 'Cinchos', where: 'Por las ranuras chicas del piso: dos sobre cada driver y uno sobre cada regulador y la resistencia (la placa del ESP32 lleva dos por sus barrenos)' },
+      ],
+    },
+    { n: 4, title: 'Paredes de acrílico', text: ['Quitar la película protectora de la cara de adentro de cada pared; la de afuera, al final.', 'Encajar el frente A01 y los costados A02 y A03 en las ranuras del piso: las esquinas entran holgadas, no se fuerzan ni se pegan.'], parts: ['A01', 'A02', 'A03'], supplies: [] },
+    {
+      n: 5,
+      title: 'Cubierta doble',
+      text: ['Pegar la copa impresa del pivote (I05) bajo la contracubierta E03 con sus tres espigas y epóxico.', 'Bajar la E03 sobre las pestañas de las paredes, las torres y el marco de la fuente: cada una entra en su ranura y las paredes quedan atrapadas.', 'Meter a presión los dos 608 de los tambores en la cubierta E02, poner cola blanca en su cara de abajo y bajarla sobre la E03 con los ejes de las guías como guía; prensar con peso una hora. Las pestañas de acrílico quedan al ras.', 'Meter el 608 de arriba del pivote desde el hueco: apoya en la copa.'],
+      parts: ['E02', 'E03', 'I05', 'bearing-608', 'glue-wood', 'epoxy'],
+      supplies: [
+        { id: 'glue-deck', bomId: 'glue-wood', what: 'Cola blanca', where: 'En toda la cara de abajo de la cubierta E02, con los 608 ya puestos; se prensa con peso una hora' },
+        epoxy('epoxy-cup', 'En las tres espigas de la copa I05, que entran en la contracubierta E03 por abajo'),
+      ],
+    },
+    {
+      n: 6,
+      title: 'Tambores',
+      text: ['Pegar con epóxico cada núcleo impreso (I01) a su eje de 100 mm, con 2 mm de eje arriba.', 'Pegar con cianoacrilato la brida de abajo A06 (barreno de 11,7) y la de arriba A07 (8,2) a las orillas del núcleo.', 'Bajar cada tambor por su 608 de la cubierta y el de la torre hasta el cople y apretar el prisionero: el cubo apoya en la pista interior del 608.'],
+      parts: ['I01', 'A06', 'A07', 'shaft-8mm', 'epoxy', 'ca-glue'],
+      supplies: [epoxy('epoxy-reel', 'En el eje de 8 mm, en el tramo que queda dentro del cubo del núcleo I01'), ca('ca-reel', 'En las dos orillas del núcleo I01, donde asientan las bridas A06 (abajo) y A07 (arriba)')],
+    },
+    {
+      n: 7,
+      title: 'Guías y brazo tensor',
+      text: ['Pegar con epóxico los ejes de 70 mm de las guías en la cubierta, a plomo.', 'Rondana M8, guía (I02 con dos 608 y sus bridas A08 pegadas con cianoacrilato) y tapón I07.', 'Brazo I04 pegado al eje del pivote, eje del rodillo en su casquillo, rodillo I03 con sus 608 y bridas A09, tapón I07.', 'Resorte del brazo a la mitad del brazo y al ancla I15; tapa del imán (I06) en la punta de abajo del eje y el AS5600 en la ranura de la copa.'],
+      parts: ['I02', 'I03', 'I04', 'I06', 'I07', 'I15', 'A08', 'A09', 'washers-m8', 'dancer-spring', 'as5600', 'epoxy', 'ca-glue'],
+      supplies: [
+        epoxy('epoxy-guide-shafts', 'En la punta de abajo del eje de cada guía: el tramo que entra en la cubierta'),
+        { id: 'washers-m8', bomId: 'washers-m8', what: 'Rondana M8', where: 'Una bajo cada guía, sobre la cubierta: el 608 de abajo apoya en ella' },
+        ca('ca-rollers', 'En las orillas de los cuerpos I02 (guías) e I03 (rodillo tensor), donde asientan sus bridas A08 y A09'),
+        epoxy('epoxy-arm', 'En el eje del pivote, donde entra el cubo del brazo I04, y en el eje del rodillo tensor, donde entra en el casquillo del brazo'),
+        epoxy('epoxy-magnet', 'La tapa I06 en la punta de abajo del eje del pivote, y el imán en la cara de abajo de la tapa'),
+      ],
+    },
+    {
+      n: 8,
+      title: 'Ventana, LED, sensor de marcas y lente',
+      text: ['Pegar con cianoacrilato las dos guías N02 a la placa N01 y encajarla en su ranura.', 'Cabeza del LED (I11) con el disipador, el LED y el tubo del condensador (I12), pegada a la cubierta con dos espigas I16; brazo del sensor de marcas (I14) con el F249 amarrado con un cincho.', 'Cuna de la lente (I13) con sus dos espigas I16 pegadas, en sus dos ranuras del frente: se corre ±3 mm para enfocar. El barril se sujeta con una liga o un cincho de velcro.'],
+      parts: ['N01', 'N02', 'I11', 'I12', 'I13', 'I14', 'I16', 'led-10w', 'led-heatsink', 'condenser', 'sensor-f249', 'lens-50mm', 'ca-glue', 'epoxy', 'cable-ties'],
+      supplies: [
+        ca('ca-rails', 'Las dos guías N02 sobre la placa N01'),
+        epoxy('epoxy-led-dowels', 'Dos espigas I16 entre la cabeza del LED (I11) y la cubierta'),
+        epoxy('epoxy-lens-dowels', 'Dos espigas I16 en la ceja de la cuna de la lente (I13), pegadas solo a la cuna: corren en las ranuras de la cubierta para enfocar'),
+        { id: 'silicone-condenser', what: 'Silicón transparente', where: 'Una gota en la orilla de cada lente del condensador, dentro del tubo I12 (no está en la lista de compras: sirve cualquier silicón)' },
+        { id: 'tie-f249', bomId: 'cable-ties', what: 'Cincho', where: 'Amarra el F249 debajo de su brazo I14, por sus dos barrenos' },
+        { id: 'strap-lens', what: 'Liga o cincho de velcro', where: 'Por las dos ranuras de la cuna I13, sobre el barril de la lente (no está en la lista de compras)' },
+      ],
+    },
+    { n: 9, title: 'Postes', text: ['Pegar con epóxico las espigas de los cuatro postes (I08) y los dos postes huecos (I09) en la cubierta.', 'Pasar el bus I2C de cada sensor por su poste hueco.'], parts: ['I08', 'I09', 'jumpers-hh', 'epoxy'], supplies: [epoxy('epoxy-posts', 'En la espiga de cada poste I08 y en el tubo de abajo de cada poste hueco I09: lo que entra en la cubierta')] },
+    { n: 10, title: 'Tapas y sensores de mano', text: ['Abrochar cada tapa A05 en sus tres postes (la del tambor 2, volteada).', 'Poner cada VL53L4CD con su tira de pines en ángulo y cubrirlo con su capuchón con canal (I10): el canal tapa los cables hasta el poste hueco.'], parts: ['A05', 'I10', 'hand-sensor', 'pin-headers'], supplies: [] },
+    { n: 11, title: 'Película', text: ['Meter la punta de la cola del tambor 1 en la ranura de su núcleo y enrollarla; pasar la película por la guía 1, la ventana, la guía 2 y el rodillo tensor hasta el tambor 2.', 'Con el programa en banco, tensar a 1,5 N y probar las dos manos.'], parts: ['film'], supplies: [] },
+    { n: 12, title: 'Tapa trasera y cuñas', text: ['Empujar la tapa trasera A04 sobre los dientes del piso, de los costados y de la cubierta.', 'Bajar las dos cuñas E09 por las ventanas de los dientes de la cubierta hasta que aprieten. Quitar la película protectora de afuera de las paredes.'], parts: ['A04', 'E09'], supplies: [] },
   ];
 }
 

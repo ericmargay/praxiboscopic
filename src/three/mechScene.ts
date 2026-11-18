@@ -16,8 +16,8 @@ import { pointAt, type PathGeometry, type PathPoint, type Vec2 } from '../mech/p
 import { handRangeMm, livePath, type HandInput, type ReelLive } from '../mech/reels';
 import { motorOf } from '../mech/transport';
 import { opticsReport } from '../optics/projector';
-import { BREADBOARD, box, breadboardHole, buildAcrylicBox, buildHand, buildKind, buildMagnet, buildReel, buildRoller, buildSpool, buildSpring, cyl, EXPANSION, KINDS, localBox, mat, type KindSpec, type PartCategory } from './parts';
-import { buildReelsStructure, REELS_FEET, SHEET_MATERIALS, type AssemblyStep, type ReelsStructure, type SheetMaterial } from '../mech/structure';
+import { BREADBOARD, box, breadboardHole, buildAcrylicBox, buildHand, buildKind, buildMagnet, buildReel, buildRoller, buildSpool, buildSpring, cyl, EXPANSION, KINDS, localBox, mat, roleOf, type KindSpec, type PartCategory } from './parts';
+import { assemblySteps, buildReelsStructure, cupPegs, REELS_FEET, SHEET_MATERIALS, type AssemblyStep, type ReelsStructure, type SheetMaterial, type StepSupply } from '../mech/structure';
 import { reelsPrintedParts } from '../fabricate/printed';
 
 const MM = 0.001;
@@ -55,6 +55,10 @@ export interface PartNode {
   /** paso del ensamble en que entra (mesa de dos tambores) y hacia dónde sale en la vista explosionada */
   step?: number;
   explode?: [number, number, number];
+  /** paso de una pieza que va dentro de otra (se mueve con ella): pegamentos, cintas y rondanas */
+  atStep?: number;
+  /** solo se ve en el ensamble (el pegamento no se ve con la mesa armada) */
+  assemblyOnly?: boolean;
   visible: boolean;
 }
 
@@ -133,6 +137,76 @@ function wireMesh(points: THREE.Vector3[], color: number, radius: number, ends =
     }
   }
   return g;
+}
+
+/** lo que no se corta ni se imprime, por id de marcador, con el paso en que entra */
+const SUPPLIES = new Map<string, StepSupply & { step: number }>(assemblySteps().flatMap((s) => s.supplies.map((u) => [u.id, { ...u, step: s.n }] as const)));
+
+/** color de cada pegamento o consumible en el ensamble (la leyenda está en el panel) */
+export const SUPPLY_COLORS: Record<string, number> = {
+  epoxy: 0xd23c77,
+  'ca-glue': 0x7d4cc2,
+  'glue-wood': 0x2f80d1,
+  'psu-tape': 0x14a38b,
+  'cable-ties': 0xf4f2ec,
+  'washers-m8': 0xb7bcc0,
+  silicone: 0xe8792b,
+  strap: 0x46525e,
+};
+export function supplyColor(u: Pick<StepSupply, 'id' | 'bomId'>): number {
+  return SUPPLY_COLORS[u.bomId ?? ''] ?? (u.id.startsWith('silicone') ? SUPPLY_COLORS.silicone : SUPPLY_COLORS.strap);
+}
+
+/**
+ * Vista explosionada de la mesa de dos tambores: cada pieza se separa de aquella en la que se apoya (`at`) por `v` (mm, con
+ * la explosión completa, en el marco de su grupo). Las capas se apilan sin encimarse: piso, torres y motores, electrónica,
+ * cubierta, y sobre ella tambores, guías, ventana, postes y tapas; las paredes y la tapa trasera salen de lado. Lo que va
+ * dentro de otra pieza (rodamientos, bridas, ejes, tapones, imán, espigas) sale por su eje con `userData.explodeMm`.
+ */
+const EXPLODE_PLAN: [RegExp, string | null, [number, number, number]][] = [
+  [/^E01$/, null, [0, 0, 0]],
+  [/^rubber-feet$/, 'E01', [0, -35, 0]],
+  [/^E0[478](-\d+)?$/, 'E01', [0, 40, 0]],
+  [/^E05(-\d+)?$/, 'E04', [0, 25, 0]],
+  [/^motor(-\d)?$/, 'E01', [0, 75, 0]],
+  [/^coupling-\d$/, 'motor', [0, 40, 0]],
+  [/^E06(-\d+)?$/, 'E04', [0, 85, 0]],
+  [/^bearing-reel\d-b$/, 'E06', [0, 30, 0]],
+  [/^(psu|dm542-\d|buck-\d+v|fuse|breadboard|esp32-expansion|led-resistor|wires-(control|power|motor|i2c|deck))$/, 'E01', [0, 45, 0]],
+  [/^psu-tape(-\d+)?$/, 'E01', [0, 20, 0]],
+  [/^cable-ties$/, 'E01', [0, 80, 0]],
+  [/^A01$/, null, [0, 0, 130]],
+  [/^A02$/, null, [-130, 0, 0]],
+  [/^A03$/, null, [130, 0, 0]],
+  [/^E03$/, 'E01', [0, 180, 0]],
+  [/^glue-deck(-\d+)?$/, 'E03', [0, 20, 0]],
+  [/^E02$/, 'E03', [0, 40, 0]],
+  [/^bearing-(reel\d|pivot)-a$/, 'E02', [0, 35, 0]],
+  [/^pivot-cup$/, 'E03', [0, -45, 0]],
+  [/^bearing-pivot-b$/, 'pivot-cup', [0, -35, 0]],
+  [/^reel-\d$/, 'E02', [0, 75, 0]],
+  [/^(guide-\d|dancer)$/, 'E02', [0, 60, 0]],
+  [/^spring-anchor$/, 'E02', [0, 30, 0]],
+  [/^dancer-spring$/, 'dancer', [0, 20, 0]],
+  [/^as5600$/, 'pivot-cup', [-55, 0, 0]],
+  [/^(N01|led-head|sensor|lens-cradle)$/, 'E02', [0, 60, 0]],
+  [/^N02(-\d+)?$/, 'N01', [0, 0, 25]],
+  [/^lens$/, 'lens-cradle', [0, 55, 0]],
+  [/^cover-posts(-\d)?$/, 'E02', [0, 100, 0]],
+  [/^A05(-\d+)?$/, 'cover-posts', [0, 45, 0]],
+  [/^hand-sensor(-\d)?$/, 'A05', [0, 25, 0]],
+  [/^hood-\d$/, 'hand-sensor', [0, 25, 0]],
+  [/^film$/, 'E02', [0, 70, 0]],
+  [/^A04$/, null, [0, 0, -140]],
+  [/^E09(-\d+)?$/, 'E02', [0, 60, 0]],
+];
+/** desplazamiento de la explosión completa de una pieza (mm) y el suyo propio, o null si no está en el plan */
+export function explodeOffset(id: string): { total: [number, number, number]; own: [number, number, number] } | null {
+  const hit = EXPLODE_PLAN.find(([re]) => re.test(id));
+  if (!hit) return null;
+  const [, at, own] = hit;
+  const base = at && at !== id ? explodeOffset(at)?.total ?? [0, 0, 0] : [0, 0, 0];
+  return { total: [base[0] + own[0], base[1] + own[1], base[2] + own[2]], own };
 }
 
 export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement): MechScene {
@@ -286,6 +360,9 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     gateGroup.clear();
     clearHelpers();
     registry.clear();
+    homes.clear();
+    offsets.clear();
+    subs.length = 0;
     spinners = [];
     drumSpinners = [];
     shellMats = [];
@@ -709,8 +786,11 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       if (reels) {
         // brazo I14: espiga cuadrada en la cubierta, poste y brazo sobre la película; el F249 va amarrado debajo
         const yTop = 19;
-        sg.add(box(8, a.sensor.mouthY + yTop, 8, mat('plaDark'), 12, -a.sensor.mouthY + (a.sensor.mouthY + yTop) / 2, -22));
-        sg.add(box(8, 6, 34, mat('plaDark'), 12, yTop - 3, -9));
+        const arm = new THREE.Group();
+        arm.userData.role = 'i14';
+        arm.add(box(8, a.sensor.mouthY + yTop, 8, mat('plaDark'), 12, -a.sensor.mouthY + (a.sensor.mouthY + yTop) / 2, -22));
+        arm.add(box(8, 6, 34, mat('plaDark'), 12, yTop - 3, -9));
+        sg.add(arm);
       } else {
         // brazo impreso desde un poste dentro del loop
         sg.add(box(6, a.sensor.mouthY + 12.6, 6, mat('plaDark'), 12, -(a.sensor.mouthY) + (a.sensor.mouthY + 12.6) / 2, -22));
@@ -874,7 +954,50 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     return Math.min(tx, tz);
   }
 
+  // --- pegamentos, cintas y cinchos -------------------------------------------------------------------------------------
+  const supplyMats = new Map<number, THREE.Material>();
+  function supplyMat(color: number): THREE.Material {
+    let m = supplyMats.get(color);
+    if (!m) {
+      m = new THREE.MeshStandardMaterial({ color, roughness: 0.45, emissive: color, emissiveIntensity: 0.3 });
+      supplyMats.set(color, m);
+    }
+    return m;
+  }
+  /**
+   * Marca dónde va un pegamento, una cinta o un cincho (`id` de los `supplies` de `assemblySteps`): pinta en su color lo
+   * que arma `draw` y lo registra como pieza. `top`: cuelga de la escena y se mueve con el plan de explosión; si no, va
+   * dentro de otra pieza y se mueve con ella. `always`: se ve también con la mesa armada (un cincho sí, el pegamento no).
+   */
+  function supply(id: string, k: number | string, where: string | null, draw: (m: THREE.Material) => THREE.Object3D[], opts: { top?: boolean; always?: boolean } = {}): THREE.Group {
+    const u = SUPPLIES.get(id);
+    if (!u) throw new Error(`sin consumible ${id}`);
+    const color = supplyColor(u);
+    const g = new THREE.Group();
+    g.add(...draw(supplyMat(color)));
+    g.userData.supplyColor = color;
+    return tag(g, {
+      id: `${id}-${k}`,
+      name: where ? `${u.what} · ${where}` : u.what,
+      category: 'consumibles',
+      bomId: u.bomId,
+      notes: [u.where, `Paso ${u.step} del ensamble`, ...(u.bomId ? [] : ['No está en la lista de compras'])],
+      ...(opts.top ? { step: u.step } : { atStep: u.step }),
+      ...(opts.always ? {} : { assemblyOnly: true }),
+    });
+  }
+  /** formas de los marcadores, en mm sobre el eje Y */
+  const sleeve = (m: THREE.Material, r: number, y0: number, y1: number, x = 0, z = 0) => cyl(r, Math.abs(y1 - y0), m, x, (y0 + y1) / 2, z, 24);
+  const ring = (m: THREE.Material, r: number, y: number, tube = 1, x = 0, z = 0) => {
+    const t = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 8, 64), m);
+    t.rotation.x = Math.PI / 2;
+    t.position.set(x, y, z);
+    return t;
+  };
+
   // --- dos tambores (ADR-0011) armados sin tornillos (ADR-0012) ---------------------------------------------------------
+  /** bridas de acrílico de tambores y rodillos: giran con ellos, así que se dibujan dentro de cada uno */
+  const SPINNING_LASER = new Set(['A06', 'A07', 'A08', 'A09']);
   /** piezas de corte láser: se extruyen los mismos contornos que salen al taller y se colocan con su marco */
   function buildStructure(st: ReelsStructure): void {
     const bomOf: Record<SheetMaterial, string> = { mdf: 'laser-mdf', 'acrilico-3': 'laser-acrylic', 'acrilico-negro-3': 'laser-black' };
@@ -884,12 +1007,16 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     shellMats.push(shellMat);
     const edgeMat = new THREE.LineBasicMaterial({ color: 0x8c8379, transparent: true, opacity: 0.55 });
     const edgeAcr = new THREE.LineBasicMaterial({ color: 0x7fa6b2, transparent: true, opacity: 0.7 });
-
-    for (const part of st.parts) {
-      if (!part.frames.length) continue;
+    const shapeOf = (part: ReelsStructure['parts'][number]) => {
       const shape = new THREE.Shape(part.profile.outer.map((q) => new THREE.Vector2(q.x, q.y)));
       for (const h of part.profile.holes ?? []) shape.holes.push(new THREE.Path(h.map((q) => new THREE.Vector2(q.x, q.y))));
-      const geo = new THREE.ExtrudeGeometry(shape, { depth: part.thicknessMm, bevelEnabled: false, curveSegments: 1 });
+      return shape;
+    };
+    const frameMatrix = (f: ReelsStructure['parts'][number]['frames'][number], push = 0) => new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.u), new THREE.Vector3(...f.v), new THREE.Vector3(...f.n)).setPosition(f.o[0] + f.n[0] * push, f.o[1] + f.n[1] * push, f.o[2] + f.n[2] * push);
+
+    for (const part of st.parts) {
+      if (!part.frames.length || SPINNING_LASER.has(part.id)) continue;
+      const geo = new THREE.ExtrudeGeometry(shapeOf(part), { depth: part.thicknessMm, bevelEnabled: false, curveSegments: 1 });
       const edges = new THREE.EdgesGeometry(geo, 25);
       const shell = shellIds.has(part.id);
       const material = shell ? shellMat : part.material === 'acrilico-3' ? mat('acrylic') : part.material === 'acrilico-negro-3' ? mat('anod') : mat('mdf');
@@ -904,7 +1031,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
           step: part.step,
           explode: part.explode,
         });
-        const m = new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.u), new THREE.Vector3(...f.v), new THREE.Vector3(...f.n)).setPosition(...f.o);
+        const m = frameMatrix(f);
         const mesh = new THREE.Mesh(geo, material);
         mesh.matrixAutoUpdate = false;
         mesh.matrix.copy(m);
@@ -917,6 +1044,39 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
         line.raycast = () => {};
         g.add(mesh, line);
         staticGroup.add(g);
+      });
+    }
+
+    // cola blanca: una capa con el contorno de la E02 justo debajo de ella; con la explosión queda entre las dos capas
+    const deck = st.parts.find((q) => q.id === 'E02');
+    if (deck) {
+      const glue = supply('glue-deck', 1, 'cara de abajo de la E02', (m) => {
+        // translúcida: deja ver lo que hay abajo
+        const film = (m as THREE.MeshStandardMaterial).clone();
+        film.transparent = true;
+        film.opacity = 0.45;
+        film.depthWrite = false;
+        const sheet = new THREE.Mesh(new THREE.ExtrudeGeometry(shapeOf(deck), { depth: 0.6, bevelEnabled: false, curveSegments: 1 }), film);
+        sheet.matrixAutoUpdate = false;
+        sheet.matrix.copy(frameMatrix(deck.frames[0], deck.thicknessMm));
+        return [sheet];
+      }, { top: true });
+      staticGroup.add(glue);
+    }
+    // cianoacrilato: la huella de cada guía N02 sobre la placa N01 (se queda en la placa cuando la guía sale)
+    const rails = st.parts.find((q) => q.id === 'N02');
+    const plate = registry.get('N01')?.obj;
+    if (rails && plate) {
+      const railGeo = new THREE.ExtrudeGeometry(shapeOf(rails), { depth: rails.thicknessMm + 0.4, bevelEnabled: false, curveSegments: 1 });
+      railGeo.translate(0, 0, -0.2);
+      railGeo.scale(1.02, 1.15, 1);
+      rails.frames.forEach((f, k) => {
+        plate.add(supply('ca-rails', k + 1, `guía N02 ${k + 1} sobre la placa N01`, (m) => {
+          const mesh = new THREE.Mesh(railGeo, m);
+          mesh.matrixAutoUpdate = false;
+          mesh.matrix.copy(frameMatrix(f));
+          return [mesh];
+        }));
       });
     }
   }
@@ -946,11 +1106,26 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const feet = tag(new THREE.Group(), { id: 'rubber-feet', name: 'Patas de hule', category: 'estructura', bomId: 'rubber-feet', notes: [`Cuatro topes adhesivos de Ø${REELS_FEET.diameterMm} × ${REELS_FEET.heightMm} mm bajo las esquinas del piso, a ${REELS_FEET.insetMm} mm de las orillas: por debajo solo pasa la tira de los cinchos`], step: 1, explode: [0, -1, 0] });
     for (const q of st.feet) feet.add(cyl(REELS_FEET.diameterMm / 2, REELS_FEET.heightMm, mat('rubber'), q.x, B.bottom - REELS_FEET.heightMm / 2, q.z, 24));
     staticGroup.add(feet);
-    const bearing = (parentObj: THREE.Object3D, y: number, id: string, step?: number) => {
-      const b = tag(buildKind('bearing'), { id, name: 'Rodamiento 608ZZ', category: 'transporte', kind: 'bearing', bomId: 'bearing-608', ...(step ? { step, explode: [0, 1, 0] as [number, number, number] } : {}) });
+    /** un 608: con `step` se mueve con el plan de explosión; sin él va dentro de un rodillo y sale `lift` mm por su eje */
+    const bearing = (parentObj: THREE.Object3D, y: number, id: string, where: string, step?: number, lift = 0) => {
+      const b = tag(buildKind('bearing'), { id, name: `Rodamiento 608ZZ · ${where}`, category: 'transporte', kind: 'bearing', bomId: 'bearing-608', ...(step ? { step, explode: [0, 1, 0] as [number, number, number] } : {}) });
       b.position.y = y;
+      if (!step) sub(b, 0, lift);
       parentObj.add(b);
     };
+    const laserParts = new Map(st.parts.map((q) => [q.id, q]));
+    /** una brida de acrílico que gira con su tambor o rodillo: misma nota que en la hoja de corte */
+    const tagLaser = (o: THREE.Object3D, id: string, k: number) => {
+      const q = laserParts.get(id)!;
+      return tag(o, { id: `${id}-${k}`, name: `${id} ${q.name} (${k} de ${q.qty})`, category: 'transporte', bomId: 'laser-acrylic', notes: [q.role, `${SHEET_MATERIALS[q.material].short}, corte láser${q.glue ? ` · ${q.glue}` : ''}`, `Paso ${q.step} del ensamble`] });
+    };
+    /** una pieza impresa dentro de otra: su código, cuál es y su nota */
+    const tagPrinted = <T extends THREE.Object3D>(o: T, id: string, key: string | number, which: string, category: PartCategory = 'transporte') => {
+      const q = printed.get(id);
+      return tag(o, { id: `${id}-${key}`, name: `${id} ${q?.name ?? ''} · ${which}`, category, bomId: 'print-petg', notes: [pnote(id), ...(q && q.qty > 1 ? [`Van ${q.qty} en la mesa: el STL las trae todas`] : [])] });
+    };
+    /** un eje de acero (tramo de la varilla de 60 cm) */
+    const tagShaft = <T extends THREE.Object3D>(o: T, id: string, name: string, notes: string[]) => tag(o, { id, name, category: 'transporte', bomId: 'shaft-8mm', notes: [...notes, 'Tramo de la varilla de acero 1045 de Ø8 × 600 mm, cortado con segueta y con las puntas biseladas'] });
     const flangeR2 = a.flangeR;
     const spoolBase = a.flangeLowY - a.flangeT;
 
@@ -971,7 +1146,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
         bomId: 'print-petg',
         notes: [
           n === 1 ? 'La mano sobre este tambor lleva la película hacia él: la animación avanza' : 'La mano sobre este tambor lleva la película hacia él: la animación va al revés',
-          `Núcleo I01 de Ø${(2 * a.coreR).toFixed(1)} mm entre bridas de acrílico A02 y A03 de Ø${(2 * flangeR2).toFixed(0)} mm, con ${gap.toFixed(0)} mm de luz para la película de ${strip} mm`,
+          `Núcleo I01 de Ø${(2 * a.coreR).toFixed(1)} mm entre bridas de acrílico A06 y A07 de Ø${(2 * flangeR2).toFixed(0)} mm, con ${gap.toFixed(0)} mm de luz para la película de ${strip} mm`,
           `Lleno mide Ø${(2 * r.design.fullR).toFixed(1)} mm con ${(r.design.maxWoundMm / 1000).toFixed(2)} m de película`,
           'El eje de 8 mm va pegado al núcleo: gira en el 608 de la cubierta y en el de la torre, y baja al cople del motor',
           `La cola transparente entra en la ranura del núcleo y le da ${r.spec.tailTurns} vuelta${r.spec.tailTurns === 1 ? '' : 's'} con la película en el otro extremo`,
@@ -980,21 +1155,31 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
         explode: [0, 1, 0],
       });
       g.position.set(q.x, 0, q.y);
+      // al explotar, el eje se queda y suben por él la brida de abajo, el núcleo y la brida de arriba
+      const CORE_UP = 55;
       const spin = new THREE.Group();
       const reel = buildReel(a.coreR, flangeR2, gap, a.flangeT);
       reel.position.y = spoolBase;
       spin.add(reel);
-      spin.add(cyl(5.75, spoolBase - a.deckBearingTopY, mat('pla'), 0, (spoolBase + a.deckBearingTopY) / 2, 0, 24)); // boss sobre la pista interior
-      spin.add(cyl(4, shaftTop - a.motor.reelShaftBottomY, mat('steel'), 0, (shaftTop + a.motor.reelShaftBottomY) / 2, 0, 16));
+      sub(tagLaser(roleOf(reel, 'flangeLow'), 'A06', n), 0, 25);
+      sub(tagLaser(roleOf(reel, 'flangeHigh'), 'A07', n), 0, 95);
+      const core = sub(tagPrinted(roleOf(reel, 'core'), 'I01', n, `tambor ${n}`), 0, CORE_UP);
+      core.add(cyl(5.75, spoolBase - a.deckBearingTopY, mat('pla'), 0, (a.deckBearingTopY - spoolBase) / 2, 0, 24)); // boss sobre la pista interior
+      // cianoacrilato en las dos orillas del núcleo, donde asientan las bridas
+      core.add(supply('ca-reel', n, `orillas del núcleo del tambor ${n}`, (m) => [ring(m, a.coreR - 1.2, a.flangeT, 1.1), ring(m, a.coreR - 1.2, a.flangeT + gap, 1.1)]));
+      const shaftL = shaftTop - a.motor.reelShaftBottomY;
+      spin.add(tagShaft(cyl(4, shaftL, mat('steel'), 0, (shaftTop + a.motor.reelShaftBottomY) / 2, 0, 16), `shaft-reel-${n}`, `Eje del tambor ${n} · Ø8 × ${shaftL.toFixed(0)} mm`, ['Pegado con epóxico al cubo del núcleo I01, con 2 mm arriba de la brida', 'Gira en el 608 de la cubierta y en el de la torre, y abajo entra en el cople del motor']));
+      // epóxico en el tramo del eje que queda dentro del cubo (se ve cuando el núcleo sube)
+      spin.add(supply('epoxy-reel', n, `eje del tambor ${n}, dentro del cubo`, (m) => [sleeve(m, 4.45, a.deckBearingTopY + 1, a.flangeHighY - 2)]));
       g.add(spin);
       spins.push(spin);
-      // película enrollada: lado y tapas, que siguen al radio en cada cuadro
-      const side = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, strip, 72, 1, true), woundMat);
+      // película enrollada: lado y tapas, que siguen al radio en cada cuadro (y suben con el núcleo)
+      const side = sub(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, strip, 72, 1, true), woundMat), 0, CORE_UP);
       side.position.y = a.filmMid;
       side.userData.assemblyFilm = true;
       g.add(side);
       const caps = [a.filmBottom, a.filmTop].map((y) => {
-        const m = new THREE.Mesh(new THREE.RingGeometry(a.coreR, a.coreR + 0.5, 72), woundMat);
+        const m = sub(new THREE.Mesh(new THREE.RingGeometry(a.coreR, a.coreR + 0.5, 72), woundMat), 0, CORE_UP);
         m.rotation.x = -Math.PI / 2;
         m.position.y = y;
         m.userData.assemblyFilm = true;
@@ -1004,15 +1189,15 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       wound.push({ side, caps, r: 0 });
       staticGroup.add(g);
       // rodamientos fijos (no giran con el tambor): uno a presión en la cubierta, con la contracubierta de tope, y otro
-      // en la placa E10 de la torre, 25 mm abajo
+      // en la placa E06 de la torre, 25 mm abajo
       const bg = new THREE.Group();
       bg.position.set(q.x, 0, q.y);
-      bearing(bg, deckBearingY, `bearing-reel${n}-a`, 5);
-      bearing(bg, plateBearingY, `bearing-reel${n}-b`, 2);
+      bearing(bg, deckBearingY, `bearing-reel${n}-a`, `tambor ${n}, en la cubierta E02`, 5);
+      bearing(bg, plateBearingY, `bearing-reel${n}-b`, `tambor ${n}, en la placa E06 de la torre`, 2);
       staticGroup.add(bg);
       const mg = new THREE.Group();
       mg.position.set(q.x, 0, q.y);
-      const m = tag(buildKind('nema17'), { id: `motor-${n}`, name: `Motor ${n} · NEMA 17 17HS8401`, category: 'transporte', kind: 'nema17', bomId: `motor-${motor.id}`, notes: [`A ${r.fps.normal} fps gira de ${r.rpm.normalFull.toFixed(0)} rpm (tambor lleno) a ${r.rpm.normalCore.toFixed(0)} rpm (vacío); a ${r.fps.max} fps, hasta ${r.rpm.maxCore.toFixed(0)} rpm`, `Par: hacen falta ${r.torque.rollerTorqueNcm.toFixed(1)} N·cm y da ${r.torque.availableNcm.toFixed(1)} N·cm a ${r.torque.motorRpm.toFixed(0)} rpm`, 'Parado en el piso, dentro del collar E09 de su torre: no lleva soporte ni tornillos. Lo mueve su propio DM542'], step: 2, explode: [0, 1, 0] });
+      const m = tag(buildKind('nema17'), { id: `motor-${n}`, name: `Motor ${n} · NEMA 17 17HS8401`, category: 'transporte', kind: 'nema17', bomId: `motor-${motor.id}`, notes: [`A ${r.fps.normal} fps gira de ${r.rpm.normalFull.toFixed(0)} rpm (tambor lleno) a ${r.rpm.normalCore.toFixed(0)} rpm (vacío); a ${r.fps.max} fps, hasta ${r.rpm.maxCore.toFixed(0)} rpm`, `Par: hacen falta ${r.torque.rollerTorqueNcm.toFixed(1)} N·cm y da ${r.torque.availableNcm.toFixed(1)} N·cm a ${r.torque.motorRpm.toFixed(0)} rpm`, 'Parado en el piso, dentro del collar E05 de su torre: no lleva soporte ni tornillos. Lo mueve su propio DM542'], step: 2, explode: [0, 1, 0] });
       m.position.y = a.motor.faceY - 48;
       mg.add(m);
       const cpl = tag(buildKind('coupling'), { id: `coupling-${n}`, name: `Cople flexible 5 × 8 mm · motor ${n}`, category: 'transporte', kind: 'coupling', bomId: 'coupling-5-8', notes: ['El único tornillo de la mesa: sus dos prisioneros aprietan el eje del motor y el del tambor'], step: 2, explode: [0, 1, 0] });
@@ -1026,17 +1211,25 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const guides: THREE.Object3D[] = [];
     a.guides.forEach((q, i) => {
       const n = i + 1;
-      const g = tag(new THREE.Group(), { id: `guide-${n}`, name: `Guía ${n}`, category: 'transporte', kind: 'roller', bomId: 'print-petg', notes: [pnote('I02'), 'Bridas A04 de acrílico; eje fijo de 70 mm pegado con epóxico en la cubierta, rondana M8 abajo y tapón I07 arriba', 'Toca la cara de la lámpara'], step: 7, explode: [0, 1, 0] });
+      const g = tag(new THREE.Group(), { id: `guide-${n}`, name: `Guía ${n}`, category: 'transporte', kind: 'roller', bomId: 'print-petg', notes: [pnote('I02'), 'De abajo arriba: rondana M8, 608, brida A08, cuerpo I02, brida A08, 608 y tapón I07, en un eje fijo de 70 mm pegado con epóxico en la cubierta', 'Toca la cara de la lámpara'], step: 7, explode: [0, 1, 0] });
       g.position.set(q.x, 0, q.y);
       const spin = new THREE.Group();
       const roller = buildSpool(a.R, gap, a.flangeT, a.R + 2);
       roller.position.y = spoolBase;
       spin.add(roller);
       g.add(spin);
+      // al explotar, el eje se queda y la pila sube por él en orden: rondana, 608, brida, cuerpo, brida, 608 y tapón
+      sub(tagLaser(roleOf(roller, 'flangeLow'), 'A08', 2 * n - 1), 0, 42);
+      const body = sub(tagPrinted(roleOf(roller, 'body'), 'I02', n, `guía ${n}`), 0, 62);
+      body.add(supply('ca-rollers', `g${n}`, `orillas del cuerpo de la guía ${n}`, (m) => [ring(m, a.R - 1.2, a.flangeT, 1.1), ring(m, a.R - 1.2, a.flangeT + gap, 1.1)]));
+      sub(tagLaser(roleOf(roller, 'flangeHigh'), 'A08', 2 * n), 0, 88);
+      bearing(spin, 1.6 + 3.5, `bearing-guide${n}-a`, `guía ${n}, abajo`, undefined, 26);
+      bearing(spin, a.flangeHighY + a.flangeT - 3.1, `bearing-guide${n}-b`, `guía ${n}, arriba`, undefined, 104);
       const top = shaftTop + 4.5;
-      g.add(cyl(4, top + B.deckT, mat('steel'), 0, (top - B.deckT) / 2, 0, 16), cyl(7, 6, mat('pla'), 0, top - 1, 0, 24), cyl(8, 1.6, mat('steel'), 0, 0.8, 0, 24));
-      bearing(spin, 1.6 + 3.5, `bearing-guide${n}-a`);
-      bearing(spin, a.flangeHighY + a.flangeT - 3.1, `bearing-guide${n}-b`);
+      g.add(tagShaft(cyl(4, top + B.deckT, mat('steel'), 0, (top - B.deckT) / 2, 0, 16), `shaft-guide-${n}`, `Eje de la guía ${n} · Ø8 × ${(top + B.deckT).toFixed(0)} mm`, ['Fijo: la punta de abajo va pegada con epóxico en la cubierta, a plomo; el rodillo gira en sus dos 608']));
+      g.add(supply('epoxy-guide-shafts', n, `eje de la guía ${n}, en la cubierta`, (m) => [sleeve(m, 4.45, -B.deckT, 0.5)]));
+      g.add(sub(tagPrinted(cyl(7, 6, mat('pla'), 0, top - 1, 0, 24), 'I07', `g${n}`, `arriba de la guía ${n}`), 0, 125));
+      g.add(sub(supply('washers-m8', n, `bajo la guía ${n}`, (m) => [cyl(8, 1.6, m, 0, 0.8, 0, 24)], { always: true }), 0, 12));
       staticGroup.add(g);
       guides.push(spin);
     });
@@ -1051,16 +1244,20 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       name: 'Brazo tensor',
       category: 'transporte',
       bomId: 'print-petg',
-      notes: [pnote('I04'), `Rodillo I03 de Ø${(2 * a.dancerR).toFixed(0)} mm con bridas A05: empuja la película unos 22 mm hacia dentro, por la cara de la cubierta, con el centro rebajado`, `El resorte, entre la mitad del brazo y el ancla I15, fija la tensión en unos ${p.transport.tensionN} N; el AS5600 lee el ángulo del eje`, 'El ESP32 corrige el tambor que suelta para dejar el brazo al centro: sirve en los dos sentidos'],
+      notes: [pnote('I04'), `Rodillo I03 de Ø${(2 * a.dancerR).toFixed(0)} mm con bridas A09: empuja la película unos 22 mm hacia dentro, por la cara de la cubierta, con el centro rebajado`, `El resorte, entre la mitad del brazo y el ancla I15, fija la tensión en unos ${p.transport.tensionN} N; el AS5600 lee el ángulo del eje`, 'El ESP32 corrige el tambor que suelta para dejar el brazo al centro: sirve en los dos sentidos'],
       step: 7,
       explode: [0, 1, 0],
     });
     const dx = a.dancer.x - a.pivot.x;
     const dz = a.dancer.y - a.pivot.y;
     const armT = ps.armY[1] - ps.armY[0];
+    // brazo I04: placa, cubo en el eje del pivote y casquillo del eje del rodillo
+    const arm = tagPrinted(new THREE.Group(), 'I04', 1, 'brazo del rodillo tensor');
     const bar = box(a.armMm, armT, 12, mat('plaDark'), dx / 2, (ps.armY[0] + ps.armY[1]) / 2, dz / 2);
     bar.rotation.y = -armAng;
-    rot.add(bar, cyl(8, armT, mat('plaDark'), 0, (ps.armY[0] + ps.armY[1]) / 2, 0, 24), cyl(6, ps.bossTopY - ps.armY[0], mat('plaDark'), dx, (ps.bossTopY + ps.armY[0]) / 2, dz, 24));
+    arm.add(bar, cyl(8, armT, mat('plaDark'), 0, (ps.armY[0] + ps.armY[1]) / 2, 0, 24), cyl(6, ps.bossTopY - ps.armY[0], mat('plaDark'), dx, (ps.bossTopY + ps.armY[0]) / 2, dz, 24));
+    rot.add(arm);
+    // rodillo tensor: su eje se queda en el casquillo y la pila sube por él
     const rg = new THREE.Group();
     rg.position.set(dx, 0, dz);
     const dSpin = new THREE.Group();
@@ -1068,26 +1265,42 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     dRoller.position.y = spoolBase;
     dSpin.add(dRoller);
     rg.add(dSpin);
+    sub(tagLaser(roleOf(dRoller, 'flangeLow'), 'A09', 1), 0, 38);
+    const dBody = sub(tagPrinted(roleOf(dRoller, 'body'), 'I03', 1, 'rodillo del brazo tensor'), 0, 58);
+    dBody.add(supply('ca-rollers', 'd', 'orillas del cuerpo del rodillo tensor', (m) => [ring(m, a.dancerR - 1.2, a.flangeT, 1.1), ring(m, a.dancerR - 1.2, a.flangeT + gap, 1.1)]));
+    sub(tagLaser(roleOf(dRoller, 'flangeHigh'), 'A09', 2), 0, 84);
     const dTop = shaftTop + 4.5;
-    rg.add(cyl(4, dTop - ps.armY[0], mat('steel'), 0, (dTop + ps.armY[0]) / 2, 0, 16), cyl(7, 6, mat('pla'), 0, dTop - 1, 0, 24));
-    bearing(dSpin, ps.bossTopY + 3.5, 'bearing-dancer-a');
-    bearing(dSpin, a.flangeHighY + a.flangeT - 3.5, 'bearing-dancer-b');
+    rg.add(tagShaft(cyl(4, dTop - ps.armY[0], mat('steel'), 0, (dTop + ps.armY[0]) / 2, 0, 16), 'shaft-dancer', `Eje del rodillo tensor · Ø8 × ${(dTop - ps.armY[0]).toFixed(0)} mm`, ['Entra a presión, con epóxico, en el casquillo del brazo I04; el rodillo gira en sus dos 608']));
+    rg.add(sub(tagPrinted(cyl(7, 6, mat('pla'), 0, dTop - 1, 0, 24), 'I07', 'd', 'arriba del rodillo tensor'), 0, 122));
+    bearing(dSpin, ps.bossTopY + 3.5, 'bearing-dancer-a', 'rodillo tensor, abajo', undefined, 22);
+    bearing(dSpin, a.flangeHighY + a.flangeT - 3.5, 'bearing-dancer-b', 'rodillo tensor, arriba', undefined, 100);
     rot.add(rg);
-    // eje del pivote con la tapa del imán abajo
-    rot.add(cyl(4, ps.armY[1] - (ps.magnetFaceY + 3.4), mat('steel'), 0, (ps.armY[1] + ps.magnetFaceY + 3.4) / 2, 0, 16));
-    rot.add(cyl(7, 7.5, mat('plaDark'), 0, ps.magnetFaceY + 3.75, 0, 24));
-    const mag = buildMagnet();
+    // eje del pivote: se queda con el brazo; la tapa del imán (I06) y el imán salen por abajo
+    const pivotL = ps.armY[1] - (ps.magnetFaceY + 3.4);
+    rot.add(tagShaft(cyl(4, pivotL, mat('steel'), 0, (ps.armY[1] + ps.magnetFaceY + 3.4) / 2, 0, 16), 'shaft-pivot', `Eje del pivote · Ø8 × ${pivotL.toFixed(0)} mm`, ['Gira en los dos 608 del pivote (cubierta y copa I05); arriba va pegado al cubo del brazo I04 y abajo lleva la tapa del imán I06']));
+    rot.add(supply('epoxy-arm', 1, 'eje del pivote, en el cubo del brazo', (m) => [sleeve(m, 4.45, ps.armY[0] + 0.3, ps.armY[1] - 0.3)]));
+    rot.add(supply('epoxy-arm', 2, 'eje del rodillo, en el casquillo del brazo', (m) => [sleeve(m, 4.45, ps.armY[0] + 0.3, ps.bossTopY - 0.3, dx, dz)]));
+    rot.add(supply('epoxy-magnet', 1, 'punta del eje del pivote, dentro de la tapa I06', (m) => [sleeve(m, 4.45, ps.magnetFaceY + 3.6, ps.magnetFaceY + 7.3)]));
+    const magCap = sub(tagPrinted(new THREE.Group(), 'I06', 1, 'punta de abajo del eje del pivote'), 0, -28);
+    magCap.add(cyl(7, 7.5, mat('plaDark'), 0, ps.magnetFaceY + 3.75, 0, 24));
+    magCap.add(supply('epoxy-magnet', 2, 'imán, en la cara de abajo de la tapa I06', (m) => [cyl(2.9, 0.5, m, 0, ps.magnetFaceY + 2.35, 0, 16)]));
+    rot.add(magCap);
+    const mag = sub(tag(buildMagnet(), { id: 'magnet', name: 'Imán diametral Ø6 × 2,5 mm (viene con el AS5600)', category: 'manos', bomId: 'as5600', notes: ['Va pegado con epóxico en la cara de abajo de la tapa I06, centrado en el eje: el AS5600 lo lee a 1,5 mm'] }), 0, -50);
     mag.position.y = ps.magnetFaceY + 1.25;
     rot.add(mag);
     piv.add(rot);
-    bearing(piv, (ps.upperBearingY[0] + ps.upperBearingY[1]) / 2, 'bearing-pivot-a', 5);
-    bearing(piv, (ps.lowerBearingY[0] + ps.lowerBearingY[1]) / 2, 'bearing-pivot-b', 5);
+    bearing(piv, (ps.upperBearingY[0] + ps.upperBearingY[1]) / 2, 'bearing-pivot-a', 'pivote, arriba (entra por el hueco de la cubierta)', 5);
+    bearing(piv, (ps.lowerBearingY[0] + ps.lowerBearingY[1]) / 2, 'bearing-pivot-b', 'pivote, dentro de la copa I05 (entra por abajo)', 5);
     const cup = tag(new THREE.Group(), { id: 'pivot-cup', name: 'I05 Copa del pivote', category: 'transporte', bomId: 'print-petg', notes: [pnote('I05')], step: 5, explode: [0, -1, 0] });
     const cupH = ps.cupY[1] - ps.cupY[0];
     const cupBody = new THREE.Mesh(new THREE.CylinderGeometry(13.5, 13.5, cupH - 6, 40, 1, true), mat('plaDark'));
     cupBody.position.y = ps.cupY[0] + 6 + (cupH - 6) / 2;
     (cupBody.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
     cup.add(cupBody, box(31, 6, 31, mat('plaDark'), -2, ps.cupY[0] + 3, 0));
+    // sus tres espigas entran en la contracubierta con epóxico
+    const pegs = cupPegs(a).map((q) => ({ x: q.x - a.pivot.x, z: q.y - a.pivot.y }));
+    for (const q of pegs) cup.add(cyl(2.4, 5, mat('plaDark'), q.x, ps.cupY[1] + 2.5, q.z, 16));
+    cup.add(supply('epoxy-cup', 1, 'espigas de la copa I05', (m) => pegs.map((q) => sleeve(m, 2.75, ps.cupY[1] + 0.8, ps.cupY[1] + 5.2, q.x, q.z))));
     piv.add(cup);
     const enc = tag(buildKind('as5600'), { id: 'as5600', name: 'Encoder AS5600 del brazo tensor', category: 'manos', kind: 'as5600', bomId: 'as5600', notes: ['Entra de lado en la ranura de abajo de la copa, a 1,5 mm del imán del eje', 'El ESP32 lo lee por I2C y corrige el motor que suelta'], step: 7, explode: [-1, 0, 0] });
     enc.position.y = a.as5600.y;
@@ -1108,19 +1321,25 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const range = handRangeMm(c.speedMap);
     const halfFov = ((r.sensor.fovDeg / 2) * Math.PI) / 180;
     const sensors: THREE.Object3D[] = [];
+    let solidPost = 0;
     a.covers.forEach((cv, i) => {
       const n = i + 1;
       const posts = tag(new THREE.Group(), { id: `cover-posts-${n}`, name: `Postes de la tapa ${n}`, category: 'manos', bomId: 'print-petg', notes: [pnote('I08'), pnote('I09')], step: 9, explode: [0, 1, 0] });
       cv.posts.forEach((s, k) => {
         const hollow = k === cv.hollow;
         const pr = hollow ? a.hollowPostR : a.postR;
+        const spigotR = hollow ? 6 : 4;
+        const pg = hollow ? tagPrinted(new THREE.Group(), 'I09', n, `tapa ${n}`, 'manos') : tagPrinted(new THREE.Group(), 'I08', ++solidPost, `tapa ${n}`, 'manos');
         const post = new THREE.Mesh(new THREE.CylinderGeometry(pr, pr, cv.y, 24, 1, hollow), mat(hollow ? 'pla' : 'plaDark'));
         post.position.set(s.x, cv.y / 2, s.y);
         post.castShadow = true;
-        posts.add(post);
+        // la espiga (o el tubo del poste hueco) que entra en la cubierta, con su epóxico
+        pg.add(post, new THREE.Mesh(new THREE.CylinderGeometry(spigotR, spigotR, B.deckT, 20, 1, hollow), mat(hollow ? 'pla' : 'plaDark')).translateX(s.x).translateY(-B.deckT / 2).translateZ(s.y));
+        pg.add(supply('epoxy-posts', `${n}-${k + 1}`, `espiga del poste ${hollow ? 'hueco ' : ''}de la tapa ${n}`, (m) => [sleeve(m, spigotR + 0.35, -B.deckT + 0.5, -0.5, s.x, s.y)]));
+        posts.add(pg);
       });
       staticGroup.add(posts);
-      const hood = tag(new THREE.Group(), { id: `hood-${n}`, name: `Capuchón del sensor ${n}`, category: 'manos', bomId: 'print-petg', notes: [pnote('I10')], step: 10, explode: [0, 1, 0] });
+      const hood = tag(new THREE.Group(), { id: `hood-${n}`, name: `I10 Capuchón del sensor ${n}`, category: 'manos', bomId: 'print-petg', notes: [pnote('I10')], step: 10, explode: [0, 1, 0] });
       hood.position.set(cv.x, cv.y + 3, cv.z);
       const hq = cv.posts[cv.hollow];
       const toH = Math.atan2(hq.y - cv.z, hq.x - cv.x);
@@ -1173,6 +1392,8 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     psu.rotation.x = Math.PI / 2;
     psu.position.set(a.psu.x, floorTop + PSU_MM.w / 2, a.psu.z - PSU_MM.h / 2);
     staticGroup.add(psu);
+    // dos tiras de cinta de gel bajo la fuente, a lo largo
+    staticGroup.add(supply('psu-tape', 1, 'bajo la fuente', (m) => [-7.5, 7.5].map((dz2) => box(140, 1, 10, m, a.psu.x, floorTop + 0.5, a.psu.z - PSU_MM.h / 2 + dz2)), { top: true }));
     const dms = a.dm542.map((m, i) => put(tag(buildKind('dm542'), el(`dm542-${i + 1}`, `Driver DM542 · motor ${i + 1}`, { kind: 'dm542', bomId: 'driver-dm542', notes: ['Dos cinchos por las ranuras del piso, sobre sus pestañas', 'Interruptores DIP: 1/16 de paso y 1,8 A (verificar la tabla impresa en el driver)'] })), m.x, floorTop, m.z, m.rotY));
     const bucks = a.bucks.map((b) => put(tag(buildKind('lm2596'), el(`buck-${b.volts}v`, `Regulador LM2596 a ${b.volts} V`, { kind: 'lm2596', bomId: 'buck-lm2596', notes: [b.volts === 5 ? 'Alimenta el ESP32, el sensor de marcas y las entradas de los drivers' : 'Alimenta el IR2101', 'Un cincho por las ranuras del piso'] })), b.x, floorTop, b.z));
     const fuseG = tag(new THREE.Group(), el('fuse', 'Portafusible en línea con fusible de 500 mA', { bomId: 'led-fuse', notes: ['En la línea de 24 V del LED, antes de los capacitores; va amarrado a los cables', 'Modelo aproximado'] }));
@@ -1185,7 +1406,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const exp = put(tag(buildKind('expansion'), el('esp32-expansion', 'Placa de expansión del ESP32', { category: 'control', kind: 'expansion', bomId: 'esp32-expansion', notes: ['Dos cinchos por sus barrenos de esquina'] })), a.expansion.x, floorTop, a.expansion.y);
     const esp = tag(buildKind('esp32'), { id: 'esp32', name: 'ESP32 DevKitC V4 («el Arduino»)', category: 'control', kind: 'esp32', bomId: 'esp32', notes: ['Lee las dos manos, el brazo tensor y las marcas; mueve los dos motores con la misma rampa y dispara el LED', 'GPIO25/26 → motor 1 · GPIO32/33 → motor 2 · GPIO27 → LED · GPIO34 ← marcas · GPIO21/22 I2C · GPIO4 → XSHUT del sensor 2'] });
     esp.position.set(0, EXPANSION.socketTop + 2.5, 0);
-    exp.add(esp);
+    exp.add(sub(esp, 0, 30));
     const res10 = put(tag(buildKind('res10w'), el('led-resistor', 'Resistencia 3,3 Ω 10 W', { category: 'control', kind: 'res10w', bomId: 'led-resistor', notes: ['Un cincho por las ranuras del piso'] })), a.res10.x, floorTop, a.res10.y);
     const onBB = (o: THREE.Object3D, col: number, row: string) => {
       const h = breadboardHole(col, row);
@@ -1214,13 +1435,65 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       smallR.add(o);
     }
     // cinchos: bandas delgadas sobre los drivers, reguladores y resistencia
-    const ties = tag(new THREE.Group(), el('cable-ties', 'Cinchos de nylon', { category: 'estructura', bomId: 'cable-ties', notes: ['Pasan por las ranuras chicas del piso: sujetan sin tornillos los drivers, la placa de expansión, los reguladores y la resistencia. Se cortan para cambiar una pieza'] }));
+    const ties = tag(new THREE.Group(), el('cable-ties', 'Cinchos de nylon', { category: 'consumibles', bomId: 'cable-ties', notes: ['Pasan por las ranuras chicas del piso: sujetan sin tornillos los drivers, la placa de expansión, los reguladores y la resistencia. Se cortan para cambiar una pieza'] }));
+    ties.userData.supplyColor = SUPPLY_COLORS['cable-ties'];
     for (const m of a.dm542) for (const dz2 of [-45, 45]) ties.add(box(86, 1.2, 3.6, mat('white'), m.x, floorTop + 34.6, m.z + dz2));
     a.bucks.forEach((b, k) => ties.add(box(3.6, 1.2, 30, mat('white'), b.x + (k ? 10 : -10), floorTop + 16.6, b.z)));
     ties.add(box(3.6, 1.2, 30, mat('white'), a.res10.x, floorTop + 15.6, a.res10.y));
     staticGroup.add(ties);
 
     buildGateOptics(d, p, a, a);
+
+    // --- lo que va dentro de la cabeza del LED, del sensor de marcas y de la cuna de la lente --------------------------
+    {
+      const fm = a.filmMid;
+      const toGate = gateMatrix.clone().invert();
+      const gateXZ = (q: Vec2) => new THREE.Vector3(q.x, 0, q.y).applyMatrix4(toGate);
+      /** espiga I16 Ø5,8 × 18 de la mesa (11 mm en la cubierta) en el marco de la ventana, con su epóxico */
+      const dowel = (parentObj: THREE.Object3D, q: Vec2, k: number, which: string, glue: (m: THREE.Material) => THREE.Object3D[], supplyId: string) => {
+        const v = gateXZ(q);
+        const g = sub(tagPrinted(new THREE.Group(), 'I16', k, which, 'optica'), 0, -32);
+        g.add(cyl(2.9, 18, mat('pla'), v.x, -fm - 2, v.z, 16));
+        g.add(supply(supplyId, k, which, glue));
+        parentObj.add(g);
+        return v;
+      };
+      const head = registry.get('led-head')?.obj;
+      const cond = registry.get('condenser');
+      const led = registry.get('led')?.obj;
+      const hs = registry.get('led-heatsink')?.obj;
+      if (head && cond && led && hs) {
+        // el disipador sale hacia arriba de entre las paredes, el LED se despega de su frente y el tubo sube de sus cunas
+        sub(hs, 0, 42);
+        sub(led, 0, 42, 16);
+        sub(cond.obj, 0, 30);
+        cond.node.name = 'I12 Tubo del condensador con sus dos lentes Ø40';
+        cond.node.notes = [pnote('I12')];
+        cond.obj.add(supply('silicone-condenser', 1, 'orillas de las lentes del condensador', (m) => [6, 18].map((z) => {
+          const t = new THREE.Mesh(new THREE.TorusGeometry(19.4, 0.9, 8, 64), m);
+          t.position.z = z;
+          return t;
+        })));
+        a.ledPegs.forEach((q, k) => dowel(head, q, k + 1, `cabeza del LED ${k ? 'derecha' : 'izquierda'}`, (m) => [sleeve(m, 3.25, -fm - 10.5, -fm + 6.5, gateXZ(q).x, gateXZ(q).z)], 'epoxy-led-dowels'));
+      }
+      const cradle = registry.get('lens-cradle')?.obj;
+      if (cradle) {
+        a.lensPegs.forEach((q, k) => dowel(cradle, q, k + 3, `cuna de la lente ${k ? 'derecha' : 'izquierda'}`, (m) => [sleeve(m, 3.25, -fm + 0.3, -fm + 6.5, gateXZ(q).x, gateXZ(q).z)], 'epoxy-lens-dowels'));
+        // liga o cincho de velcro alrededor del barril, entre las dos ranuras de la cuna
+        const edge = gateEdgeDistance(d, a);
+        cradle.add(supply('strap-lens', 1, null, (m) => {
+          const t = new THREE.Mesh(new THREE.TorusGeometry(33.2, 1.6, 8, 72), m);
+          t.position.z = edge + 40;
+          return [t];
+        }, { always: true }));
+      }
+      const sensorObj = registry.get('sensor')?.obj;
+      if (sensorObj) {
+        // el brazo I14 sube y deja ver el F249 y el cincho que los amarra
+        sub(tagPrinted(roleOf(sensorObj, 'i14'), 'I14', 1, 'brazo del sensor de marcas', 'control'), 0, 28);
+        sensorObj.add(supply('tie-f249', 1, 'F249 al brazo I14', (m) => [-4, 4].flatMap((z) => [box(11, 1, 3.6, m, 12, 23, z), box(11, 1, 3.6, m, 12, 10.2, z), box(1, 13.8, 3.6, m, 6.5, 16.6, z), box(1, 13.8, 3.6, m, 17.5, 16.6, z)]), { always: true }));
+      }
+    }
 
     // --- cables -------------------------------------------------------------------------------------------------------
     root.updateMatrixWorld(true);
@@ -1526,19 +1799,53 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
   }
   function applyVisibility(id: string): void {
     const e = registry.get(id);
-    if (e) e.obj.visible = !hidden.has(id) && (!isolated || related(isolated, id)) && (!assembly || e.node.step === undefined || e.node.step <= assembly.step);
+    if (!e) return;
+    const st = e.node.step ?? e.node.atStep;
+    e.obj.visible = !hidden.has(id) && (!isolated || related(isolated, id)) && (!assembly ? !e.node.assemblyOnly : st === undefined || st <= assembly.step);
   }
 
   // --- ensamble paso a paso ------------------------------------------------------------------------------------------
   /** paso visible, explosión (0–1) y cuándo empezó el paso (para que sus piezas lleguen volando) */
   let assembly: { step: number; explode: number; since: number } | null = null;
+  /** piezas del plan de explosión: dónde están armadas, a dónde van con la explosión completa y de dónde llegan */
   const homes = new Map<THREE.Object3D, THREE.Vector3>();
-  /** distancia de la vista explosionada (mm) */
-  const EXPLODE_MM = 150;
+  const offsets = new Map<THREE.Object3D, { total: THREE.Vector3; fly: THREE.Vector3 }>();
+  /** lo que va dentro de otra pieza: sale por su eje (`userData.explodeMm`) y llega desarmado con su paso */
+  const subs: { obj: THREE.Object3D; home: THREE.Vector3; v: THREE.Vector3; step: number }[] = [];
+  /** de qué tan lejos llegan las piezas del paso (mm) */
+  const FLY_MM = 140;
+  /** el paso de una pieza o de la pieza que la contiene */
+  function stepOf(o: THREE.Object3D): number {
+    for (let x: THREE.Object3D | null = o; x; x = x.parent) {
+      const n = x.userData.partId ? registry.get(x.userData.partId as string)?.node : undefined;
+      const st = n?.step ?? n?.atStep;
+      if (st !== undefined) return st;
+    }
+    return 0;
+  }
   function captureAssemblyHomes(): void {
     homes.clear();
-    for (const e of registry.values()) if (e.node.step !== undefined) homes.set(e.obj, e.obj.position.clone());
+    offsets.clear();
+    subs.length = 0;
+    for (const e of registry.values()) {
+      if (e.node.step === undefined) continue;
+      homes.set(e.obj, e.obj.position.clone());
+      const plan = explodeOffset(e.node.id);
+      if (!plan && import.meta.env.DEV) console.warn(`explosión: ${e.node.id} no está en el plan`);
+      const total = plan ? new THREE.Vector3(...plan.total) : new THREE.Vector3(...(e.node.explode ?? [0, 1, 0])).multiplyScalar(50);
+      const fly = plan ? new THREE.Vector3(...plan.own) : total.clone();
+      offsets.set(e.obj, { total, fly: fly.lengthSq() > 0 ? fly.normalize() : new THREE.Vector3(0, -1, 0) });
+    }
+    for (const grp of [staticGroup, gateGroup]) grp.traverse((o) => {
+      const v = o.userData.explodeMm as THREE.Vector3 | undefined;
+      if (v) subs.push({ obj: o, home: o.position.clone(), v, step: stepOf(o) });
+    });
     applyAssemblyHides();
+  }
+  /** marca algo que va dentro de otra pieza para que salga `x, y, z` mm (en el marco de su grupo) al explotar */
+  function sub<T extends THREE.Object3D>(o: T, x: number, y: number, z = 0): T {
+    o.userData.explodeMm = new THREE.Vector3(x, y, z);
+    return o;
   }
   function applyAssemblyHides(): void {
     for (const grp of [staticGroup, gateGroup]) grp.traverse((o) => {
@@ -1549,21 +1856,22 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
   }
   function applyAssembly(): void {
     const A = assembly;
-    const now = performance.now();
-    const t = A ? Math.min(1, (now - A.since) / 900) : 1;
+    const t = A ? Math.min(1, (performance.now() - A.since) / 900) : 1;
     const ease = 1 - (1 - t) ** 3;
-    for (const e of registry.values()) {
-      const st = e.node.step;
-      const home = homes.get(e.obj);
-      if (st === undefined || !home) continue;
-      if (!A) {
-        e.obj.position.copy(home);
-        continue;
-      }
-      const dir = e.node.explode ?? [0, 1, 0];
-      // las piezas de pasos anteriores se separan con la explosión; las del paso llegan desde afuera
-      const f = st < A.step ? A.explode * (0.4 + (0.6 * st) / Math.max(1, A.step)) : st === A.step ? Math.max(A.explode, 1 - ease) : 0;
-      e.obj.position.set(home.x + dir[0] * EXPLODE_MM * f, home.y + dir[1] * EXPLODE_MM * f, home.z + dir[2] * EXPLODE_MM * f);
+    for (const [obj, home] of homes) {
+      obj.position.copy(home);
+      if (!A) continue;
+      const o = offsets.get(obj)!;
+      // todo lo visible se separa con la explosión; las piezas del paso además llegan desde afuera
+      obj.position.addScaledVector(o.total, A.explode);
+      if (stepOf(obj) === A.step) obj.position.addScaledVector(o.fly, FLY_MM * (1 - ease));
+    }
+    for (const s of subs) {
+      s.obj.position.copy(s.home);
+      if (!A) continue;
+      // lo de adentro llega desarmado y se cierra al llegar; con la explosión se vuelve a abrir
+      const k = s.step < A.step ? A.explode : s.step === A.step ? Math.max(A.explode, 1 - ease) : 0;
+      s.obj.position.addScaledVector(s.v, k);
     }
   }
   function applyIsolation(): void {
@@ -1581,8 +1889,11 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
   function baseSphere(): THREE.Sphere {
     if (!baseBox) return new THREE.Sphere(new THREE.Vector3(), 0.3);
     const B = baseBox;
-    const c = new THREE.Vector3(((B.x0 + B.x1) / 2) * MM, ((B.bottom + topY) / 2) * MM, ((B.z0 + B.z1) / 2) * MM);
-    return new THREE.Sphere(c, Math.hypot(B.x1 - B.x0, B.z1 - B.z0, topY - B.bottom) * 0.5 * MM);
+    // la vista explosionada sube hasta unos 450 mm y abre las paredes 130 mm por lado
+    const ex = assembly ? assembly.explode : 0;
+    const top = topY + 450 * ex;
+    const c = new THREE.Vector3(((B.x0 + B.x1) / 2) * MM, ((B.bottom + top) / 2) * MM, ((B.z0 + B.z1) / 2) * MM);
+    return new THREE.Sphere(c, Math.hypot(B.x1 - B.x0 + 260 * ex, B.z1 - B.z0 + 270 * ex, top - B.bottom) * 0.5 * MM);
   }
   function lookFrom(target: THREE.Vector3, dir: THREE.Vector3, radius: number): void {
     const fov = (persp.fov * Math.PI) / 180;
@@ -1800,8 +2111,15 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     }
     const wanted = new Set<string>();
     if (labelsOn) for (const [id, e] of registry) {
-      if (!e.obj.visible || e.node.category === 'cableado' || id.startsWith('bearing-') || parentOf(id) && !['control-box', 'led-head'].includes(parentOf(id)!)) continue;
+      if (!e.obj.visible || e.node.category === 'cableado' || e.node.category === 'consumibles' || id.startsWith('bearing-') || parentOf(id) && !['control-box', 'led-head'].includes(parentOf(id)!)) continue;
       wanted.add(id);
+    }
+    // en el ensamble, los pegamentos, cintas y cinchos del paso llevan siempre su etiqueta de color
+    if (assembly) for (const [id, e] of registry) {
+      if (e.node.category !== 'consumibles' || (e.node.step ?? e.node.atStep) !== assembly.step) continue;
+      let shown = true;
+      for (let x: THREE.Object3D | null = e.obj; x && shown; x = x.parent) shown = x.visible;
+      if (shown) wanted.add(id);
     }
     for (const [id, el] of labelEls) if (!wanted.has(id)) {
       el.remove();
@@ -1810,9 +2128,15 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     for (const id of wanted) {
       let el = labelEls.get(id);
       if (!el) {
+        const e = registry.get(id)!;
         el = document.createElement('span');
         el.className = 'sim-label';
-        el.textContent = registry.get(id)!.node.name;
+        el.textContent = e.node.name;
+        if (e.node.category === 'consumibles') {
+          el.classList.add('supply');
+          el.textContent = e.node.name.split(' · ')[0];
+          el.style.setProperty('--sup', `#${((e.obj.userData.supplyColor as number | undefined) ?? 0x888888).toString(16).padStart(6, '0')}`);
+        }
         el.onclick = () => select(id);
         labelsEl.append(el);
         labelEls.set(id, el);

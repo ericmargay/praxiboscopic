@@ -214,12 +214,12 @@ function fabHtml(): string {
       return `<li><b>${esc(SHEET_MATERIALS[e.material].label)}</b>: ${e.pieces} piezas, ${e.cutM.toFixed(1).replace('.', ',')} m de corte · ${sheets} · <a href="${base}/laser/${pre}.pdf" target="_blank" rel="noopener">PDF 1:1</a></li>`;
     })
     .join('');
-  const stl = printed.map((p) => `<li><a href="${base}/impresion-3d/${esc(p.file)}" download>${esc(p.file)}</a> × ${p.qty} <span class="hint">${esc(p.name)}</span></li>`).join('');
+  const stl = printed.map((p) => `<li><a href="${base}/impresion-3d/${esc(p.file)}" download>${esc(p.file)}</a> <span class="hint">${esc(p.name)}${p.qty > 1 ? ` · trae las ${p.qty}` : ''}</span></li>`).join('');
   return `<div class="why"><b>Cómo se fabrica.</b> Piso y cubierta de MDF de ${esc(String(st.mdfMm).replace('.', ','))} mm y paredes de acrílico transparente de ${esc(String(st.asm.base.acrT).replace('.', ','))} mm, cortados con láser y armados a mano, sin tornillos: las paredes quedan atrapadas en ranuras del MDF (se ve la electrónica), dos cuñas aprietan la tapa trasera y las tapas se abrochan. Las piezas que giran o sostienen se imprimen en PETG. Cada pieza lleva su código (E, A, N, I), el mismo que usan los <a href="./index.html?section=mechanical&demo=tambores&ensamble=1">12 pasos del ensamble en el simulador</a>.</div>
     <div class="fab">
       <section><h3>1 · Corte láser</h3><p class="hint">DXF R12, SVG y PDF a escala 1:1, con las piezas acomodadas en hojas de 90 × 60 cm y el kerf compensado. Rojo corta, azul marca y negro graba el código.</p><ul>${laserLinks}</ul>
         <div class="msg"><div class="msg-h"><b>Texto para el taller</b><button class="btn" data-copy="msg-laser">Copiar</button></div><pre id="msg-laser">${esc(laserRequestText(st, laser))}</pre></div></section>
-      <section><h3>2 · Impresión 3D</h3><p class="hint">${printed.length} STL, uno por pieza, ya orientados y revisados (sólidos cerrados, sin soportes).</p><ul class="stl">${stl}</ul>
+      <section><h3>2 · Impresión 3D</h3><p class="hint">${printed.length} STL, uno por pieza, ya orientados y revisados (sólidos cerrados, sin soportes). Cada archivo trae todas las copias que van, ${pe.pieces} piezas en total: se imprime una vez cada uno.</p><ul class="stl">${stl}</ul>
         <div class="msg"><div class="msg-h"><b>Texto para el servicio</b><button class="btn" data-copy="msg-print">Copiar</button></div><pre id="msg-print">${esc(printRequestText(printed, pe))}</pre></div></section>
     </div>
     <p class="fab-all"><a class="btn primary" href="${base}/${ZIP_NAME}" download>Descargar todo (ZIP)</a> <a class="btn" href="${base}/README.md" target="_blank" rel="noopener">README con piezas y pasos</a></p>`;

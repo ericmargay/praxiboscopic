@@ -2,7 +2,7 @@
 
 # Lista de compras · Demostración · dos tambores con la mano (5 s)
 
-13/11/2026 · Formato de docs/SHOPPING.md: qué, por qué, para qué, alternativa, costo · evidencia (🟢 leído, 🟡 estimado, 🔴 sin verificar), link, necesidad. Precios antes de envío e impuestos; no se compra nada sin abrir el link.
+17/11/2026 · Formato de docs/SHOPPING.md: qué, por qué, para qué, alternativa, costo · evidencia (🟢 leído, 🟡 estimado, 🔴 sin verificar), link, necesidad. Precios antes de envío e impuestos; no se compra nada sin abrir el link.
 
 | ID | Qué | Por qué | Para qué | Alternativa | Costo · evidencia | Link | Necesidad |
 |---|---|---|---|---|---|---|---|

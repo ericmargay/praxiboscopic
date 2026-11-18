@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { PSU_MM } from '../mech/assembly';
 
-export type PartCategory = 'estructura' | 'transporte' | 'manos' | 'pelicula' | 'optica' | 'control' | 'potencia' | 'cableado';
+export type PartCategory = 'estructura' | 'transporte' | 'manos' | 'pelicula' | 'optica' | 'control' | 'potencia' | 'cableado' | 'consumibles';
 
 export const CATEGORY_LABEL: Record<PartCategory, string> = {
   estructura: 'Estructura',
@@ -19,6 +19,7 @@ export const CATEGORY_LABEL: Record<PartCategory, string> = {
   control: 'Control',
   potencia: 'Potencia (dentro de la base)',
   cableado: 'Cableado',
+  consumibles: 'Pegamentos, cintas y cinchos (se ven en el ensamble)',
 };
 
 export interface KindSpec {
@@ -517,14 +518,19 @@ export function buildRoller(R: number, bodyH: number, drive = false): THREE.Grou
 /**
  * Tambor (ADR-0011, ADR-0012): núcleo impreso de radio `coreR` (anillo de 2 mm con el alma arriba y el cubo para el eje
  * de 8 mm) entre dos bridas de acrílico transparente de 3 mm, para ver la película enrollada. Eje Y; origen en la cara
- * inferior de la brida de abajo; `gap` es la luz entre bridas.
+ * inferior de la brida de abajo; `gap` es la luz entre bridas. Sus hijos son tres grupos que la vista explosionada
+ * separa: `userData.role` = 'flangeLow', 'core' y 'flangeHigh'.
  */
 export function buildReel(coreR: number, flangeR: number, gap: number, flangeT = 3): THREE.Group {
   const g = new THREE.Group();
+  const lo = roleGroup('flangeLow');
+  const hi = roleGroup('flangeHigh');
+  const body = roleGroup('core');
   for (const [y, hole] of [
     [0, 5.85],
     [flangeT + gap, 4.1],
   ] as const) {
+    const fl = y === 0 ? lo : hi;
     const f = new THREE.Shape();
     f.absarc(0, 0, flangeR, 0, Math.PI * 2, false);
     const h = new THREE.Path();
@@ -534,17 +540,17 @@ export function buildReel(coreR: number, flangeR: number, gap: number, flangeT =
     fg.rotateX(-Math.PI / 2);
     const m = new THREE.Mesh(fg, mat('acrylic'));
     m.position.y = y;
-    g.add(m);
+    fl.add(m);
     // canto pulido del acrílico: se ve como una línea
     const edge = new THREE.Mesh(new THREE.CylinderGeometry(flangeR, flangeR, flangeT, 96, 1, true), new THREE.MeshStandardMaterial({ color: 0xb9d3da, roughness: 0.1, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
     edge.position.y = y + flangeT / 2;
-    g.add(edge);
+    fl.add(edge);
   }
   const core = new THREE.Mesh(new THREE.CylinderGeometry(coreR, coreR, gap, 96, 1, true), mat('pla'));
   core.position.y = flangeT + gap / 2;
   (core.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
   core.castShadow = true;
-  g.add(core);
+  body.add(core);
   // alma con aligeramientos bajo la brida de arriba, y el cubo
   const web = new THREE.Shape();
   web.absarc(0, 0, coreR - 1, 0, Math.PI * 2, false);
@@ -562,29 +568,46 @@ export function buildReel(coreR: number, flangeR: number, gap: number, flangeT =
   const wm = new THREE.Mesh(wg, mat('pla'));
   wm.position.y = flangeT + gap - 3;
   wm.castShadow = true;
-  g.add(wm);
-  g.add(cyl(11, gap, mat('pla'), 0, flangeT + gap / 2, 0, 32));
+  body.add(wm);
+  body.add(cyl(11, gap, mat('pla'), 0, flangeT + gap / 2, 0, 32));
   // ranura de la cola y marca de giro
-  g.add(box(1.2, gap - 4, 6, mat('hole'), coreR - 0.4, flangeT + gap / 2, 0));
-  g.add(box(flangeR * 0.4, 0.6, 2.4, mat('red'), flangeR * 0.7, 2 * flangeT + gap + 0.3, 0));
+  body.add(box(1.2, gap - 4, 6, mat('hole'), coreR - 0.4, flangeT + gap / 2, 0));
+  hi.add(box(flangeR * 0.4, 0.6, 2.4, mat('red'), flangeR * 0.7, 2 * flangeT + gap + 0.3, 0));
+  g.add(lo, body, hi);
   return g;
+}
+
+/** grupo con `userData.role`, para que la escena encuentre las partes de un tambor o rodillo */
+function roleGroup(role: string): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.role = role;
+  return g;
+}
+/** la parte `role` de lo que arman `buildReel` y `buildSpool` */
+export function roleOf(g: THREE.Object3D, role: string): THREE.Object3D {
+  const c = g.children.find((o) => o.userData.role === role);
+  if (!c) throw new Error(`sin la parte ${role}`);
+  return c;
 }
 
 /**
  * Rodillo de la mesa de dos tambores (guía o tensor): cuerpo impreso de radio R con su manga para dos 608 y bridas de
  * acrílico de radio `flangeR`. `relief` rebaja el centro (el rodillo tensor solo apoya en los márgenes). Eje Y; origen
- * en la cara inferior de la brida de abajo.
+ * en la cara inferior de la brida de abajo. Hijos: 'flangeLow', 'body' y 'flangeHigh' (`userData.role`).
  */
 export function buildSpool(R: number, gap: number, flangeT: number, flangeR: number, relief = 0): THREE.Group {
   const g = new THREE.Group();
+  const lo = roleGroup('flangeLow');
+  const hi = roleGroup('flangeHigh');
+  const body = roleGroup('body');
   const shellR = R - relief;
   const shell = new THREE.Mesh(new THREE.CylinderGeometry(shellR, shellR, gap - (relief ? 11 : 0), 72, 1, true), mat('pla'));
   shell.position.y = flangeT + gap / 2;
   (shell.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
   shell.castShadow = true;
-  g.add(shell);
-  if (relief) for (const y of [flangeT + 2.75, flangeT + gap - 2.75]) g.add(cyl(R, 5.5, mat('pla'), 0, y, 0, 72));
-  g.add(cyl(14, gap, mat('pla'), 0, flangeT + gap / 2, 0, 32));
+  body.add(shell);
+  if (relief) for (const y of [flangeT + 2.75, flangeT + gap - 2.75]) body.add(cyl(R, 5.5, mat('pla'), 0, y, 0, 72));
+  body.add(cyl(14, gap, mat('pla'), 0, flangeT + gap / 2, 0, 32));
   for (const y of [0, flangeT + gap]) {
     const f = new THREE.Shape();
     f.absarc(0, 0, flangeR, 0, Math.PI * 2, false);
@@ -595,9 +618,10 @@ export function buildSpool(R: number, gap: number, flangeT: number, flangeR: num
     fg.rotateX(-Math.PI / 2);
     const m = new THREE.Mesh(fg, mat('acrylic'));
     m.position.y = y;
-    g.add(m);
+    (y === 0 ? lo : hi).add(m);
   }
-  g.add(box(R * 0.5, 0.6, 2, mat('red'), R * 0.62, 2 * flangeT + gap + 0.9, 0)); // marca de giro
+  hi.add(box(R * 0.5, 0.6, 2, mat('red'), R * 0.62, 2 * flangeT + gap + 0.9, 0)); // marca de giro
+  g.add(lo, body, hi);
   return g;
 }
 

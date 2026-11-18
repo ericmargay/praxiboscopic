@@ -27,7 +27,7 @@ Actualizado: 5/11/2026. Puente entre sesiones: la siguiente arranca leyendo este
 | Dos tambores con la mano (ADR-0011) | Implementado: recorrido abierto entre dos tambores con radio que crece al enrollar, colas transparentes, brazo tensor y AS5600; programa del ESP32 (`ReelController`: dos sensores de mano, filtro, espera, rampa de 2 m/s², frenado antes del final, paro con un fotograma centrado, dos manos, invitar, regresar sola); destello de 0,1 mm / v y cuadro fijo a 200 Hz; mesa de 394 × 268 mm con la electrónica dentro y a la vista (ADR-0012); escena 3D con tambores que giran y se llenan, tapas, sensores, conos y la mano del visitante; laboratorio con la planta de los tambores; lista de compras propia (`compras.html?demo=tambores`, `docs/COMPRAS-TAMBORES.md`) | `src/mech/reels.ts`, `reels.test.ts`, `capturas/tambores*.png` |
 | Mesa de dos tambores sin tornillos (ADR-0012) | Implementado: la estructura se calcula desde el ensamble (`buildReelsStructure`): piso y cubierta doble de MDF de 5,5 mm y paredes de acrílico transparente de 3 mm atrapadas en ranuras del MDF (una prueba recorre las aristas: ninguna pieza se encima y entre acrílicos solo queda su holgura de 0,1 mm), tapa trasera de acrílico con cuñas, cuatro patas de hule bajo el piso (sin marcarlas: el láser marca la cara de adentro), torres de los motores, marco y topes de la fuente, tapas y bridas de acrílico, ventana de acrílico negro y piezas de prueba. 16 piezas impresas en PETG modeladas con manifold-3d y revisadas con `checkPrint`. `npm run fabricar` escribe DXF R12, SVG y PDF 1:1 por hoja, los STL, el README con los textos para los talleres y un ZIP en `public/fabricacion/tambores/`. Cantidades de taller (`quantities.ts`); los costos estimados, en privado (`private/costos/`). En el simulador, *Ensamble sin tornillos* tiene 12 pasos con explosión (`?ensamble=N&explosion=x`). La página de compras tiene la pestaña *Taller* | `src/mech/structure.ts`, `src/fabricate/printed.ts`, `src/fabricate/quantities.ts`, `src/fabricate/shops.ts`, `scripts/fabricar.mjs`, `structure.test.ts`, `printed.test.ts`, `capturas/tambores-ensamble*.png` |
 | Espacio interior del loop | Implementado: `interiorClearance` mide fondo y ancho reales dentro del loop y `deriveProject` marca error si la linterna o el tambor no caben | `src/mech/path.ts`, `project.test.ts` |
-| Pruebas y capturas | 125 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
+| Pruebas y capturas | 130 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
 
 ## Decisiones tomadas (ADR en docs/adr)
 
@@ -54,6 +54,21 @@ prueba revisa que quepa sin mover el marco ni los topes). El S8050 de UNIT era d
 TO-92. La tira de pines, en escuadra. Las resistencias, de 1/2 W. La varilla, de acero 1045 sin cromar de 60 cm. Los
 608 se piden en Amazon. El cable dúplex de 18 AWG, el fusible, los cinchos y la cinta son de Steren. El ESP32, la protoboard y
 los jumpers ya los tenía Eric; la placa de expansión queda como opcional.
+
+**Armado y reposición de impresas (17-nov-2026):** al armar faltaba al menos un núcleo de tambor. El servicio de
+impresión imprimió una copia de cada STL sin ver las cantidades. Desde ahora cada STL trae todas las copias de su pieza,
+acomodadas en una cama de 220 mm, y el nombre dice cuántas trae (`I01-nucleo-tambor-2-piezas.stl`; 28 piezas en 16
+archivos). `npm run fabricar -- --faltan=una-de-cada` (o `--faltan=I01:1,I08:3`) arma `impresion-3d/reposicion/` y
+`mesa-tambores-reposicion.zip` con solo lo que falta.
+
+En el simulador, la vista explosionada separa por capas: cada pieza se aparta de aquella en la que se apoya. Tambores,
+guías y rodillo tensor se desarman a lo largo de su eje en rondana, 608, bridas, cuerpo y tapón. También se desarman el
+eje del pivote, la tapa del imán, el imán, las espigas I16 y el brazo del F249. Cada paso marca en color lo que no se
+corta ni se imprime: epóxico, cianoacrilato, cola blanca, cinta de gel, cinchos, rondanas, silicón y liga. El panel
+explica dónde va cada uno y da cuántas piezas entran de cada código.
+
+Las bridas A06–A09 se dibujaban dos veces y la del rodillo tensor no giraba con él; ahora van dentro de su tambor o
+rodillo.
 
 **La película sigue laminada (5-nov-2026, ADR-0013):** Eric preguntó por una laca en aerosol en lugar del laminado en
 frío. Se investigó con fuentes y se descartó. Corre o vela la tinta inkjet, no pega bien al PET sin lijar, se pega a sí

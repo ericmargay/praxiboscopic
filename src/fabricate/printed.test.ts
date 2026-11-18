@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import Module from 'manifold-3d';
 import { deriveProject } from '../core/project';
 import { reelsDemoProject } from '../core/video';
-import { reelsPrintedParts } from './printed';
+import { BED_MM, printPlate, reelsPrintedParts, stlName } from './printed';
 
 const p = reelsDemoProject();
 const d = deriveProject(p);
@@ -27,6 +27,26 @@ describe('piezas impresas de la mesa de dos tambores (ADR-0012)', () => {
       expect(Math.abs(v - part.solidCm3) / v, `${part.id}: ${v.toFixed(1)} frente a ${part.solidCm3.toFixed(1)} cm³`).toBeLessThan(0.3);
       m.delete();
     }
+  });
+
+  it('cada STL trae todas las copias que van, en una cama de 220 mm, y su nombre dice cuántas', async () => {
+    const mf = await Module();
+    mf.setup();
+    const parts = reelsPrintedParts(p, d);
+    expect(parts.reduce((s, x) => s + x.qty, 0)).toBe(28);
+    for (const part of parts) {
+      expect(part.file, part.id).toMatch(new RegExp(`^${part.id}-[a-z0-9-]+-${part.qty}-piezas?\\.stl$`));
+      const one = part.build(mf);
+      const plate = printPlate(mf, part);
+      const b = plate.boundingBox();
+      for (const k of [0, 1]) expect(b.max[k] - b.min[k], part.id).toBeLessThanOrEqual(BED_MM);
+      expect(b.min[2], part.id).toBeCloseTo(0, 3);
+      expect(plate.decompose().length, part.id).toBeGreaterThanOrEqual(part.qty);
+      expect(plate.volume(), part.id).toBeCloseTo(part.qty * one.volume(), 0);
+      one.delete();
+      plate.delete();
+    }
+    expect(stlName(parts[0], 1)).toBe('I01-nucleo-tambor-1-pieza.stl');
   });
 
   it('el núcleo del tambor tiene el diámetro del modelo y el boss que apoya en el 608', async () => {

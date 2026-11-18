@@ -14,7 +14,10 @@ import { DEFAULT_LAMINATE } from '../../film/layout';
 import { defaultReelsSpec, handFps, reelPose, reelPulseS, reelRpm, type ReelControlSpec, type ReelsSpec } from '../../mech/reels';
 import { deriveProject, type Project } from '../../core/project';
 import { buildReelsAssembly } from '../../mech/assembly';
-import { assemblySteps } from '../../mech/structure';
+import { assemblySteps, buildReelsStructure, type AssemblyStep } from '../../mech/structure';
+import { reelsPrintedParts } from '../../fabricate/printed';
+import { pieceQty, stepPartsText } from '../../fabricate/shops';
+import { supplyColor } from '../../three/mechScene';
 import { autoSync } from '../../mech/sync';
 import type { DrumStrobe, LedStrobe } from '../../mech/strobe';
 import type { OpticsSpec } from '../../optics/projector';
@@ -455,6 +458,20 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
       }, 1800);
     };
     const cur = asmStep ? steps[asmStep - 1] : null;
+    // cuántas van de cada pieza cortada o impresa: la primera impresión llegó con una de cada
+    let qty: (id: string) => number | undefined = () => undefined;
+    if (cur) {
+      const p = ctx.project;
+      const d = ctx.derived();
+      if (d.reels) {
+        const st = buildReelsStructure(p, d);
+        qty = pieceQty(st, reelsPrintedParts(p, d, {}, st.asm));
+      }
+    }
+    const supplyList = (s: AssemblyStep) =>
+      s.supplies.length
+        ? [el('p', { class: 'hint', text: 'Lo que no se corta ni se imprime (en el modelo, del mismo color):' }), el('ul', { class: 'asm-supplies' }, ...s.supplies.map((u) => el('li', { style: `--sup:#${supplyColor(u).toString(16).padStart(6, '0')}` }, el('i'), el('span', {}, el('b', { text: `${u.what}: ` }), u.where))))]
+        : [];
     return group('Ensamble sin tornillos', [
       el('p', { class: 'hint', text: 'Piso y cubierta de MDF de 5,5 mm y paredes de acrílico transparente de 3 mm, cortados con láser y armados a mano: las paredes quedan atrapadas en ranuras del piso y de la cubierta, para que se vea la electrónica, y la tapa trasera se aprieta con dos cuñas. Cada pieza lleva grabado su código (E: MDF, A: acrílico, N: acrílico negro); las impresas en 3D empiezan con I. El único tornillo es el prisionero del cople.' }),
       el('div', { class: 'btn-row' },
@@ -477,9 +494,9 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
         asmExplode = v;
         if (asmStep === null) asmStep = n;
         scene?.setAssembly(asmStep, asmExplode);
-      }, help: 'Separa las piezas ya armadas para ver cómo encajan' }).root,
+      }, help: 'Separa todo por capas: lo que va dentro de otra pieza (rodamientos, bridas, ejes, tapones, espigas) sale por su eje' }).root,
       cur
-        ? el('div', { class: 'asm-step' }, el('b', { text: `${cur.n}. ${cur.title}` }), el('ol', {}, ...cur.text.map((t) => el('li', { text: t }))), el('p', { class: 'hint', text: `Entran: ${cur.parts.join(' · ')}` }))
+        ? el('div', { class: 'asm-step' }, el('b', { text: `${cur.n}. ${cur.title}` }), el('ol', {}, ...cur.text.map((t) => el('li', { text: t }))), el('p', { class: 'hint', text: `Entran: ${stepPartsText(cur.parts, qty).replaceAll(', ', ' · ')}` }), ...supplyList(cur))
         : el('p', { class: 'hint', text: steps.map((q) => `${q.n}. ${q.title}`).join(' · ') }),
       el('p', { class: 'hint' }, 'Archivos y textos para el taller: ', el('a', { href: 'compras.html?demo=tambores#fabricacion', target: '_blank', text: 'corte láser e impresión 3D' })),
     ]);

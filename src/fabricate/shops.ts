@@ -50,9 +50,13 @@ export function laserRequestText(st: ReelsStructure, laser: LaserQuantities[]): 
 /** mensaje para cotizar la impresión 3D */
 export function printRequestText(parts: PrintedPart[], pe: PrintQuantities): string {
   const lines = [
-    `Hola, buen día. Quiero cotizar la impresión 3D en PETG de ${parts.length} piezas distintas (${pe.pieces} en total), para recoger en CDMX.`,
+    `Hola, buen día. Quiero cotizar la impresión 3D en PETG de ${pe.pieces} piezas (${parts.length} distintas), para recoger en CDMX.`,
     '',
-    ...parts.map((p) => `- ${p.file} × ${p.qty}`),
+    `Son ${parts.length} archivos y cada uno ya trae todas las copias de su pieza acomodadas en la cama: se imprime cada archivo una sola vez, sin multiplicar. El nombre dice cuántas piezas trae:`,
+    '',
+    ...parts.map((p) => `- ${p.file}${p.qty > 1 ? ` (${p.qty} piezas en el archivo)` : ''}`),
+    '',
+    `En total deben salir ${pe.pieces} piezas; al entregarlas, por favor cuéntenlas con esta lista.`,
     '',
     'Detalles:',
     '- STL en milímetros, ya orientados para imprimir (z hacia arriba) y revisados: son sólidos cerrados y no necesitan soportes.',
@@ -81,14 +85,30 @@ export function laserTableMd(st: ReelsStructure): string {
 
 /** tabla de piezas impresas (Markdown) */
 export function printTableMd(parts: PrintedPart[]): string {
-  const rows = parts.map((p) => `| ${p.id} | \`${p.file}\` | ${p.name} | ${p.qty} | ${Math.round(printedGrams(p) / p.qty)} | ${p.bboxMm.map((x) => x.toFixed(0)).join(' × ')} | ${p.print} |`);
-  return ['| Código | Archivo | Pieza | Cant. | g c/u | Caja (mm) | Cómo imprimir |', '|---|---|---|---|---|---|---|', ...rows].join('\n');
+  const rows = parts.map((p) => `| ${p.id} | \`${p.file}\` | ${p.name} | **${p.qty}** | ${p.step} | ${Math.round(printedGrams(p) / p.qty)} | ${p.bboxMm.map((x) => x.toFixed(0)).join(' × ')} | ${p.print} |`);
+  return ['| Código | Archivo | Pieza | Piezas (el archivo las trae todas) | Paso | g c/u | Caja (mm) | Cómo imprimir |', '|---|---|---|---|---|---|---|---|', ...rows].join('\n');
+}
+
+/** «I01 ×2, A06 ×2, epoxy»: lo que entra en un paso, con cuántas van de cada pieza cortada o impresa */
+export function stepPartsText(ids: string[], qty: (id: string) => number | undefined): string {
+  return ids.map((id) => {
+    const n = qty(id);
+    return n && n > 1 ? `${id} ×${n}` : id;
+  }).join(', ');
+}
+
+/** cuántas van de una pieza de corte (E/A/N) o impresa (I) */
+export function pieceQty(st: ReelsStructure, parts: PrintedPart[]): (id: string) => number | undefined {
+  return (id) => st.parts.find((q) => q.id === id)?.qty ?? parts.find((q) => q.id === id)?.qty;
 }
 
 /** README del paquete para los talleres (también va a docs/FABRICACION-TAMBORES.md) */
 export function fabricationReadme(o: { st: ReelsStructure; laser: LaserQuantities[]; parts: PrintedPart[]; pe: PrintQuantities; files: { laser: string[]; stl: string[]; zip: string }; date: string; checks?: string[] }): string {
   const { st, laser, parts, pe } = o;
-  const steps = st.steps.map((s) => [`**${s.n}. ${s.title}**`, ...s.text.map((t) => `   - ${t}`), `   - Entran: ${s.parts.join(', ')}`].join('\n')).join('\n\n');
+  const qty = pieceQty(st, parts);
+  const steps = st.steps
+    .map((s) => [`**${s.n}. ${s.title}**`, ...s.text.map((t) => `   - ${t}`), `   - Entran: ${stepPartsText(s.parts, qty)}`, ...s.supplies.map((u) => `   - ${u.what}: ${u.where}`)].join('\n'))
+    .join('\n\n');
   return [
     '<!-- Generado por scripts/fabricar.mjs (ADR-0012); vuelve a generarlo tras cambiar la mesa: node scripts/fabricar.mjs [--mdf=5.5] -->',
     '',
@@ -99,7 +119,7 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserQuantitie
     '## Qué hay aquí',
     '',
     `- \`laser/\`: ${o.files.laser.length} archivos. Cada hoja en DXF R12 y SVG, y un PDF a escala 1:1 por material. Las piezas van acomodadas en hojas de 90 × 60 cm (87 × 57 útiles), con el kerf ya compensado.`,
-    `- \`impresion-3d/\`: ${o.files.stl.length} STL, uno por pieza, ya orientados para imprimir.`,
+    `- \`impresion-3d/\`: ${o.files.stl.length} STL, uno por pieza, ya orientados para imprimir. Cada uno trae todas las copias que van (${pe.pieces} piezas en total): se imprime una vez cada archivo.`,
     `- \`${o.files.zip}\`: todo lo anterior y este README, para mandarlo de una vez.`,
     '',
     '## Texto para el taller de corte láser',
@@ -122,7 +142,7 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserQuantitie
     '',
     '## Piezas impresas',
     '',
-    `PETG (${PETG_G_CM3} g/cm³), boquilla de 0,4 mm, capa de 0,2 mm, 3 perímetros y 20 % de relleno.`,
+    `PETG (${PETG_G_CM3} g/cm³), boquilla de 0,4 mm, capa de 0,2 mm, 3 perímetros y 20 % de relleno. Al recibirlas, cuenta las ${pe.pieces} con la columna «Piezas»: de varias van más de una (${parts.filter((q) => q.qty > 1).map((q) => `${q.id} ×${q.qty}`).join(', ')}).`,
     '',
     printTableMd(parts),
     ...(o.checks?.length ? ['', 'Revisión de los STL (OMEGA `checkPrint`):', '', ...o.checks.map((c) => `- ${c}`)] : []),

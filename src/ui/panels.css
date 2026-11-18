@@ -90,6 +90,8 @@
 .sim-labels { position: absolute; inset: 0; }
 .sim-label { position: absolute; left: 0; top: 0; padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 90%, transparent); border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--text-2); white-space: nowrap; pointer-events: auto; cursor: pointer; }
 .sim-label.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sim-label.supply { border-color: var(--sup); color: var(--text); font-weight: 600; }
+.sim-label.supply::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--sup); vertical-align: 0; box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); }
 .sim-label.measure { background: var(--accent); color: #fff; border-color: var(--accent); font-family: var(--mono); pointer-events: none; }
 .sim-measure-hint { display: none; position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 5px 10px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; }
 .sim-side { overflow: auto; }
@@ -110,3 +112,6 @@
 .sim-side .asm-step { margin: 6px 0 4px; font-size: 12px; line-height: 1.45; }
 .sim-side .asm-step ol { margin: 4px 0 6px; padding-left: 18px; }
 .sim-side .asm-step li { margin: 2px 0; }
+.sim-side .asm-supplies { list-style: none; margin: 4px 0 6px; padding: 0; }
+.sim-side .asm-supplies li { display: grid; grid-template-columns: 12px 1fr; gap: 6px; align-items: baseline; margin: 3px 0; }
+.sim-side .asm-supplies i { width: 10px; height: 10px; border-radius: 50%; background: var(--sup); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); transform: translateY(1px); }

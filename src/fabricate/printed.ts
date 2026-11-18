@@ -469,7 +469,41 @@ export function reelsPrintedParts(p: Project, d: Derived, opts: PrintedOptions =
     bboxMm: [5.8, 5.8, 18],
     build: (mf) => kit(mf).cyl(2.9, 18),
   });
+  // el nombre del archivo dice cuántas copias trae: el STL ya las lleva acomodadas en la cama (ver printPlate), así que
+  // cada archivo se imprime una sola vez
+  for (const q of parts) q.file = stlName(q);
   return parts;
+}
+
+/** «I01-nucleo-tambor-2-piezas.stl»: el nombre de un STL con `qty` copias de la pieza */
+export function stlName(p: Pick<PrintedPart, 'file' | 'qty'>, qty = p.qty): string {
+  return `${p.file.replace(/(-\d+-piezas?)?\.stl$/, '')}-${qty}-${qty === 1 ? 'pieza' : 'piezas'}.stl`;
+}
+
+/** cama útil de una Bambu A1 o una Ender 3 (mm) y separación entre copias */
+export const BED_MM = 220;
+const PLATE_GAP_MM = 8;
+
+/**
+ * Las `qty` copias de una pieza acomodadas en una cama, centradas: un archivo es una impresión con todas las que van, para
+ * que nadie tenga que multiplicar (en la primera impresión llegó una de cada).
+ */
+export function printPlate(mf: ManifoldToplevel, part: PrintedPart, qty = part.qty): Manifold {
+  const one = part.build(mf);
+  if (qty === 1) return one;
+  const b = one.boundingBox();
+  const w = b.max[0] - b.min[0];
+  const h = b.max[1] - b.min[1];
+  const cols = Math.max(1, Math.min(qty, Math.floor((BED_MM + PLATE_GAP_MM) / (w + PLATE_GAP_MM))));
+  const rows = Math.ceil(qty / cols);
+  const W = cols * w + (cols - 1) * PLATE_GAP_MM;
+  const H = rows * h + (rows - 1) * PLATE_GAP_MM;
+  if (W > BED_MM || H > BED_MM) throw new Error(`${part.id}: ${qty} copias no caben en una cama de ${BED_MM} mm`);
+  const copies = Array.from({ length: qty }, (_, i) => one.translate([(i % cols) * (w + PLATE_GAP_MM) - W / 2 - b.min[0], Math.floor(i / cols) * (h + PLATE_GAP_MM) - H / 2 - b.min[1], 0]));
+  const plate = mf.Manifold.compose(copies);
+  for (const c of copies) c.delete();
+  one.delete();
+  return plate;
 }
 
 /** gramos y piezas de toda la impresión */
