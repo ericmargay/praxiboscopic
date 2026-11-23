@@ -2,8 +2,56 @@
   "version": 1,
   "about": "Bitácora de Praxiboscopic: comentarios (issues de GitHub), respuestas y fotos. Lo genera scripts/bitacora.mjs; no se edita a mano.",
   "repo": "ericmargay/praxiboscopic",
-  "updatedAt": "2026-11-23T03:19:13Z",
+  "updatedAt": "2026-11-23T22:47:32Z",
   "issues": [
+    {
+      "number": 14,
+      "title": "[Q1 · transistor 2N3904] Los 2N3904 no vienen en el pedido de UNIT",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/14",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "electronica"
+        },
+        {
+          "name": "nota"
+        }
+      ],
+      "created_at": "2026-11-23T22:47:29Z",
+      "updated_at": "2026-11-23T22:47:29Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasa.** En el pedido de UNIT que revisamos el 23-nov-2026 no aparecen los transistores 2N3904. La lista pide cinco: dos por driver y uno de repuesto. Sin ellos las señales de 3,3 V del ESP32 no llegan a las entradas de 5 V de los DM542, así que la prueba se detiene en el paso 4, el del motor 1.\n\n**Falta.**\n- [ ] Pedir cinco 2N3904 en TO-92, de patitas. El S8050 de UNIT es de montaje superficial y no entra en la protoboard.\n- [ ] En el mismo pedido, las dos resistencias de 1 kΩ del issue #9 y un paquete de jumpers macho-hembra de 30 cm: el montaje usa 25.\n\n---\n**Pieza:** Q1 · transistor 2N3904 (`npn-0`) · **Tipo:** Nota · **Paso de las conexiones:** 4\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=4&sel=npn-0)\n\n<!-- praxiboscopic pieza=\"npn-0\" tipo=\"nota\" vista=\"electronica\" paso=\"4\" sel=\"npn-0\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 13,
+      "title": "[Fuente Mean Well LRS-150-24] La fuente del pedido trae selector de 115 / 230 V: va en 115 V",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/13",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "electronica"
+        },
+        {
+          "name": "nota"
+        }
+      ],
+      "created_at": "2026-11-23T22:47:27Z",
+      "updated_at": "2026-11-23T22:47:27Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasa.** La lista de compras y el visor decían LRS-150F-24, que tiene entrada automática. El pedido de UNIT que revisamos el 23-nov-2026 dice LRS-150-24. Es la misma caja, con los mismos bornes y la misma salida de 24 V y 6,5 A, pero la entrada se elige con un interruptor: 115 V (acepta de 85 a 132 V) o 230 V (de 170 a 264 V). Los datos son de la hoja de datos de Mean Well.\n\n**Antes de enchufarla.**\n- [ ] Leer la etiqueta de la fuente: LRS-150-24 o LRS-150F-24.\n- [ ] Si es la LRS-150-24, dejar en 115 V el selector de su costado, con la fuente desenchufada. Si es la LRS-150F-24, no trae selector.\n\nCon el selector en 230 V y la toma de 127 V la fuente queda por debajo de su entrada mínima: puede no arrancar, o dar 24 V sola y caerse al conectarle los motores.\n\n**Qué se hizo.** La lista, la ficha de la fuente y el paso 1 de las conexiones ya lo dicen en el modelo. Sale con la siguiente publicación del sitio.\n\n---\n**Pieza:** Fuente Mean Well LRS-150-24 (`psu`) · **Tipo:** Nota · **Paso de las conexiones:** 1\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=1&sel=psu)\n\n<!-- praxiboscopic pieza=\"psu\" tipo=\"nota\" vista=\"electronica\" paso=\"1\" sel=\"psu\" -->\n",
+      "replies": [],
+      "photos": []
+    },
     {
       "number": 12,
       "title": "[Portafusible con fusible de 500 mA] El fusible rápido queda al límite al encender con los capacitores",
@@ -109,9 +157,9 @@
         }
       ],
       "created_at": "2026-11-23T02:04:14Z",
-      "updated_at": "2026-11-23T03:19:11Z",
+      "updated_at": "2026-11-23T22:47:31Z",
       "closed_at": null,
-      "comments": 1,
+      "comments": 2,
       "body": "**Qué pasa.** La lista de compras pedía tres resistencias de 1 kΩ: dos para los transistores de un motor y una de repuesto. La mesa de dos tambores tiene dos motores y cuatro transistores 2N3904 (pasos y sentido de cada uno), así que usa cuatro. Con lo comprado el 13 de noviembre falta una, y no queda repuesto.\n\n**Cómo salió.** Al escribir las conexiones pin por pin para el visor de conexiones: una prueba cuenta las resistencias del montaje contra la lista.\n\n**Qué se hizo.** La lista de la mesa ya pide cinco de 1 kΩ (cuatro y un repuesto), una de 10 Ω y dos de 10 kΩ. Sale con la siguiente publicación del sitio.\n\n**Falta.**\n- [ ] Comprar dos resistencias de 1 kΩ.\n- Para no detener la prueba del motor 2, en la base de Q4 sirve cualquier resistencia de 470 Ω a 2,2 kΩ.\n\n---\n**Pieza:** R4 · resistencia de 1 kΩ (`r4`) · **Tipo:** Falla · **Paso de las conexiones:** 5\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=5&sel=r4)\n\n<!-- praxiboscopic pieza=\"r4\" tipo=\"falla\" vista=\"electronica\" paso=\"5\" sel=\"r4\" -->\n",
       "replies": [
         {
@@ -120,6 +168,13 @@
           },
           "created_at": "2026-11-23T03:19:11Z",
           "body": "La lista corregida ya está publicada (commit b9d3fbd): cinco de 1 kΩ, una de 10 Ω y dos de 10 kΩ. Queda abierto hasta comprar las dos de 1 kΩ."
+        },
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-23T22:47:30Z",
+          "body": "El pedido de UNIT que revisamos el 23-nov-2026 lo confirma: trae tres resistencias de 1 kΩ, una de 10 Ω y dos de 10 kΩ. Siguen faltando dos de 1 kΩ; van en el mismo pedido que los 2N3904 (issue #14)."
         }
       ],
       "photos": []
@@ -327,7 +382,7 @@
     {
       "number": 1,
       "title": "[I01 Núcleo del tambor] Faltaron piezas impresas: llegó una copia de cada archivo",
-      "state": "open",
+      "state": "closed",
       "html_url": "https://github.com/ericmargay/praxiboscopic/issues/1",
       "user": {
         "login": "ericmargay"
@@ -341,11 +396,19 @@
         }
       ],
       "created_at": "2026-11-22T22:07:28Z",
-      "updated_at": "2026-11-22T22:07:28Z",
-      "closed_at": null,
-      "comments": 0,
+      "updated_at": "2026-11-23T22:47:32Z",
+      "closed_at": "2026-11-23T22:47:32Z",
+      "comments": 1,
       "body": "**Qué pasó.** Al empezar a armar (17-nov-2026) faltaba al menos un núcleo de tambor. El servicio de impresión entregó una sola copia de cada STL, sin ver las cantidades de la tabla.\n\n**Causa.** Cada archivo traía una pieza y la cantidad solo estaba escrita en el README. Quien imprime carga los archivos y no lee la tabla.\n\n**Qué se hizo.** Desde ded31d2 cada STL trae todas las copias de su pieza, acomodadas en una cama de 220 mm, y el nombre dice cuántas trae (`I01-nucleo-tambor-2-piezas.stl`): 28 piezas en 16 archivos. El texto para el taller pide imprimir cada archivo una sola vez y contar 28 piezas al entregar. `npm run fabricar -- --faltan=I01:1,I08:3` arma un ZIP con solo lo que falta.\n\n**Falta.**\n- [ ] Contar lo que llegó y confirmar qué falta. El ZIP de reposición supone que llegó una de cada: 12 piezas en 7 archivos (I01 ×1, I02 ×1, I07 ×2, I08 ×3, I09 ×1, I10 ×1, I16 ×3).\n- [ ] Mandar a imprimir la reposición: https://ericmargay.github.io/praxiboscopic/fabricacion/tambores/mesa-tambores-reposicion.zip\n\n---\n**Pieza:** I01 Núcleo del tambor (`I01`) · **Tipo:** Falla · **Paso del ensamble:** 6\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=I01-1&ensamble=6&explosion=0.6)\n\n<!-- praxiboscopic pieza=\"I01\" tipo=\"falla\" paso=\"6\" sel=\"I01-1\" -->\n",
-      "replies": [],
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-23T22:47:32Z",
+          "body": "Eric confirmó el 23-nov-2026 que ya tiene la impresión que faltaba. Desde ded31d2 cada STL trae todas sus copias, así que no debería repetirse."
+        }
+      ],
       "photos": []
     }
   ],
