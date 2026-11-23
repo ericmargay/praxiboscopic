@@ -2,7 +2,7 @@
   "version": 1,
   "about": "Bitácora de Praxiboscopic: comentarios (issues de GitHub), respuestas y fotos. Lo genera scripts/bitacora.mjs; no se edita a mano.",
   "repo": "ericmargay/praxiboscopic",
-  "updatedAt": "2026-11-23T02:04:18Z",
+  "updatedAt": "2026-11-23T03:19:13Z",
   "issues": [
     {
       "number": 12,
@@ -31,7 +31,7 @@
     {
       "number": 11,
       "title": "[Protoboard de 830 puntos] Los 5 V y los 12 V compartían riel: solo funcionaba con el riel partido",
-      "state": "open",
+      "state": "closed",
       "html_url": "https://github.com/ericmargay/praxiboscopic/issues/11",
       "user": {
         "login": "ericmargay"
@@ -45,11 +45,19 @@
         }
       ],
       "created_at": "2026-11-23T02:04:17Z",
-      "updated_at": "2026-11-23T02:04:17Z",
-      "closed_at": null,
-      "comments": 0,
+      "updated_at": "2026-11-23T03:19:13Z",
+      "closed_at": "2026-11-23T03:19:13Z",
+      "comments": 1,
       "body": "**Qué pasa.** El montaje anterior de la protoboard ponía los 5 V en un extremo de un riel rojo y los 12 V en el otro extremo del mismo riel. Eso solo funciona en las protoboards de 830 puntos que traen cada riel partido a la mitad (la línea roja se interrumpe a media tabla). En las que lo traen entero, une los 5 V con los 12 V.\n\n**Cómo salió.** Al escribir el montaje agujero por agujero: una prueba arma las redes eléctricas con los rieles enteros y con los rieles partidos, y deben salir iguales.\n\n**Qué se hizo.**\n- Los 12 V ya no pasan por ningún riel: van directo a la columna del pin 1 del IR2101.\n- Cada riel se usa de un solo lado: los 24 V con fusible en el lado j y los 5 V en el lado a.\n- Dos puentes unen las tierras, así que no importa cómo venga la protoboard.\n\nSale con la siguiente publicación del sitio. No falta nada: se cierra al publicar.\n\n---\n**Pieza:** Protoboard de 830 puntos (`breadboard`) · **Tipo:** Falla · **Paso de las conexiones:** 8\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=8&sel=breadboard)\n\n<!-- praxiboscopic pieza=\"breadboard\" tipo=\"falla\" vista=\"electronica\" paso=\"8\" sel=\"breadboard\" -->\n",
-      "replies": [],
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-23T03:19:13Z",
+          "body": "Corregido en b9d3fbd y publicado: los 12 V van directo al pin 1 del IR2101, cada riel se usa de un solo lado y dos puentes unen las tierras. [Paso 8 de las conexiones](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=8&sel=breadboard)."
+        }
+      ],
       "photos": []
     },
     {
@@ -69,11 +77,19 @@
         }
       ],
       "created_at": "2026-11-23T02:04:16Z",
-      "updated_at": "2026-11-23T02:04:16Z",
+      "updated_at": "2026-11-23T03:19:12Z",
       "closed_at": null,
-      "comments": 0,
+      "comments": 1,
       "body": "**Qué pasa.** El modelo alimentaba el sensor de marcas F249 con 5 V. Estas plaquitas (una horquilla óptica y un LM393) llevan una resistencia de su salida DO a su alimentación: con 5 V, la salida en alto es de 5 V. Esa salida va directo al GPIO34 del ESP32, y sus pines solo aguantan 3,3 V.\n\n**Cómo salió.** Al revisar cada conexión contra las hojas de datos para el visor de conexiones.\n\n**Qué se hizo.** En el modelo, en la escena de la mesa y en el visor de conexiones el sensor va ahora a los 3,3 V del ESP32. La plaquita trabaja de 3,3 a 5 V. Sale con la siguiente publicación del sitio.\n\n**Falta.**\n- [ ] Probar en banco (paso 7 de las conexiones) que a 3,3 V sigue viendo la marca, con la tinta de la película real.\n\n---\n**Pieza:** Sensor de marcas F249 (`sensor`) · **Tipo:** Falla · **Paso de las conexiones:** 7\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=7&sel=sensor)\n\n<!-- praxiboscopic pieza=\"sensor\" tipo=\"falla\" vista=\"electronica\" paso=\"7\" sel=\"sensor\" -->\n",
-      "replies": [],
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-23T03:19:12Z",
+          "body": "Corregido en b9d3fbd y publicado: el sensor va a los 3,3 V del ESP32 en el modelo, en la escena de la mesa y en el [paso 7 de las conexiones](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=7&sel=sensor). Queda abierto hasta probarlo en banco con la tinta de la película real."
+        }
+      ],
       "photos": []
     },
     {
@@ -93,11 +109,19 @@
         }
       ],
       "created_at": "2026-11-23T02:04:14Z",
-      "updated_at": "2026-11-23T02:04:14Z",
+      "updated_at": "2026-11-23T03:19:11Z",
       "closed_at": null,
-      "comments": 0,
+      "comments": 1,
       "body": "**Qué pasa.** La lista de compras pedía tres resistencias de 1 kΩ: dos para los transistores de un motor y una de repuesto. La mesa de dos tambores tiene dos motores y cuatro transistores 2N3904 (pasos y sentido de cada uno), así que usa cuatro. Con lo comprado el 13 de noviembre falta una, y no queda repuesto.\n\n**Cómo salió.** Al escribir las conexiones pin por pin para el visor de conexiones: una prueba cuenta las resistencias del montaje contra la lista.\n\n**Qué se hizo.** La lista de la mesa ya pide cinco de 1 kΩ (cuatro y un repuesto), una de 10 Ω y dos de 10 kΩ. Sale con la siguiente publicación del sitio.\n\n**Falta.**\n- [ ] Comprar dos resistencias de 1 kΩ.\n- Para no detener la prueba del motor 2, en la base de Q4 sirve cualquier resistencia de 470 Ω a 2,2 kΩ.\n\n---\n**Pieza:** R4 · resistencia de 1 kΩ (`r4`) · **Tipo:** Falla · **Paso de las conexiones:** 5\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=5&sel=r4)\n\n<!-- praxiboscopic pieza=\"r4\" tipo=\"falla\" vista=\"electronica\" paso=\"5\" sel=\"r4\" -->\n",
-      "replies": [],
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-23T03:19:11Z",
+          "body": "La lista corregida ya está publicada (commit b9d3fbd): cinco de 1 kΩ, una de 10 Ω y dos de 10 kΩ. Queda abierto hasta comprar las dos de 1 kΩ."
+        }
+      ],
       "photos": []
     },
     {
@@ -151,7 +175,7 @@
     {
       "number": 6,
       "title": "[Eje del rodillo tensor] Los largos de la varilla en la lista de compras no coincidían con el modelo",
-      "state": "open",
+      "state": "closed",
       "html_url": "https://github.com/ericmargay/praxiboscopic/issues/6",
       "user": {
         "login": "ericmargay"
@@ -165,11 +189,19 @@
         }
       ],
       "created_at": "2026-11-22T22:07:34Z",
-      "updated_at": "2026-11-22T22:07:34Z",
-      "closed_at": null,
-      "comments": 0,
+      "updated_at": "2026-11-23T03:19:10Z",
+      "closed_at": "2026-11-23T03:19:10Z",
+      "comments": 1,
       "body": "**Qué pasó.** La lista de compras pedía cortar la varilla de 8 mm en 2 tramos de 100 mm, 2 de 70, 1 de 65 y 1 de 40. El modelo mide otra cosa: 2 de 98,5 mm (tambores), 2 de 67,5 (guías), 1 de 60,5 (rodillo tensor) y 1 de 40 (pivote).\n\n**Por qué importa.** El eje del rodillo tensor no admite sobrante: abajo queda al ras del brazo I04, a 1,5 mm de la contracubierta, y arriba lo tapa el tapón I07. Con 65 mm habría rozado la contracubierta al girar el brazo.\n\n**Causa.** Los largos estaban escritos a mano en la lista y el modelo cambió después.\n\n**Qué se cambió en el modelo.** Los largos salen del ensamble (`shaftCuts`) y la lista dice, para cada tramo, qué punta manda y hacia dónde puede ir lo que sobre. El paso 1 incluye cortar la varilla y una prueba revisa que los seis tramos salgan de los 600 mm con repuesto. Sale con la siguiente publicación del sitio.\n\n**Si ya se cortó con las medidas viejas.** Los de 100 y 70 sirven tal cual (lo que sobra va arriba en los tambores y abajo de la cubierta en las guías) y el de 40 también. El de 65 hay que dejarlo en 60,5.\n\n**Falta.**\n- [ ] Cortar los seis tramos y confirmar que cada uno entra en un 608.\n\n---\n**Pieza:** Eje del rodillo tensor · Ø8 × 60,5 mm (`shaft-dancer`) · **Tipo:** Falla · **Paso del ensamble:** 1\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=shaft-dancer&ensamble=7&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"shaft-dancer\" tipo=\"falla\" paso=\"1\" sel=\"shaft-dancer\" -->\n",
-      "replies": [],
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-23T03:19:09Z",
+          "body": "Corregido en b9d3fbd y publicado. Los largos salen ahora del ensamble: 2 de 98,5 mm (tambores), 2 de 67,5 (guías), 1 de 60,5 (rodillo tensor) y 1 de 40 (pivote). La lista de compras y el paso 1 del ensamble dicen lo mismo, y una prueba lo revisa."
+        }
+      ],
       "photos": []
     },
     {
@@ -189,11 +221,19 @@
         }
       ],
       "created_at": "2026-11-22T22:07:33Z",
-      "updated_at": "2026-11-22T22:07:33Z",
+      "updated_at": "2026-11-23T03:19:08Z",
       "closed_at": null,
-      "comments": 0,
+      "comments": 1,
       "body": "**Qué pasó.** Siguiendo los pasos, las torres (costados E04 con su collar E05) se encajaron en el piso en el paso 1. En el paso 2 el motor no bajó por el collar: el conector no pasa.\n\n**Causa.** El collar queda 21 mm arriba del piso y su hueco mide 42,6 mm. El conector del 17HS8401 está entre 4 y 10 mm de la base del motor y sobresale unos 6 mm del cuerpo de 42,3 mm. El orden de los pasos estaba mal: el motor tiene que estar en su lugar antes que la torre.\n\n**Cómo se resolvió en el taller (22-nov-2026).** Las torres ya no se pudieron sacar del piso (ver #4), así que Eric cortó en cada collar una muesca del tamaño del conector y el motor bajó por ahí. El conector quedó hacia el frente de la mesa, del lado abierto de la torre.\n\n**Qué se cambió en el modelo.** El paso 2 ahora para primero el motor, con el cople ya puesto a 10 mm de su cara y el conector al frente, y después baja la torre armada sobre él. E04 y E05 pasan del paso 1 al paso 2. Sale con la siguiente publicación del sitio.\n\n**Falta.**\n- [ ] Dibujar la muesca del conector en el collar E05 de los archivos de corte, para que el motor entre también con la torre ya puesta.\n- [ ] Subir aquí la foto de la muesca.\n\n---\n**Pieza:** E05 Collar del motor (`E05`) · **Tipo:** Falla · **Paso del ensamble:** 2\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=E05-1&ensamble=2&explosion=0.6)\n\n<!-- praxiboscopic pieza=\"E05\" tipo=\"falla\" paso=\"2\" sel=\"E05-1\" -->\n",
-      "replies": [],
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-23T03:19:08Z",
+          "body": "El orden nuevo ya está publicado (commit b9d3fbd): en el paso 2 del ensamble el motor se para primero, con el conector al frente, y la torre baja sobre él. [Ver el paso 2](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&ensamble=2&explosion=0.4).\n\nSigue abierto por dos cosas:\n- Dibujar la muesca del conector en el collar E05 de los archivos de corte.\n- La foto de la muesca. Ya se puede subir al repositorio como `bitacora/fotos/5-muesca-del-collar.jpg` y aparece aquí sola."
+        }
+      ],
       "photos": []
     },
     {
