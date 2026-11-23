@@ -1,0 +1,49 @@
+{
+  "date": "22/11/2026",
+  "mdfMm": 5.5,
+  "laser": [
+    "laser/mesa-tambores-mdf-5.5mm-hoja-1.svg",
+    "laser/mesa-tambores-mdf-5.5mm-hoja-1.dxf",
+    "laser/mesa-tambores-mdf-5.5mm.pdf",
+    "laser/mesa-tambores-acrilico-transparente-3mm-hoja-1.svg",
+    "laser/mesa-tambores-acrilico-transparente-3mm-hoja-1.dxf",
+    "laser/mesa-tambores-acrilico-transparente-3mm.pdf",
+    "laser/mesa-tambores-acrilico-negro-3mm-hoja-1.svg",
+    "laser/mesa-tambores-acrilico-negro-3mm-hoja-1.dxf",
+    "laser/mesa-tambores-acrilico-negro-3mm.pdf"
+  ],
+  "stl": [
+    "impresion-3d/I01-nucleo-tambor-2-piezas.stl",
+    "impresion-3d/I02-cuerpo-guia-2-piezas.stl",
+    "impresion-3d/I03-cuerpo-rodillo-tensor-1-pieza.stl",
+    "impresion-3d/I04-brazo-tensor-1-pieza.stl",
+    "impresion-3d/I05-copa-pivote-1-pieza.stl",
+    "impresion-3d/I06-tapa-iman-1-pieza.stl",
+    "impresion-3d/I07-tapon-eje-3-piezas.stl",
+    "impresion-3d/I08-poste-tapa-4-piezas.stl",
+    "impresion-3d/I09-poste-hueco-2-piezas.stl",
+    "impresion-3d/I10-capuchon-sensor-2-piezas.stl",
+    "impresion-3d/I11-cabeza-led-1-pieza.stl",
+    "impresion-3d/I12-tubo-condensador-1-pieza.stl",
+    "impresion-3d/I13-cuna-lente-1-pieza.stl",
+    "impresion-3d/I14-brazo-sensor-marcas-1-pieza.stl",
+    "impresion-3d/I15-ancla-resorte-1-pieza.stl",
+    "impresion-3d/I16-espiga-4-piezas.stl"
+  ],
+  "zip": "mesa-tambores-taller.zip",
+  "zipBytes": 3481284,
+  "reposicion": {
+    "zip": "mesa-tambores-reposicion.zip",
+    "pieces": 12,
+    "files": [
+      "impresion-3d/reposicion/I01-nucleo-tambor-1-pieza.stl",
+      "impresion-3d/reposicion/I02-cuerpo-guia-1-pieza.stl",
+      "impresion-3d/reposicion/I07-tapon-eje-2-piezas.stl",
+      "impresion-3d/reposicion/I08-poste-tapa-3-piezas.stl",
+      "impresion-3d/reposicion/I09-poste-hueco-1-pieza.stl",
+      "impresion-3d/reposicion/I10-capuchon-sensor-1-pieza.stl",
+      "impresion-3d/reposicion/I16-espiga-3-piezas.stl",
+      "impresion-3d/reposicion/LEEME.txt"
+    ]
+  }
+}

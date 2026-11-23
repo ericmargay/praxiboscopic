@@ -1,0 +1,13 @@
+Reposición de piezas impresas · mesa de dos tambores · 22/11/2026
+
+Faltan 12 piezas en 7 archivos. Cada archivo ya trae todas las copias que faltan de su pieza: se imprime una sola vez, sin multiplicar.
+
+- I01-nucleo-tambor-1-pieza.stl: 1 × I01 Núcleo del tambor (van 2 en total)
+- I02-cuerpo-guia-1-pieza.stl: 1 × I02 Cuerpo de guía (van 2 en total)
+- I07-tapon-eje-2-piezas.stl: 2 × I07 Tapón de eje (van 3 en total)
+- I08-poste-tapa-3-piezas.stl: 3 × I08 Poste de tapa (van 4 en total)
+- I09-poste-hueco-1-pieza.stl: 1 × I09 Poste hueco (van 2 en total)
+- I10-capuchon-sensor-1-pieza.stl: 1 × I10 Capuchón del sensor con canal (van 2 en total)
+- I16-espiga-3-piezas.stl: 3 × I16 Espiga Ø5,8 × 18 (van 4 en total)
+
+Mismos ajustes que la primera vez: PETG, boquilla de 0,4 mm, capa de 0,2 mm, 3 perímetros y 20 % de relleno, sin soportes.
