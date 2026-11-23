@@ -2,7 +2,7 @@
   "version": 1,
   "about": "Bitácora de Praxiboscopic: comentarios (issues de GitHub), respuestas y fotos. Lo genera scripts/bitacora.mjs; no se edita a mano.",
   "repo": "ericmargay/praxiboscopic",
-  "updatedAt": "2026-11-23T23:19:17Z",
+  "updatedAt": "2026-11-23T23:22:13Z",
   "issues": [
     {
       "number": 15,
@@ -21,10 +21,10 @@
         }
       ],
       "created_at": "2026-11-23T23:19:17Z",
-      "updated_at": "2026-11-23T23:19:17Z",
+      "updated_at": "2026-11-23T23:22:13Z",
       "closed_at": null,
       "comments": 0,
-      "body": "**Qué pasa.** La lente que ya está en el taller es una Yongnuo YN50mm F1.8N, de montura Nikon F. Las tiendas le dan Ø74 × 60 mm y 203 g. La cuna I13 se imprimió para un barril de Ø64 mm, que era el valor por omisión.\n\n**Qué medir, con la lente en la mano.**\n- [ ] El diámetro del barril donde va a descansar en las dos cunas, con vernier.\n- [ ] Si asienta en la cuna impresa y a qué altura queda su eje respecto al centro de la ventana.\n\n**Si no asienta.** Se reimprime solo la cuna con la medida real: `npm run fabricar -- --lente=74` (con el número medido) y se manda el archivo `I13-cuna-lente.stl`.\n\n**Dos cosas más de esta lente.**\n- No trae anillo de diafragma. Si al mirar a través de ella el diafragma se ve cerrado, se abre empujando la palanca metálica de la montura, y hay que dejarla fija abierta: cerrada pasa muy poca luz.\n- La película debe quedar a 46,5 mm de la cara de la montura (el registro de la montura Nikon F). El enfoque fino se hace con su anillo, con el interruptor en MF.\n\n---\n**Pieza:** I13 Cuna de la lente (`I13`) · **Tipo:** Pregunta · **Paso del ensamble:** 8\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=I13&ensamble=8&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"I13\" tipo=\"pregunta\" paso=\"8\" sel=\"I13\" -->\n",
+      "body": "**Qué pasa.** La lente que ya está en el taller es una Yongnuo YN50mm F1.8N, de montura Nikon F. Las tiendas le dan Ø74 × 60 mm y 203 g. La cuna I13 se imprimió para un barril de Ø64 mm, que era el valor por omisión.\n\n**Qué medir, con la lente en la mano.**\n- [ ] El diámetro del barril donde va a descansar en las dos cunas, con vernier.\n- [ ] Si asienta en la cuna impresa y a qué altura queda su eje respecto al centro de la ventana.\n\n**Si no asienta.** Se reimprime solo la cuna con la medida real: `npm run fabricar -- --lente=74` (con el número medido) y se manda el archivo `I13-cuna-lente.stl`.\n\n**Dos cosas más de esta lente.**\n- No trae anillo de diafragma. Si al mirar a través de ella el diafragma se ve cerrado, se abre empujando la palanca metálica de la montura, y hay que dejarla fija abierta: cerrada pasa muy poca luz.\n- La película debe quedar a 46,5 mm de la cara de la montura (el registro de la montura Nikon F). El enfoque fino se hace con su anillo, con el interruptor en MF.\n\n---\n**Pieza:** I13 Cuna de la lente (`I13`) · **Tipo:** Pregunta · **Paso del ensamble:** 8\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=lens-cradle&ensamble=8&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"I13\" tipo=\"pregunta\" paso=\"8\" sel=\"lens-cradle\" -->\n",
       "replies": [],
       "photos": []
     },
