@@ -1,0 +1,48 @@
+# Bitácora de la obra (ADR-0016): después de cada push, y cada vez que alguien abre, responde o cierra un comentario,
+# vuelve a escribir bitacora/bitacora.json con los issues, sus respuestas y las fotos de bitacora/fotos/, y pone cada
+# foto nueva como respuesta en su issue. No compila el sitio (eso es `npm run publicar`): solo corre un script de Node
+# sin dependencias.
+name: Bitácora
+
+on:
+  push:
+    branches-ignore: [gh-pages]
+  issues:
+    types: [opened, edited, closed, reopened, deleted, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: bitacora-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bitacora:
+    runs-on: ubuntu-latest
+    # las respuestas que pone esta misma acción no la vuelven a disparar
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Escribir la bitácora
+        run: node scripts/bitacora.mjs --comentar-fotos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Guardarla en el repositorio
+        run: |
+          if [ -z "$(git status --porcelain bitacora/bitacora.json)" ]; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bitacora/bitacora.json
+          git commit -m "Bitácora: comentarios y fotos al día"
+          git push || (git pull --rebase && git push)

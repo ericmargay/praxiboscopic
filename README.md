@@ -15,11 +15,12 @@ Crear animación → Diseñar movimiento → Generar fotogramas → Distribuir e
 ```bash
 npm install           # enlaza ../omega con file:
 npm run dev           # http://localhost:5174
-npm test              # 122 pruebas (vitest + @napi-rs/canvas)
+npm test              # 149 pruebas (vitest + @napi-rs/canvas)
 npm run build         # tsc + vite build → dist/
 npm run captura       # capturas/*.png + report.json con Chrome headless (verificación visual)
 node scripts/bom.mjs  # docs/COMPRAS.md y fabricacion/BOM.csv de la demostración (--tambores: la de dos tambores)
 npm run fabricar      # corte láser, STL y textos para los talleres de la mesa de dos tambores (public/fabricacion/tambores)
+npm run bitacora      # bitacora/bitacora.json: issues, respuestas y fotos (también lo hace GitHub en cada push)
 npm run publicar -- --con-videos  # compila y sube dist/ a gh-pages (GitHub Pages) con los videos importados
 npm run video -- "archivo.mp4" --nombre=mi-video   # importa un video como secuencia de cuadros (public/videos/)
 npm run imprimir -- --video=mi-video [--segundos=5] [--fps=24] # PDF a tamaño real en carta y MP4 (impresion/)
@@ -48,6 +49,16 @@ arma el video en los dos tambores;
 
 **Lista de compras:** http://localhost:5174/compras.html (botón «Lista de compras ↗» arriba). Sale del mismo proyecto
 que el simulador, con cada pieza en 3D, precios en UNIT, Amazon y MercadoLibre y qué revisar antes de pagar.
+
+**Conexiones de la electrónica:** http://localhost:5174/electronica.html (botón «Probar la electrónica ↗» en el paso 2
+del ensamble de la mesa de dos tambores). Diez pasos para cablear en banco y probar por partes, con cada cable de punta
+a punta en 3D, los datos eléctricos de cada pieza y un programa de prueba para el ESP32
+(`public/electronica/prueba-banco/prueba-banco.ino`). Ver [ADR-0015](docs/adr/0015-visor-de-conexiones-de-la-electronica.md).
+
+**Bitácora:** los comentarios sobre las piezas son issues de GitHub (ADR-0014) y quedan guardados, con sus respuestas
+y sus fotos, en [bitacora/bitacora.json](bitacora/bitacora.json). Las fotos se suben a
+[bitacora/fotos/](bitacora/fotos/LEEME.md) con el número del issue al principio del nombre; GitHub reescribe el archivo
+después de cada push. Ver [ADR-0016](docs/adr/0016-bitacora-en-el-repositorio.md).
 
 ## Las tres secciones
 

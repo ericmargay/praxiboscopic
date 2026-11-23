@@ -1,4 +1,4 @@
-Reposición de piezas impresas · mesa de dos tambores · 17/11/2026
+Reposición de piezas impresas · mesa de dos tambores · 22/11/2026
 
 Faltan 12 piezas en 7 archivos. Cada archivo ya trae todas las copias que faltan de su pieza: se imprime una sola vez, sin multiplicar.
 

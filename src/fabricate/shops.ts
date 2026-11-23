@@ -107,7 +107,7 @@ export function fabricationReadme(o: { st: ReelsStructure; laser: LaserQuantitie
   const { st, laser, parts, pe } = o;
   const qty = pieceQty(st, parts);
   const steps = st.steps
-    .map((s) => [`**${s.n}. ${s.title}**`, ...s.text.map((t) => `   - ${t}`), `   - Entran: ${stepPartsText(s.parts, qty)}`, ...s.supplies.map((u) => `   - ${u.what}: ${u.where}`)].join('\n'))
+    .map((s) => [`**${s.n}. ${s.title}**`, ...s.text.map((t) => `   - ${t}`), `   - Entran: ${stepPartsText(s.parts, qty)}`, ...s.supplies.map((u) => `   - ${u.what}: ${u.where}`), ...(s.bench ? [`   - Antes de seguir, ${s.bench.label.toLowerCase()}: https://ericmargay.github.io/praxiboscopic/${s.bench.page}. ${s.bench.why}`] : [])].join('\n'))
     .join('\n\n');
   return [
     '<!-- Generado por scripts/fabricar.mjs (ADR-0012); vuelve a generarlo tras cambiar la mesa: node scripts/fabricar.mjs [--mdf=5.5] -->',

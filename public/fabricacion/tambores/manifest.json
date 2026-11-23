@@ -1,5 +1,5 @@
 {
-  "date": "17/11/2026",
+  "date": "22/11/2026",
   "mdfMm": 5.5,
   "laser": [
     "laser/mesa-tambores-mdf-5.5mm-hoja-1.svg",
@@ -31,7 +31,7 @@
     "impresion-3d/I16-espiga-4-piezas.stl"
   ],
   "zip": "mesa-tambores-taller.zip",
-  "zipBytes": 3479953,
+  "zipBytes": 3481284,
   "reposicion": {
     "zip": "mesa-tambores-reposicion.zip",
     "pieces": 12,

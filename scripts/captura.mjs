@@ -13,7 +13,7 @@ import { chromium } from 'playwright';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Map(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? '1']));
 const hasVideo = existsSync(path.join(root, 'public', 'videos', 'cried-out', 'manifest.json'));
-const views = (args.get('vistas') ?? `studio,frames,film,export,mechanical,mechanical-motor,mechanical-electronics,mechanical-interior,mechanical-gate,mechanical-screen,laboratory,laboratory-drum,compras,laminada,laminada-top,tambores,tambores-top,tambores-manos,tambores-interior,tambores-ventana,tambores-tensor,tambores-laboratorio,tambores-ensamble,tambores-explosion,compras-tambores,compras-taller${hasVideo ? ',video-frames,video-mechanical,video-top,video-gate,video-laboratory' : ''}`).split(',');
+const views = (args.get('vistas') ?? `studio,frames,film,export,mechanical,mechanical-motor,mechanical-electronics,mechanical-interior,mechanical-gate,mechanical-screen,laboratory,laboratory-drum,compras,laminada,laminada-top,tambores,tambores-top,tambores-manos,tambores-interior,tambores-ventana,tambores-tensor,tambores-laboratorio,tambores-ensamble,tambores-explosion,tambores-comentarios,conexiones,conexiones-motor,conexiones-esp32,conexiones-led,conexiones-ensamble,compras-tambores,compras-taller${hasVideo ? ',video-frames,video-mechanical,video-top,video-gate,video-laboratory' : ''}`).split(',');
 const outDir = path.join(root, 'capturas');
 await mkdir(outDir, { recursive: true });
 
@@ -90,11 +90,40 @@ try {
       console.log(`✓ ${v} → ${path.relative(root, file)}`);
       continue;
     }
+    if (v.startsWith('conexiones')) {
+      // visor de conexiones de la electrónica (ADR-0015): el banco completo, el paso del motor 1, el ESP32 con sus
+      // pines y el driver del LED en la protoboard visto desde arriba
+      const q = { conexiones: '?paso=10', 'conexiones-motor': '?paso=4', 'conexiones-esp32': '?paso=6&sel=esp32', 'conexiones-led': '?paso=9&sel=irlz44n', 'conexiones-ensamble': '' }[v];
+      if (v === 'conexiones-ensamble') {
+        // el paso 2 del ensamble, con el botón que abre este visor
+        await page.goto(`${url}?demo=tambores&section=mechanical&ensamble=2&explosion=0.4`, { waitUntil: 'networkidle' });
+        await page.waitForFunction(() => window.__praxi?.ready, null, { timeout: 30_000 });
+        await page.waitForSelector('.asm-bench', { timeout: 15_000 });
+        await page.locator('.asm-bench').scrollIntoViewIfNeeded();
+        await page.waitForTimeout(2500);
+      } else {
+        await page.goto(`${url}electronica.html${q}`, { waitUntil: 'networkidle' });
+        await page.waitForFunction(() => window.__elec?.ready || window.__elec?.error, null, { timeout: 30_000 });
+        const bad = await page.evaluate(() => window.__elec.error);
+        if (bad) throw new Error(`El visor de conexiones no arrancó: ${bad}`);
+        await page.waitForFunction(() => window.__elec.drawn(), null, { timeout: 15_000 });
+        if (v === 'conexiones') await page.evaluate(() => { document.querySelectorAll('.ev-seg button')[2].click(); window.__elec.view('iso'); });
+        if (v === 'conexiones-esp32') await page.evaluate(() => window.__elec.select('esp32'));
+        if (v === 'conexiones-led') await page.evaluate(() => { window.__elec.view('top'); window.__elec.select('irlz44n'); });
+        await page.waitForTimeout(1500);
+      }
+      const file = path.join(outDir, `${v}.png`);
+      await page.screenshot({ path: file });
+      report.views[v] = { file: path.relative(root, file) };
+      console.log(`✓ ${v} → ${path.relative(root, file)}`);
+      continue;
+    }
     if (v.startsWith('tambores')) {
       // dos tambores (?demo=tambores, ADR-0011): la mano sobre el tambor 1 a 15 cm mueve la película hacia él
       const lab = v === 'tambores-laboratorio';
       // ensamble sin tornillos (ADR-0012): el paso 5 con la cubierta bajando, y la mesa completa en explosión
-      const asm = { 'tambores-ensamble': '&ensamble=5&explosion=0.35', 'tambores-explosion': '&ensamble=12&explosion=0.7' }[v];
+      // comentarios sobre las piezas (ADR-0014): el paso 2 con el collar E05 seleccionado; lee los issues de GitHub en vivo
+      const asm = { 'tambores-ensamble': '&ensamble=5&explosion=0.35', 'tambores-explosion': '&ensamble=12&explosion=0.7', 'tambores-comentarios': '&ensamble=2&explosion=0.6&sel=E05-1' }[v];
       await page.goto(`${url}?demo=tambores&section=${lab ? 'laboratory' : 'mechanical'}${asm ?? (v === 'tambores-top' || v === 'tambores-interior' ? '' : '&mano=1&cm=15')}`, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => window.__praxi?.ready, null, { timeout: 30_000 });
       await page.waitForTimeout(2500);

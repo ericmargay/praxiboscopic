@@ -15,7 +15,8 @@
     "publicar": "bash scripts/publicar.sh",
     "video": "node scripts/video.mjs",
     "imprimir": "node scripts/imprimir.mjs",
-    "fabricar": "node scripts/fabricar.mjs"
+    "fabricar": "node scripts/fabricar.mjs",
+    "bitacora": "node scripts/bitacora.mjs"
   },
   "dependencies": {
     "@aminoacid/omega": "file:../omega",

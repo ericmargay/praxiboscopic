@@ -2,7 +2,7 @@
 
 # Mesa de dos tambores · paquete para los talleres
 
-17/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
+22/11/2026 · piso y cubierta de MDF de 5,5 mm, paredes de acrílico transparente de 3 mm · 41 piezas de corte láser y 28 impresas en 3D. Armado a mano, sin tornillos: las paredes quedan atrapadas en ranuras del piso y de la cubierta, la tapa trasera lleva dos cuñas, las tapas se abrochan y lo demás se pega donde se indica. El único tornillo es el prisionero del cople de cada motor.
 
 ## Qué hay aquí
 
@@ -75,8 +75,8 @@ Cada pieza lleva su código grabado en la cara que no se ve con la mesa armada. 
 | E01 | Piso | 1 | MDF 5,5 mm | 394 × 268 | 1 | Base de todo: en sus ranuras entran las paredes de acrílico, las torres de los motores, el marco y los topes de la fuente; los cinchos de los drivers y de las tarjetas pasan por sus ranuras chicas. Sobresale 8 mm de las paredes al frente y a los lados. Por abajo lleva cuatro patas de hule a 18 mm de las orillas |
 | E02 | Cubierta (capa de arriba) | 1 | MDF 5,5 mm | 394 × 282 | 5 | Lleva los dos 608 de los tambores, los ejes de las guías y el hueco donde gira el brazo tensor; todo lo de arriba se posiciona con ella · Cola blanca en toda la cara de abajo, con los 608 ya puestos: queda pegada a la contracubierta |
 | E03 | Contracubierta (capa de abajo) | 1 | MDF 5,5 mm | 394 × 282 | 5 | Le hace tope a los 608 de la capa de arriba, lleva el 608 de arriba del pivote y recibe las pestañas de las paredes, las torres y el marco de la fuente |
-| E04 | Costado de torre | 4 | MDF 5,5 mm | 54 × 120 | 1 | Cuatro iguales: dos por motor. Abajo entran en el piso, arriba en la contracubierta; sostienen el collar del motor y la placa del segundo 608. La muesca de abajo deja salir el conector del motor |
-| E05 | Collar del motor | 2 | MDF 5,5 mm | 68 × 54 | 1 | El cuerpo del motor entra en su hueco cuadrado de 42,6 mm: no gira ni se mueve. Forrar el hueco con cinta de espuma si queda juego |
+| E04 | Costado de torre | 4 | MDF 5,5 mm | 54 × 120 | 2 | Cuatro iguales: dos por motor. Abajo entran en el piso, arriba en la contracubierta; sostienen el collar del motor y la placa del segundo 608. La torre se baja sobre el motor ya parado en el piso: con el collar puesto, su conector no pasa. La muesca de abajo deja paso a los cables |
+| E05 | Collar del motor | 2 | MDF 5,5 mm | 68 × 54 | 2 | El cuerpo del motor entra en su hueco cuadrado de 42,6 mm: no gira ni se mueve. Queda 21 mm arriba del piso, sobre el conector del motor, así que entra por el lado del eje. Forrar el hueco con cinta de espuma si queda juego |
 | E06 | Placa del segundo 608 | 2 | MDF 5,5 mm | 68 × 54 | 2 | Lleva el segundo 608 del eje del tambor, 25 mm abajo del de la cubierta: el tambor no cabecea |
 | E07 | Marco de la fuente | 1 | MDF 5,5 mm | 116 × 120 | 1 | La fuente se para detrás de él, contra la tapa trasera; por la ventana se ven sus bornes |
 | E08 | Tope de la fuente | 2 | MDF 5,5 mm | 30 × 26 | 1 | Dos: no dejan que la fuente se corra de lado |
@@ -143,23 +143,26 @@ Revisión de los STL (OMEGA `checkPrint`):
 
 Los mismos pasos que muestra *Mechanical Simulation → Ensamble sin tornillos* (`?demo=tambores&ensamble=1`).
 
-**1. Piso, torres y marco de la fuente**
+**1. Piso, marco de la fuente y varilla**
    - Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.
+   - Cortar la varilla de 8 mm en sus seis tramos: 2 de 98,5 mm (tambores), 2 de 67,5 (guías), 1 de 60,5 (rodillo tensor) y 1 de 40 (pivote). Los de las guías se usan en el paso 5.
    - Pegar las cuatro patas de hule por abajo del piso E01, en las esquinas, con el centro a 18 mm de las dos orillas.
-   - Armar cada torre: dos costados E04 con su collar E05 en las ranuras de abajo.
-   - Encajar las dos torres, el marco E07 y los dos topes E08 en las ranuras del piso E01.
-   - Entran: E01, rubber-feet, E04 ×4, E05 ×2, E07, E08 ×2
+   - Encajar el marco E07 y los dos topes E08 en las ranuras del piso E01. Las torres todavía no: van sobre los motores en el paso 2.
+   - Entran: E01, rubber-feet, E07, E08 ×2
 
-**2. Motores, coples y segundo 608**
-   - Bajar cada motor por el collar hasta el piso, con el conector hacia la muesca del costado.
-   - Poner el cople en el eje del motor (13 mm de eje dentro del cople) y apretar su prisionero.
+**2. Motores, torres, coples y segundo 608**
+   - En la mesa de trabajo, poner el cople en el eje de cada motor, 10 mm arriba de su cara, con el prisionero sobre la cara plana del eje, y apretarlo.
+   - Parar cada motor en el piso, en su lugar, con el conector hacia el frente de la mesa: es el lado abierto de la torre y da hacia su DM542.
+   - Armar cada torre (dos costados E04 con su collar E05 en las ranuras de abajo) y bajarla sobre su motor: el hueco del collar entra por el lado del eje y las pestañas de los costados, en las ranuras del piso. El collar queda arriba del conector. Primero el motor y luego la torre: con el collar puesto, el conector ya no pasa.
    - Meter un 608 a presión en cada placa E06 y encajarla en las ranuras de arriba de la torre: los costados se abren un poco.
-   - Entran: motor-17hs8401, coupling-5-8, E06 ×2, bearing-608
+   - Para la prueba de la electrónica, meter por el 608 de cada torre un tramo de varilla de los tambores de 98,5 mm hasta el cople y apretar el prisionero, sin pegar nada: se saca antes del paso 6.
+   - Entran: motor-17hs8401, coupling-5-8, E04 ×4, E05 ×2, E06 ×2, bearing-608
+   - Antes de seguir, probar la electrónica: https://ericmargay.github.io/praxiboscopic/electronica.html. Antes de fijar nada al piso: con los motores en sus torres y la varilla puesta, se cablea todo sobre la mesa de trabajo y se prueba por partes (fuente, reguladores, cada motor, sensores y LED).
 
 **3. Electrónica en el piso**
    - La fuente de pie detrás del marco E07, con los bornes hacia él, la espalda a 4 mm de la orilla trasera del piso (donde va la tapa) y centrada entre los topes E08. Mide 159 mm y los topes se cortaron para una de 199, así que se pega al piso con dos tiras de cinta doble cara.
    - Cada DM542 delante de su motor con dos cinchos; el ESP32 (en su placa de expansión, o suelto con jumpers hembra en sus pines), los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.
-   - La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.
+   - La protoboard con su adhesivo. Cablear potencia y señales con las mismas conexiones ya probadas en banco (visor de conexiones, electronica.html): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.
    - Entran: psu-24v-5a, psu-tape, driver-dm542, esp32-expansion, esp32, buck-lm2596, led-resistor, breadboard-kit, cable-ties
    - Cinta doble cara de gel: Dos tiras de 14 cm entre la fuente y el piso, a lo largo
    - Cinchos: Por las ranuras chicas del piso: dos sobre cada driver y uno sobre cada regulador y la resistencia (la placa del ESP32 lleva dos por sus barrenos)
@@ -179,7 +182,7 @@ Los mismos pasos que muestra *Mechanical Simulation → Ensamble sin tornillos* 
    - Epóxico: En las tres espigas de la copa I05, que entran en la contracubierta E03 por abajo
 
 **6. Tambores**
-   - Pegar con epóxico cada núcleo impreso (I01) a su eje de 100 mm, con 2 mm de eje arriba.
+   - Pegar con epóxico cada núcleo impreso (I01) a su eje de 98,5 mm, con 2 mm de eje arriba.
    - Pegar con cianoacrilato la brida de abajo A06 (barreno de 11,7) y la de arriba A07 (8,2) a las orillas del núcleo.
    - Bajar cada tambor por su 608 de la cubierta y el de la torre hasta el cople y apretar el prisionero: el cubo apoya en la pista interior del 608.
    - Entran: I01 ×2, A06 ×2, A07 ×2, shaft-8mm, epoxy, ca-glue
@@ -187,7 +190,7 @@ Los mismos pasos que muestra *Mechanical Simulation → Ensamble sin tornillos* 
    - Cianoacrilato: En las dos orillas del núcleo I01, donde asientan las bridas A06 (abajo) y A07 (arriba)
 
 **7. Guías y brazo tensor**
-   - Pegar con epóxico los ejes de 70 mm de las guías en la cubierta, a plomo.
+   - Pegar con epóxico los ejes de 67,5 mm de las guías en la cubierta, a plomo.
    - Rondana M8, guía (I02 con dos 608 y sus bridas A08 pegadas con cianoacrilato) y tapón I07.
    - Brazo I04 pegado al eje del pivote, eje del rodillo en su casquillo, rodillo I03 con sus 608 y bridas A09, tapón I07.
    - Resorte del brazo a la mitad del brazo y al ancla I15; tapa del imán (I06) en la punta de abajo del eje y el AS5600 en la ranura de la copa.

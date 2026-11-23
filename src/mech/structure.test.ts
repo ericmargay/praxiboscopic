@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pointInPolygon } from '@aminoacid/omega/fabricate';
 import { deriveProject } from '../core/project';
 import { reelsDemoProject } from '../core/video';
-import { buildReelsStructure, REELS_FEET, type LaserPart, type V3 } from './structure';
+import { buildReelsStructure, REELS_FEET, shaftCuts, shaftCutsText, type LaserPart, type V3 } from './structure';
 import { PSU_MM } from './assembly';
 import { laserQuantities, printQuantities } from '../fabricate/quantities';
 import { reelsPrintedParts } from '../fabricate/printed';
@@ -147,6 +147,47 @@ describe('mesa de dos tambores: estructura de corte láser sin tornillos (ADR-00
       expect(part.step, part.id).toBeLessThanOrEqual(12);
       expect(named.has(part.id), part.id).toBe(true);
     }
+  });
+
+  it('el motor se para antes que su torre: el collar queda arriba del conector y no lo deja pasar', () => {
+    const tw = st.asm.towers[0];
+    const B = st.asm.base;
+    // el conector JST del 17HS8401 va de 4 a 10 mm sobre la base del motor y sobresale 6 mm del cuerpo de 42,3
+    expect(tw.collarY[0] - B.floorTop).toBeGreaterThan(12);
+    expect(42.3 / 2 + 6).toBeGreaterThan(42.6 / 2);
+    for (const id of ['E04', 'E05']) expect(byId(id).step, id).toBe(2);
+    const [s1, s2] = st.steps;
+    expect(s1.parts).not.toContain('E04');
+    const motorLine = s2.text.findIndex((x) => x.includes('Parar cada motor'));
+    const towerLine = s2.text.findIndex((x) => x.includes('bajarla sobre su motor'));
+    expect(motorLine).toBeGreaterThanOrEqual(0);
+    expect(towerLine).toBeGreaterThan(motorLine);
+    // el cople queda 10 mm arriba de la cara del motor
+    expect(s2.text[0]).toContain('10 mm arriba de su cara');
+  });
+
+  it('la varilla de 600 mm da los seis ejes con las medidas del ensamble', () => {
+    const cuts = shaftCuts(st.asm);
+    expect(cuts.map((c) => [c.id, c.qty, c.mm])).toEqual([
+      ['reel', 2, 98.5],
+      ['guide', 2, 67.5],
+      ['dancer', 1, 60.5],
+      ['pivot', 1, 40],
+    ]);
+    for (const c of cuts) expect(Math.abs(c.y1 - c.y0 - c.mm), c.id).toBeLessThanOrEqual(0.25);
+    // con 1,5 mm de segueta por corte y 1 mm de sobra para limar, alcanza y queda repuesto para un eje de tambor
+    const used = cuts.reduce((acc, c) => acc + c.qty * (c.mm + 1 + 1.5), 0);
+    expect(600 - used).toBeGreaterThan(cuts[0].mm + 2.5);
+    expect(shaftCutsText(cuts)).toBe('2 de 98,5 mm (tambores), 2 de 67,5 (guías), 1 de 60,5 (rodillo tensor) y 1 de 40 (pivote)');
+    // el eje del tambor baja hasta 1 mm sobre el del motor, dentro del cople
+    expect(cuts[0].y0 - (st.asm.motor.faceY + 24)).toBeCloseTo(1, 6);
+    expect(st.steps[0].text.join(' ')).toContain('98,5');
+    expect(st.steps[5].text[0]).toContain('eje de 98,5 mm');
+    // con otro MDF cambia el eje de las guías, que atraviesa la cubierta doble
+    const s2 = buildReelsStructure(p, d, { mdfMm: 5.7, acrylicMm: 2.8 });
+    const raw = (cs: ReturnType<typeof shaftCuts>) => cs.find((c) => c.id === 'guide')!;
+    const g2 = raw(shaftCuts(s2.asm));
+    expect(g2.y1 - g2.y0).toBeGreaterThan(raw(cuts).y1 - raw(cuts).y0);
   });
 
   it('las cuñas sujetan la tapa trasera: dos dientes de la cubierta la atraviesan con su ventana', () => {

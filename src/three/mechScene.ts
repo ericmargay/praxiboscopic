@@ -17,7 +17,7 @@ import { handRangeMm, livePath, type HandInput, type ReelLive } from '../mech/re
 import { motorOf } from '../mech/transport';
 import { opticsReport } from '../optics/projector';
 import { BREADBOARD, box, breadboardHole, buildAcrylicBox, buildHand, buildKind, buildMagnet, buildReel, buildRoller, buildSpool, buildSpring, cyl, EXPANSION, KINDS, localBox, mat, roleOf, type KindSpec, type PartCategory } from './parts';
-import { assemblySteps, buildReelsStructure, cupPegs, REELS_FEET, SHEET_MATERIALS, type AssemblyStep, type ReelsStructure, type SheetMaterial, type StepSupply } from '../mech/structure';
+import { assemblySteps, buildReelsStructure, cupPegs, REELS_FEET, shaftCuts, SHEET_MATERIALS, type AssemblyStep, type ReelsStructure, type ShaftCut, type SheetMaterial, type StepSupply } from '../mech/structure';
 import { reelsPrintedParts } from '../fabricate/printed';
 
 const MM = 0.001;
@@ -528,7 +528,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     };
     const psu = place(tag(buildKind('psu'), { id: 'psu', name: 'Fuente Mean Well 24 V 6,5 A', category: 'potencia', kind: 'psu', bomId: 'psu-24v-5a' }), a.psu.x, floorTop, a.psu.z);
     const dm = place(tag(buildKind('dm542'), { id: 'dm542', name: 'Driver DM542', category: 'potencia', kind: 'dm542', bomId: 'driver-dm542', notes: ['Interruptores DIP: 1/16 de paso y corriente de 1,8 A (verificar la tabla impresa en el driver)'] }), a.dm542.x, floorTop, a.dm542.z);
-    const bucks = a.bucks.map((b) => place(tag(buildKind('lm2596'), { id: `buck-${b.volts}v`, name: `Regulador LM2596 a ${b.volts} V`, category: 'potencia', kind: 'lm2596', bomId: 'buck-lm2596', notes: [b.volts === 5 ? 'Alimenta ESP32, sensor y las entradas del driver' : 'Alimenta el IR2101'] }), b.x, floorTop, b.z));
+    const bucks = a.bucks.map((b) => place(tag(buildKind('lm2596'), { id: `buck-${b.volts}v`, name: `Regulador LM2596 a ${b.volts} V`, category: 'potencia', kind: 'lm2596', bomId: 'buck-lm2596', notes: [b.volts === 5 ? 'Alimenta el ESP32 y las entradas del driver' : 'Alimenta el IR2101'] }), b.x, floorTop, b.z));
     const fuseG = tag(new THREE.Group(), { id: 'fuse', name: 'Portafusible con fusible rápido de 500 mA', category: 'potencia', bomId: 'led-fuse', notes: ['En la línea de 24 V del LED, antes de los capacitores', 'Modelo aproximado'] });
     const holder = cyl(6, 30, mat('black'), 0, 7, 0, 20);
     holder.rotation.z = Math.PI / 2;
@@ -932,14 +932,14 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       wires.power.add(wireMesh([anchorPos(res10, 'b'), up(anchorPos(res10, 'b'), 10), up(exitP, 8), exitP, exitP.clone().add(v3(0, -10, 6)), up(ledP, 22).add(v3(0, 0, -6)), ledP], 0xc8372d, 1));
       wires.power.add(wireMesh([hole(25, 'a', 0), up(hole(25, 'a', 0), 12), up(exitN, 8), exitN, exitN.clone().add(v3(0, -10, 6)), up(ledN, 22).add(v3(0, 0, -6)), ledN], 0x222222, 1));
     }
-    // sensor: 5 V, GND y salida a GPIO34
+    // sensor: 3,3 V del ESP32 (a 5 V su salida dañaría el GPIO), GND y salida a GPIO34
     const sensorObj = registry.get('sensor')!.obj;
     sensorObj.updateMatrixWorld(true);
     const sExit = root.worldToLocal(ctl.localToWorld(v3(-60, 1.5, bx.d / 2 - 4)));
     (['VCC', 'GND', 'DO'] as const).forEach((pin, i) => {
-      const from = i === 2 ? anchorPos(exp, 'GPIO34') : hole(8 + i, i ? 'b-' : 'b+', 0);
+      const from = i === 2 ? anchorPos(exp, 'GPIO34') : i === 0 ? anchorPos(exp, '3V3') : hole(9, 'b-', 0);
       const to = anchorPos(sensorObj, pin);
-      wires.control.add(wireMesh([from, up(from, 12), up(sExit, 10).add(v3(i * 2.5, 0, 0)), sExit.clone().add(v3(i * 2.5, 0, 0)), sExit.clone().add(v3(i * 2.5, -16, 14)), up(to, 16), to], [0xe07b26, 0x222222, 0xeeeeee][i], 0.6, true));
+      wires.control.add(wireMesh([from, up(from, 12), up(sExit, 10).add(v3(i * 2.5, 0, 0)), sExit.clone().add(v3(i * 2.5, 0, 0)), sExit.clone().add(v3(i * 2.5, -16, 14)), up(to, 16), to], [0xd4608c, 0x222222, 0xeeeeee][i], 0.6, true));
     });
     staticGroup.add(wires.control, wires.power, wires.motor);
   }
@@ -1127,6 +1127,8 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     /** un eje de acero (tramo de la varilla de 60 cm) */
     const tagShaft = <T extends THREE.Object3D>(o: T, id: string, name: string, notes: string[]) => tag(o, { id, name, category: 'transporte', bomId: 'shaft-8mm', notes: [...notes, 'Tramo de la varilla de acero 1045 de Ø8 × 600 mm, cortado con segueta y con las puntas biseladas'] });
     const flangeR2 = a.flangeR;
+    const cuts = shaftCuts(a);
+    const cutMm = (id: ShaftCut['id']) => String(cuts.find((c) => c.id === id)!.mm).replace('.', ',');
     const spoolBase = a.flangeLowY - a.flangeT;
 
     // --- tambores: núcleo impreso entre bridas de acrílico, eje pegado, motor parado en su torre -----------------------
@@ -1168,7 +1170,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       // cianoacrilato en las dos orillas del núcleo, donde asientan las bridas
       core.add(supply('ca-reel', n, `orillas del núcleo del tambor ${n}`, (m) => [ring(m, a.coreR - 1.2, a.flangeT, 1.1), ring(m, a.coreR - 1.2, a.flangeT + gap, 1.1)]));
       const shaftL = shaftTop - a.motor.reelShaftBottomY;
-      spin.add(tagShaft(cyl(4, shaftL, mat('steel'), 0, (shaftTop + a.motor.reelShaftBottomY) / 2, 0, 16), `shaft-reel-${n}`, `Eje del tambor ${n} · Ø8 × ${shaftL.toFixed(0)} mm`, ['Pegado con epóxico al cubo del núcleo I01, con 2 mm arriba de la brida', 'Gira en el 608 de la cubierta y en el de la torre, y abajo entra en el cople del motor']));
+      spin.add(tagShaft(cyl(4, shaftL, mat('steel'), 0, (shaftTop + a.motor.reelShaftBottomY) / 2, 0, 16), `shaft-reel-${n}`, `Eje del tambor ${n} · Ø8 × ${cutMm('reel')} mm`, ['Pegado con epóxico al cubo del núcleo I01, con 2 mm arriba de la brida', 'Gira en el 608 de la cubierta y en el de la torre, y abajo entra en el cople del motor']));
       // epóxico en el tramo del eje que queda dentro del cubo (se ve cuando el núcleo sube)
       spin.add(supply('epoxy-reel', n, `eje del tambor ${n}, dentro del cubo`, (m) => [sleeve(m, 4.45, a.deckBearingTopY + 1, a.flangeHighY - 2)]));
       g.add(spin);
@@ -1197,7 +1199,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       staticGroup.add(bg);
       const mg = new THREE.Group();
       mg.position.set(q.x, 0, q.y);
-      const m = tag(buildKind('nema17'), { id: `motor-${n}`, name: `Motor ${n} · NEMA 17 17HS8401`, category: 'transporte', kind: 'nema17', bomId: `motor-${motor.id}`, notes: [`A ${r.fps.normal} fps gira de ${r.rpm.normalFull.toFixed(0)} rpm (tambor lleno) a ${r.rpm.normalCore.toFixed(0)} rpm (vacío); a ${r.fps.max} fps, hasta ${r.rpm.maxCore.toFixed(0)} rpm`, `Par: hacen falta ${r.torque.rollerTorqueNcm.toFixed(1)} N·cm y da ${r.torque.availableNcm.toFixed(1)} N·cm a ${r.torque.motorRpm.toFixed(0)} rpm`, 'Parado en el piso, dentro del collar E05 de su torre: no lleva soporte ni tornillos. Lo mueve su propio DM542'], step: 2, explode: [0, 1, 0] });
+      const m = tag(buildKind('nema17'), { id: `motor-${n}`, name: `Motor ${n} · NEMA 17 17HS8401`, category: 'transporte', kind: 'nema17', bomId: `motor-${motor.id}`, notes: [`A ${r.fps.normal} fps gira de ${r.rpm.normalFull.toFixed(0)} rpm (tambor lleno) a ${r.rpm.normalCore.toFixed(0)} rpm (vacío); a ${r.fps.max} fps, hasta ${r.rpm.maxCore.toFixed(0)} rpm`, `Par: hacen falta ${r.torque.rollerTorqueNcm.toFixed(1)} N·cm y da ${r.torque.availableNcm.toFixed(1)} N·cm a ${r.torque.motorRpm.toFixed(0)} rpm`, 'Parado en el piso con el conector al frente; la torre se baja sobre él, porque con el collar E05 puesto el conector no pasa. No lleva soporte ni tornillos. Lo mueve su propio DM542'], step: 2, explode: [0, 1, 0] });
       m.position.y = a.motor.faceY - 48;
       mg.add(m);
       const cpl = tag(buildKind('coupling'), { id: `coupling-${n}`, name: `Cople flexible 5 × 8 mm · motor ${n}`, category: 'transporte', kind: 'coupling', bomId: 'coupling-5-8', notes: ['El único tornillo de la mesa: sus dos prisioneros aprietan el eje del motor y el del tambor'], step: 2, explode: [0, 1, 0] });
@@ -1226,7 +1228,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       bearing(spin, 1.6 + 3.5, `bearing-guide${n}-a`, `guía ${n}, abajo`, undefined, 26);
       bearing(spin, a.flangeHighY + a.flangeT - 3.1, `bearing-guide${n}-b`, `guía ${n}, arriba`, undefined, 104);
       const top = shaftTop + 4.5;
-      g.add(tagShaft(cyl(4, top + B.deckT, mat('steel'), 0, (top - B.deckT) / 2, 0, 16), `shaft-guide-${n}`, `Eje de la guía ${n} · Ø8 × ${(top + B.deckT).toFixed(0)} mm`, ['Fijo: la punta de abajo va pegada con epóxico en la cubierta, a plomo; el rodillo gira en sus dos 608']));
+      g.add(tagShaft(cyl(4, top + B.deckT, mat('steel'), 0, (top - B.deckT) / 2, 0, 16), `shaft-guide-${n}`, `Eje de la guía ${n} · Ø8 × ${cutMm('guide')} mm`, ['Fijo: la punta de abajo va pegada con epóxico en la cubierta, a plomo; el rodillo gira en sus dos 608']));
       g.add(supply('epoxy-guide-shafts', n, `eje de la guía ${n}, en la cubierta`, (m) => [sleeve(m, 4.45, -B.deckT, 0.5)]));
       g.add(sub(tagPrinted(cyl(7, 6, mat('pla'), 0, top - 1, 0, 24), 'I07', `g${n}`, `arriba de la guía ${n}`), 0, 125));
       g.add(sub(supply('washers-m8', n, `bajo la guía ${n}`, (m) => [cyl(8, 1.6, m, 0, 0.8, 0, 24)], { always: true }), 0, 12));
@@ -1270,14 +1272,14 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     dBody.add(supply('ca-rollers', 'd', 'orillas del cuerpo del rodillo tensor', (m) => [ring(m, a.dancerR - 1.2, a.flangeT, 1.1), ring(m, a.dancerR - 1.2, a.flangeT + gap, 1.1)]));
     sub(tagLaser(roleOf(dRoller, 'flangeHigh'), 'A09', 2), 0, 84);
     const dTop = shaftTop + 4.5;
-    rg.add(tagShaft(cyl(4, dTop - ps.armY[0], mat('steel'), 0, (dTop + ps.armY[0]) / 2, 0, 16), 'shaft-dancer', `Eje del rodillo tensor · Ø8 × ${(dTop - ps.armY[0]).toFixed(0)} mm`, ['Entra a presión, con epóxico, en el casquillo del brazo I04; el rodillo gira en sus dos 608']));
+    rg.add(tagShaft(cyl(4, dTop - ps.armY[0], mat('steel'), 0, (dTop + ps.armY[0]) / 2, 0, 16), 'shaft-dancer', `Eje del rodillo tensor · Ø8 × ${cutMm('dancer')} mm`, ['Entra a presión, con epóxico, en el casquillo del brazo I04; el rodillo gira en sus dos 608']));
     rg.add(sub(tagPrinted(cyl(7, 6, mat('pla'), 0, dTop - 1, 0, 24), 'I07', 'd', 'arriba del rodillo tensor'), 0, 122));
     bearing(dSpin, ps.bossTopY + 3.5, 'bearing-dancer-a', 'rodillo tensor, abajo', undefined, 22);
     bearing(dSpin, a.flangeHighY + a.flangeT - 3.5, 'bearing-dancer-b', 'rodillo tensor, arriba', undefined, 100);
     rot.add(rg);
     // eje del pivote: se queda con el brazo; la tapa del imán (I06) y el imán salen por abajo
     const pivotL = ps.armY[1] - (ps.magnetFaceY + 3.4);
-    rot.add(tagShaft(cyl(4, pivotL, mat('steel'), 0, (ps.armY[1] + ps.magnetFaceY + 3.4) / 2, 0, 16), 'shaft-pivot', `Eje del pivote · Ø8 × ${pivotL.toFixed(0)} mm`, ['Gira en los dos 608 del pivote (cubierta y copa I05); arriba va pegado al cubo del brazo I04 y abajo lleva la tapa del imán I06']));
+    rot.add(tagShaft(cyl(4, pivotL, mat('steel'), 0, (ps.armY[1] + ps.magnetFaceY + 3.4) / 2, 0, 16), 'shaft-pivot', `Eje del pivote · Ø8 × ${cutMm('pivot')} mm`, ['Gira en los dos 608 del pivote (cubierta y copa I05); arriba va pegado al cubo del brazo I04 y abajo lleva la tapa del imán I06']));
     rot.add(supply('epoxy-arm', 1, 'eje del pivote, en el cubo del brazo', (m) => [sleeve(m, 4.45, ps.armY[0] + 0.3, ps.armY[1] - 0.3)]));
     rot.add(supply('epoxy-arm', 2, 'eje del rodillo, en el casquillo del brazo', (m) => [sleeve(m, 4.45, ps.armY[0] + 0.3, ps.bossTopY - 0.3, dx, dz)]));
     rot.add(supply('epoxy-magnet', 1, 'punta del eje del pivote, dentro de la tapa I06', (m) => [sleeve(m, 4.45, ps.magnetFaceY + 3.6, ps.magnetFaceY + 7.3)]));
@@ -1395,7 +1397,7 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     // dos tiras de cinta de gel bajo la fuente, a lo largo
     staticGroup.add(supply('psu-tape', 1, 'bajo la fuente', (m) => [-7.5, 7.5].map((dz2) => box(140, 1, 10, m, a.psu.x, floorTop + 0.5, a.psu.z - PSU_MM.h / 2 + dz2)), { top: true }));
     const dms = a.dm542.map((m, i) => put(tag(buildKind('dm542'), el(`dm542-${i + 1}`, `Driver DM542 · motor ${i + 1}`, { kind: 'dm542', bomId: 'driver-dm542', notes: ['Dos cinchos por las ranuras del piso, sobre sus pestañas', 'Interruptores DIP: 1/16 de paso y 1,8 A (verificar la tabla impresa en el driver)'] })), m.x, floorTop, m.z, m.rotY));
-    const bucks = a.bucks.map((b) => put(tag(buildKind('lm2596'), el(`buck-${b.volts}v`, `Regulador LM2596 a ${b.volts} V`, { kind: 'lm2596', bomId: 'buck-lm2596', notes: [b.volts === 5 ? 'Alimenta el ESP32, el sensor de marcas y las entradas de los drivers' : 'Alimenta el IR2101', 'Un cincho por las ranuras del piso'] })), b.x, floorTop, b.z));
+    const bucks = a.bucks.map((b) => put(tag(buildKind('lm2596'), el(`buck-${b.volts}v`, `Regulador LM2596 a ${b.volts} V`, { kind: 'lm2596', bomId: 'buck-lm2596', notes: [b.volts === 5 ? 'Alimenta el ESP32 y las entradas de los drivers' : 'Alimenta el IR2101', 'Un cincho por las ranuras del piso'] })), b.x, floorTop, b.z));
     const fuseG = tag(new THREE.Group(), el('fuse', 'Portafusible en línea con fusible de 500 mA', { bomId: 'led-fuse', notes: ['En la línea de 24 V del LED, antes de los capacitores; va amarrado a los cables', 'Modelo aproximado'] }));
     const holder = cyl(6, 30, mat('black'), 0, 7, 0, 20);
     holder.rotation.z = Math.PI / 2;
@@ -1501,8 +1503,8 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
       control: tag(new THREE.Group(), { id: 'wires-control', name: 'Jumpers de señal', category: 'cableado', bomId: 'jumpers-hm', notes: ['GPIO25/26 → PUL y DIR del motor 1 · GPIO32/33 → los del motor 2 · GPIO27 → IR2101 · GPIO34 ← sensor de marcas; 5 V y GND'], step: 3, explode: [0, 1, 0] }),
       bus: tag(new THREE.Group(), { id: 'wires-i2c', name: 'Bus I2C de los sensores', category: 'cableado', bomId: 'jumpers-hh', notes: ['3,3 V, GND, SDA (GPIO21) y SCL (GPIO22) a los dos sensores de mano y al AS5600; XSHUT del sensor 2 al GPIO4', 'Suben por el poste hueco de cada tapa y corren bajo el canal del capuchón'], step: 9, explode: [0, 1, 0] }),
       power: tag(new THREE.Group(), { id: 'wires-power', name: 'Cables de 24 V y del LED', category: 'cableado', bomId: 'wire-18awg', notes: ['18 AWG: 24 V a los dos drivers y al LED, y el lazo del pulso (resistencia → LED → MOSFET)'], step: 3, explode: [0, 1, 0] }),
-      motor: tag(new THREE.Group(), { id: 'wires-motor', name: 'Cables de los motores', category: 'cableado', bomId: `motor-${motor.id}`, notes: ['Vienen con cada motor: A+ A− B+ B− a su DM542; el conector sale por la muesca del costado de la torre'], step: 3, explode: [0, 1, 0] }),
-      deck: tag(new THREE.Group(), { id: 'wires-deck', name: 'Cables al LED y al sensor de marcas', category: 'cableado', bomId: 'wire-18awg', notes: ['Suben por el paso de cables de la cubierta: el lazo del pulso al LED (18 AWG) y 5 V, GND y la salida del F249 (jumpers)'], step: 8, explode: [0, 1, 0] }),
+      motor: tag(new THREE.Group(), { id: 'wires-motor', name: 'Cables de los motores', category: 'cableado', bomId: `motor-${motor.id}`, notes: ['Vienen con cada motor: A+ A− B+ B− a su DM542; el conector queda al frente de la torre, del lado abierto'], step: 3, explode: [0, 1, 0] }),
+      deck: tag(new THREE.Group(), { id: 'wires-deck', name: 'Cables al LED y al sensor de marcas', category: 'cableado', bomId: 'wire-18awg', notes: ['Suben por el paso de cables de la cubierta: el lazo del pulso al LED (18 AWG) y 3,3 V, GND y la salida del F249 (jumpers)'], step: 8, explode: [0, 1, 0] }),
     };
     const v3 = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
     const up = (p0: THREE.Vector3, h: number) => p0.clone().add(v3(0, h, 0));
@@ -1550,10 +1552,11 @@ export function createMechScene(canvas: HTMLCanvasElement, overlay?: HTMLElement
     const sensorObj = registry.get('sensor')!.obj;
     sensorObj.updateMatrixWorld(true);
     (['VCC', 'GND', 'DO'] as const).forEach((pin, i) => {
-      const from = i === 2 ? anchorPos(exp, 'GPIO34') : hole(8 + i, i ? 'b-' : 'b+');
+      // a los 3,3 V del ESP32: a 5 V, su salida dañaría el GPIO
+      const from = i === 2 ? anchorPos(exp, 'GPIO34') : i === 0 ? anchorPos(exp, '3V3') : hole(9, 'b-');
       const to = anchorPos(sensorObj, pin);
       const off = v3(0, 0, (i - 1) * 2.4);
-      wires.deck.add(wireMesh([from, up(from, 12), under.clone().add(off), deckHole.clone().add(off), up(deckHole, 20).add(off), up(to, 14), to], [0xe07b26, 0x222222, 0xeeeeee][i], 0.6, true));
+      wires.deck.add(wireMesh([from, up(from, 12), under.clone().add(off), deckHole.clone().add(off), up(deckHole, 20).add(off), up(to, 14), to], [0xd4608c, 0x222222, 0xeeeeee][i], 0.6, true));
     });
     // bus I2C: 3,3 V, GND, SDA, SCL al AS5600 y a cada sensor de mano por su poste hueco
     const bus = [anchorPos(exp, '3V3'), anchorPos(exp, 'GND2'), anchorPos(exp, 'GPIO21'), anchorPos(exp, 'GPIO22')];

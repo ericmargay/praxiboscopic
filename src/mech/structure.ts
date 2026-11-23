@@ -77,6 +77,8 @@ export interface AssemblyStep {
   /** lo que no se corta ni se imprime y no se ve con la mesa armada (pegamentos, cintas, cinchos, rondanas): el modelo lo
    * marca en color durante el ensamble */
   supplies: StepSupply[];
+  /** al terminar este paso conviene probar algo antes de seguir: lo abre el visor de conexiones (ADR-0015) */
+  bench?: { label: string; why: string; page: string };
 }
 
 export interface StepSupply {
@@ -523,7 +525,7 @@ export function buildReelsStructure(p: Project, d: Derived, opts: StructureOptio
   const sb = (z0: number, z1: number, y0: number, y1: number) => boxToLocal(sideLocal, { x0: 0, x1: t, y0, y1, z0, z1 });
   const sideAdd = [sb(-halfZ, halfZ, floorTop, deckBottom), ...tabZ.flatMap((dz) => [sb(dz - 4, dz + 4, floorTop - t, floorTop), sb(dz - 4, dz + 4, deckBottom, deckBottom + L)])];
   const sideSub = [sb(-12, 12, floorTop, floorTop + 18), ...tabZ.flatMap((dz) => [sb(dz - 4, dz + 4, tw0.collarY[0], tw0.collarY[1]), sb(dz - 4, dz + 4, tw0.bearingY[0], tw0.bearingY[1])])];
-  const towerSide = flat('E04', 'Costado de torre', 'mdf', t, sideFrames, { add: sideAdd, sub: sideSub }, [], { step: 1, explode: [0, 1, 0], role: 'Cuatro iguales: dos por motor. Abajo entran en el piso, arriba en la contracubierta; sostienen el collar del motor y la placa del segundo 608. La muesca de abajo deja salir el conector del motor' }, problems);
+  const towerSide = flat('E04', 'Costado de torre', 'mdf', t, sideFrames, { add: sideAdd, sub: sideSub }, [], { step: 2, explode: [0, 1, 0], role: 'Cuatro iguales: dos por motor. Abajo entran en el piso, arriba en la contracubierta; sostienen el collar del motor y la placa del segundo 608. La torre se baja sobre el motor ya parado en el piso: con el collar puesto, su conector no pasa. La muesca de abajo deja paso a los cables' }, problems);
   const plateLocal = (y1: number) => frame([0, y1, 0], X, Z, neg(Y));
   const plateOutline = (y0: number, y1: number) => {
     const f = plateLocal(y1);
@@ -532,7 +534,7 @@ export function buildReelsStructure(p: Project, d: Derived, opts: StructureOptio
     return { add: [pb(-inner, inner, -halfZ, halfZ), ...tabZ.flatMap((dz) => [pb(-inner - t, -inner, dz - 4, dz + 4), pb(inner, inner + t, dz - 4, dz + 4)])], sub: [] };
   };
   const collarFrames = a.towers.map((tw) => frame([tw.x, tw.collarY[1], tw.z], X, Z, neg(Y)));
-  const collar = flat('E05', 'Collar del motor', 'mdf', t, collarFrames, plateOutline(tw0.collarY[0], tw0.collarY[1]), [rectC({ x: 0, y: 0 }, 42.6, 42.6)], { step: 1, explode: [0, 1, 0], role: 'El cuerpo del motor entra en su hueco cuadrado de 42,6 mm: no gira ni se mueve. Forrar el hueco con cinta de espuma si queda juego' }, problems);
+  const collar = flat('E05', 'Collar del motor', 'mdf', t, collarFrames, plateOutline(tw0.collarY[0], tw0.collarY[1]), [rectC({ x: 0, y: 0 }, 42.6, 42.6)], { step: 2, explode: [0, 1, 0], role: 'El cuerpo del motor entra en su hueco cuadrado de 42,6 mm: no gira ni se mueve. Queda 21 mm arriba del piso, sobre el conector del motor, así que entra por el lado del eje. Forrar el hueco con cinta de espuma si queda juego' }, problems);
   const bearingFrames = a.towers.map((tw) => frame([tw.x, tw.bearingY[1], tw.z], X, Z, neg(Y)));
   const bearingPlate = flat('E06', 'Placa del segundo 608', 'mdf', t, bearingFrames, plateOutline(tw0.bearingY[0], tw0.bearingY[1]), [circle({ x: 0, y: 0 }, 22.0)], { step: 2, explode: [0, 1, 0], role: 'Lleva el segundo 608 del eje del tambor, 25 mm abajo del de la cubierta: el tambor no cabecea' }, problems);
 
@@ -614,20 +616,90 @@ export function buildReelsStructure(p: Project, d: Derived, opts: StructureOptio
   rails.group = 'optica';
   const parts = [floor, deckTop, deckLow, towerSide, collar, bearingPlate, psuFrame, psuStop, wedges, testPlate, testKey, front, left, right, back, covers, flangeLow, flangeHigh, guideFlange, dancerFlange, acrylicTest, acrylicKey, gatePlate, rails];
   for (const pt of parts) if (!pt.profile.outer.length) problems.push(`${pt.id} ${pt.name}: sin contorno`);
-  return { asm: a, parts, steps: assemblySteps(), feet, mdfMm: t, problems };
+  return { asm: a, parts, steps: assemblySteps(a), feet, mdfMm: t, problems };
 }
 
 /** el orden de armado: lo mismo que muestra la vista «Ensamble» y lo que dice docs/FABRICACION-TAMBORES.md */
-export function assemblySteps(): AssemblyStep[] {
+/** un tramo de la varilla de Ø8 × 600 mm: dónde va, su largo y qué punta manda */
+export interface ShaftCut {
+  id: 'reel' | 'guide' | 'dancer' | 'pivot';
+  name: string;
+  qty: number;
+  /** de dónde a dónde va en la mesa (y, mm) */
+  y0: number;
+  y1: number;
+  /** largo a cortar, redondeado a 0,5 mm */
+  mm: number;
+  /** qué punta manda y hacia dónde puede ir lo que sobre */
+  fit: string;
+}
+
+/** los seis tramos de la varilla, medidos en el ensamble (los mismos que dibuja la escena) */
+export function shaftCuts(a: ReelsAssembly): ShaftCut[] {
+  const n1 = (x: number) => String(Math.round(x * 10) / 10).replace('.', ',');
+  const top = a.flangeHighY + a.flangeT + 2;
+  const capTop = top + 4.5;
+  const ps = a.pivotStack;
+  const c = (id: ShaftCut['id'], name: string, qty: number, y0: number, y1: number, fit: string): ShaftCut => ({ id, name, qty, y0, y1, mm: Math.round((y1 - y0) * 2) / 2, fit });
+  return [
+    c('reel', 'tambores', 2, a.motor.reelShaftBottomY, top, `manda la punta de abajo: ${n1(a.deckBearingTopY - a.motor.reelShaftBottomY)} mm de eje bajo el boss del núcleo I01, para que quede 1 mm sobre el eje del motor dentro del cople. Si sale largo, lo que sobre va arriba (hasta 3 mm: arriba está la tapa)`),
+    c('guide', 'guías', 2, -a.base.deckT, capTop, `manda la punta de arriba: ${n1(capTop)} mm sobre la cubierta, para que el tapón I07 asiente en el 608. Si sale largo, lo que sobre va abajo, dentro de la caja`),
+    c('dancer', 'rodillo tensor', 1, ps.armY[0], capTop, `no admite sobrante (±0,5 mm): abajo queda al ras del brazo I04, a ${n1(ps.armY[0] + a.base.layerT)} mm de la contracubierta, y arriba lo tapa el I07`),
+    c('pivot', 'pivote', 1, ps.magnetFaceY + 3.4, ps.armY[1], 'manda la punta de abajo, donde apoya la tapa del imán I06 frente al AS5600. Arriba queda al ras del brazo I04; si sale largo, lo que sobre asoma arriba (hasta 2 mm)'),
+  ];
+}
+
+/** «2 de 98,5 mm (tambores), 2 de 67,5 (guías)…» */
+export function shaftCutsText(cuts: ShaftCut[]): string {
+  const mm = (x: number) => String(x).replace('.', ',');
+  return cuts.map((s, i) => `${s.qty} de ${mm(s.mm)}${i === 0 ? ' mm' : ''} (${s.name})`).join(', ').replace(/, ([^,]+)$/, ' y $1');
+}
+
+/** los 12 pasos; con el ensamble, los textos llevan los largos de la varilla */
+export function assemblySteps(a?: ReelsAssembly): AssemblyStep[] {
   const epoxy = (id: string, where: string): StepSupply => ({ id, bomId: 'epoxy', what: 'Epóxico', where });
   const ca = (id: string, where: string): StepSupply => ({ id, bomId: 'ca-glue', what: 'Cianoacrilato', where });
+  const cuts = a ? shaftCuts(a) : [];
+  const len = (id: ShaftCut['id']) => {
+    const s = cuts.find((x) => x.id === id);
+    return s ? ` de ${String(s.mm).replace('.', ',')} mm` : '';
+  };
+  const couplerGap = a ? a.motor.couplingY - a.motor.couplingH / 2 - a.motor.faceY : 10;
   return [
-    { n: 1, title: 'Piso, torres y marco de la fuente', text: ['Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.', `Pegar las cuatro patas de hule por abajo del piso E01, en las esquinas, con el centro a ${REELS_FEET.insetMm} mm de las dos orillas.`, 'Armar cada torre: dos costados E04 con su collar E05 en las ranuras de abajo.', 'Encajar las dos torres, el marco E07 y los dos topes E08 en las ranuras del piso E01.'], parts: ['E01', 'rubber-feet', 'E04', 'E05', 'E07', 'E08'], supplies: [] },
-    { n: 2, title: 'Motores, coples y segundo 608', text: ['Bajar cada motor por el collar hasta el piso, con el conector hacia la muesca del costado.', 'Poner el cople en el eje del motor (13 mm de eje dentro del cople) y apretar su prisionero.', 'Meter un 608 a presión en cada placa E06 y encajarla en las ranuras de arriba de la torre: los costados se abren un poco.'], parts: ['motor-17hs8401', 'coupling-5-8', 'E06', 'bearing-608'], supplies: [] },
+    {
+      n: 1,
+      title: 'Piso, marco de la fuente y varilla',
+      text: [
+        'Cortar primero las piezas de prueba (E10, E11, A10 y A11) y ajustar si hace falta.',
+        `Cortar la varilla de 8 mm en sus seis tramos${cuts.length ? `: ${shaftCutsText(cuts)}` : ' (los largos están en la lista de compras)'}. Los de las guías se usan en el paso 5.`,
+        `Pegar las cuatro patas de hule por abajo del piso E01, en las esquinas, con el centro a ${REELS_FEET.insetMm} mm de las dos orillas.`,
+        'Encajar el marco E07 y los dos topes E08 en las ranuras del piso E01. Las torres todavía no: van sobre los motores en el paso 2.',
+      ],
+      parts: ['E01', 'rubber-feet', 'E07', 'E08'],
+      supplies: [],
+    },
+    {
+      n: 2,
+      title: 'Motores, torres, coples y segundo 608',
+      text: [
+        `En la mesa de trabajo, poner el cople en el eje de cada motor, ${String(couplerGap).replace('.', ',')} mm arriba de su cara, con el prisionero sobre la cara plana del eje, y apretarlo.`,
+        'Parar cada motor en el piso, en su lugar, con el conector hacia el frente de la mesa: es el lado abierto de la torre y da hacia su DM542.',
+        'Armar cada torre (dos costados E04 con su collar E05 en las ranuras de abajo) y bajarla sobre su motor: el hueco del collar entra por el lado del eje y las pestañas de los costados, en las ranuras del piso. El collar queda arriba del conector. Primero el motor y luego la torre: con el collar puesto, el conector ya no pasa.',
+        'Meter un 608 a presión en cada placa E06 y encajarla en las ranuras de arriba de la torre: los costados se abren un poco.',
+        `Para la prueba de la electrónica, meter por el 608 de cada torre un tramo de varilla de los tambores${len('reel')} hasta el cople y apretar el prisionero, sin pegar nada: se saca antes del paso 6.`,
+      ],
+      parts: ['motor-17hs8401', 'coupling-5-8', 'E04', 'E05', 'E06', 'bearing-608'],
+      supplies: [],
+      bench: {
+        label: 'Probar la electrónica',
+        why: 'Antes de fijar nada al piso: con los motores en sus torres y la varilla puesta, se cablea todo sobre la mesa de trabajo y se prueba por partes (fuente, reguladores, cada motor, sensores y LED).',
+        page: 'electronica.html',
+      },
+    },
     {
       n: 3,
       title: 'Electrónica en el piso',
-      text: [`La fuente de pie detrás del marco E07, con los bornes hacia él, la espalda a ${ACRYLIC_MM + 1} mm de la orilla trasera del piso (donde va la tapa) y centrada entre los topes E08. Mide ${PSU_MM.l} mm y los topes se cortaron para una de 199, así que se pega al piso con dos tiras de cinta doble cara.`, 'Cada DM542 delante de su motor con dos cinchos; el ESP32 (en su placa de expansión, o suelto con jumpers hembra en sus pines), los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.', 'La protoboard con su adhesivo. Cablear potencia y señales (ver la vista Electrónica): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.'],
+      text: [`La fuente de pie detrás del marco E07, con los bornes hacia él, la espalda a ${ACRYLIC_MM + 1} mm de la orilla trasera del piso (donde va la tapa) y centrada entre los topes E08. Mide ${PSU_MM.l} mm y los topes se cortaron para una de 199, así que se pega al piso con dos tiras de cinta doble cara.`, 'Cada DM542 delante de su motor con dos cinchos; el ESP32 (en su placa de expansión, o suelto con jumpers hembra en sus pines), los reguladores y la resistencia con un cincho cada uno. El amarre de cada cincho va arriba: por debajo del piso solo pasa la tira, que libran las patas.', 'La protoboard con su adhesivo. Cablear potencia y señales con las mismas conexiones ya probadas en banco (visor de conexiones, electronica.html): con las paredes de acrílico todo queda a la vista, así que conviene peinar los cables.'],
       parts: ['psu-24v-5a', 'psu-tape', 'driver-dm542', 'esp32-expansion', 'esp32', 'buck-lm2596', 'led-resistor', 'breadboard-kit', 'cable-ties'],
       supplies: [
         { id: 'psu-tape', bomId: 'psu-tape', what: 'Cinta doble cara de gel', where: 'Dos tiras de 14 cm entre la fuente y el piso, a lo largo' },
@@ -648,14 +720,14 @@ export function assemblySteps(): AssemblyStep[] {
     {
       n: 6,
       title: 'Tambores',
-      text: ['Pegar con epóxico cada núcleo impreso (I01) a su eje de 100 mm, con 2 mm de eje arriba.', 'Pegar con cianoacrilato la brida de abajo A06 (barreno de 11,7) y la de arriba A07 (8,2) a las orillas del núcleo.', 'Bajar cada tambor por su 608 de la cubierta y el de la torre hasta el cople y apretar el prisionero: el cubo apoya en la pista interior del 608.'],
+      text: [`Pegar con epóxico cada núcleo impreso (I01) a su eje${len('reel')}, con 2 mm de eje arriba.`, 'Pegar con cianoacrilato la brida de abajo A06 (barreno de 11,7) y la de arriba A07 (8,2) a las orillas del núcleo.', 'Bajar cada tambor por su 608 de la cubierta y el de la torre hasta el cople y apretar el prisionero: el cubo apoya en la pista interior del 608.'],
       parts: ['I01', 'A06', 'A07', 'shaft-8mm', 'epoxy', 'ca-glue'],
       supplies: [epoxy('epoxy-reel', 'En el eje de 8 mm, en el tramo que queda dentro del cubo del núcleo I01'), ca('ca-reel', 'En las dos orillas del núcleo I01, donde asientan las bridas A06 (abajo) y A07 (arriba)')],
     },
     {
       n: 7,
       title: 'Guías y brazo tensor',
-      text: ['Pegar con epóxico los ejes de 70 mm de las guías en la cubierta, a plomo.', 'Rondana M8, guía (I02 con dos 608 y sus bridas A08 pegadas con cianoacrilato) y tapón I07.', 'Brazo I04 pegado al eje del pivote, eje del rodillo en su casquillo, rodillo I03 con sus 608 y bridas A09, tapón I07.', 'Resorte del brazo a la mitad del brazo y al ancla I15; tapa del imán (I06) en la punta de abajo del eje y el AS5600 en la ranura de la copa.'],
+      text: [`Pegar con epóxico los ejes${len('guide')} de las guías en la cubierta, a plomo.`, 'Rondana M8, guía (I02 con dos 608 y sus bridas A08 pegadas con cianoacrilato) y tapón I07.', 'Brazo I04 pegado al eje del pivote, eje del rodillo en su casquillo, rodillo I03 con sus 608 y bridas A09, tapón I07.', 'Resorte del brazo a la mitad del brazo y al ancla I15; tapa del imán (I06) en la punta de abajo del eje y el AS5600 en la ranura de la copa.'],
       parts: ['I02', 'I03', 'I04', 'I06', 'I07', 'I15', 'A08', 'A09', 'washers-m8', 'dancer-spring', 'as5600', 'epoxy', 'ca-glue'],
       supplies: [
         epoxy('epoxy-guide-shafts', 'En la punta de abajo del eje de cada guía: el tramo que entra en la cubierta'),

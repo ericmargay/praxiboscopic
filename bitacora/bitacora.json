@@ -1,0 +1,313 @@
+{
+  "version": 1,
+  "about": "Bitácora de Praxiboscopic: comentarios (issues de GitHub), respuestas y fotos. Lo genera scripts/bitacora.mjs; no se edita a mano.",
+  "repo": "ericmargay/praxiboscopic",
+  "updatedAt": "2026-11-23T02:04:18Z",
+  "issues": [
+    {
+      "number": 12,
+      "title": "[Portafusible con fusible de 500 mA] El fusible rápido queda al límite al encender con los capacitores",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/12",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "electronica"
+        },
+        {
+          "name": "pregunta"
+        }
+      ],
+      "created_at": "2026-11-23T02:04:18Z",
+      "updated_at": "2026-11-23T02:04:18Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué puede pasar.** Al encender, la fuente sube a 24 V en unos 30 ms, y en ese tiempo los tres capacitores de 1000 µF toman cerca de 2,4 A para cargarse. Eso son unos 0,17 A²s. Un fusible rápido de 500 mA de 5 × 20 mm se funde con 0,215 A²s (dato de la serie 217 de Littelfuse). Queda al 80 % de su límite: puede fundirse sin que haya ninguna falla, a la primera o después de varios encendidos.\n\nSi el riel de potencia se conecta con la fuente ya encendida, los capacitores se cargan de golpe y se funde seguro.\n\nEs un cálculo con datos de catálogo, no una medición.\n\n**Qué ver en banco** (paso 9 de las conexiones).\n- [ ] Encender y apagar diez veces, esperando a que se apague el LED de la fuente cada vez. ¿Aguanta el fusible?\n\n**Si no aguanta.**\n- Fusible lento (T) de 500 mA: soporta la carga y sigue cortando en una fracción de segundo si el MOSFET se queda conduciendo.\n- O mover el fusible después de los capacitores: ya no ve la carga, pero sí cada destello.\n\nMientras tanto, el visor lo advierte en la ficha del fusible y en el paso 9.\n\n---\n**Pieza:** Portafusible con fusible de 500 mA (`fuse`) · **Tipo:** Pregunta · **Paso de las conexiones:** 9\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=9&sel=fuse)\n\n<!-- praxiboscopic pieza=\"fuse\" tipo=\"pregunta\" vista=\"electronica\" paso=\"9\" sel=\"fuse\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 11,
+      "title": "[Protoboard de 830 puntos] Los 5 V y los 12 V compartían riel: solo funcionaba con el riel partido",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/11",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "electronica"
+        },
+        {
+          "name": "falla"
+        }
+      ],
+      "created_at": "2026-11-23T02:04:17Z",
+      "updated_at": "2026-11-23T02:04:17Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasa.** El montaje anterior de la protoboard ponía los 5 V en un extremo de un riel rojo y los 12 V en el otro extremo del mismo riel. Eso solo funciona en las protoboards de 830 puntos que traen cada riel partido a la mitad (la línea roja se interrumpe a media tabla). En las que lo traen entero, une los 5 V con los 12 V.\n\n**Cómo salió.** Al escribir el montaje agujero por agujero: una prueba arma las redes eléctricas con los rieles enteros y con los rieles partidos, y deben salir iguales.\n\n**Qué se hizo.**\n- Los 12 V ya no pasan por ningún riel: van directo a la columna del pin 1 del IR2101.\n- Cada riel se usa de un solo lado: los 24 V con fusible en el lado j y los 5 V en el lado a.\n- Dos puentes unen las tierras, así que no importa cómo venga la protoboard.\n\nSale con la siguiente publicación del sitio. No falta nada: se cierra al publicar.\n\n---\n**Pieza:** Protoboard de 830 puntos (`breadboard`) · **Tipo:** Falla · **Paso de las conexiones:** 8\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=8&sel=breadboard)\n\n<!-- praxiboscopic pieza=\"breadboard\" tipo=\"falla\" vista=\"electronica\" paso=\"8\" sel=\"breadboard\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 10,
+      "title": "[Sensor de marcas F249] Iba a 5 V: su salida habría puesto 5 V en el GPIO34 del ESP32",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/10",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "electronica"
+        },
+        {
+          "name": "falla"
+        }
+      ],
+      "created_at": "2026-11-23T02:04:16Z",
+      "updated_at": "2026-11-23T02:04:16Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasa.** El modelo alimentaba el sensor de marcas F249 con 5 V. Estas plaquitas (una horquilla óptica y un LM393) llevan una resistencia de su salida DO a su alimentación: con 5 V, la salida en alto es de 5 V. Esa salida va directo al GPIO34 del ESP32, y sus pines solo aguantan 3,3 V.\n\n**Cómo salió.** Al revisar cada conexión contra las hojas de datos para el visor de conexiones.\n\n**Qué se hizo.** En el modelo, en la escena de la mesa y en el visor de conexiones el sensor va ahora a los 3,3 V del ESP32. La plaquita trabaja de 3,3 a 5 V. Sale con la siguiente publicación del sitio.\n\n**Falta.**\n- [ ] Probar en banco (paso 7 de las conexiones) que a 3,3 V sigue viendo la marca, con la tinta de la película real.\n\n---\n**Pieza:** Sensor de marcas F249 (`sensor`) · **Tipo:** Falla · **Paso de las conexiones:** 7\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=7&sel=sensor)\n\n<!-- praxiboscopic pieza=\"sensor\" tipo=\"falla\" vista=\"electronica\" paso=\"7\" sel=\"sensor\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 9,
+      "title": "[R4 · resistencia de 1 kΩ] Falta una resistencia de 1 kΩ en la lista de compras",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/9",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "electronica"
+        },
+        {
+          "name": "falla"
+        }
+      ],
+      "created_at": "2026-11-23T02:04:14Z",
+      "updated_at": "2026-11-23T02:04:14Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasa.** La lista de compras pedía tres resistencias de 1 kΩ: dos para los transistores de un motor y una de repuesto. La mesa de dos tambores tiene dos motores y cuatro transistores 2N3904 (pasos y sentido de cada uno), así que usa cuatro. Con lo comprado el 13 de noviembre falta una, y no queda repuesto.\n\n**Cómo salió.** Al escribir las conexiones pin por pin para el visor de conexiones: una prueba cuenta las resistencias del montaje contra la lista.\n\n**Qué se hizo.** La lista de la mesa ya pide cinco de 1 kΩ (cuatro y un repuesto), una de 10 Ω y dos de 10 kΩ. Sale con la siguiente publicación del sitio.\n\n**Falta.**\n- [ ] Comprar dos resistencias de 1 kΩ.\n- Para no detener la prueba del motor 2, en la base de Q4 sirve cualquier resistencia de 470 Ω a 2,2 kΩ.\n\n---\n**Pieza:** R4 · resistencia de 1 kΩ (`r4`) · **Tipo:** Falla · **Paso de las conexiones:** 5\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=5&sel=r4)\n\n<!-- praxiboscopic pieza=\"r4\" tipo=\"falla\" vista=\"electronica\" paso=\"5\" sel=\"r4\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 8,
+      "title": "[I12 Tubo del condensador] El silicón del condensador y la liga de la lente no están en la lista de compras",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/8",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "mejora"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:37Z",
+      "updated_at": "2026-11-22T22:13:40Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasa.** El paso 8 pide dos cosas que no tienen renglón en la lista de compras:\n\n- Silicón transparente: una gota en la orilla de cada lente del condensador, dentro del tubo I12.\n- Una liga o un cincho de velcro: sujeta el barril de la lente por las dos ranuras de la cuna I13.\n\nEl modelo ya las marca en el paso 8 y dice que no están en la lista.\n\n**Falta.**\n- [ ] Decidir si se compran (y agregar sus renglones) o si salen de lo que ya hay en el taller, y dejarlo dicho en el paso.\n\n---\n**Pieza:** I12 Tubo del condensador (`I12`) · **Tipo:** Mejora · **Paso del ensamble:** 8\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=condenser&ensamble=8&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"I12\" tipo=\"mejora\" paso=\"8\" sel=\"condenser\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 7,
+      "title": "[Disipador 40 × 40 mm] Falta definir con qué se pega el LED al disipador",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/7",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "pregunta"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:36Z",
+      "updated_at": "2026-11-22T22:07:36Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**La duda.** El paso 8 arma la cabeza del LED (I11) con el disipador, el LED de 10 W y el tubo del condensador, pero ningún paso dice cómo se une el LED al disipador y la lista de compras no trae nada para eso.\n\n**Opciones.**\n- Adhesivo térmico: queda fijo y sin tornillos, como el resto de la mesa.\n- Cinta térmica de doble cara: más fácil de quitar, conduce menos.\n- Pasta térmica y dos tornillos M3, si el disipador trae barrenos. Serían los únicos tornillos además de los prisioneros de los coples.\n\nEl LED trabaja en destellos cortos y calienta poco, pero necesita buen contacto con el disipador para durar.\n\n**Falta.**\n- [ ] Elegir una opción con el LED y el disipador en la mano.\n- [ ] Agregarla a la lista de compras y al paso 8, con su marca en el modelo.\n\n---\n**Pieza:** Disipador 40 × 40 mm (`led-heatsink`) · **Tipo:** Pregunta · **Paso del ensamble:** 8\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=led-heatsink&ensamble=8&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"led-heatsink\" tipo=\"pregunta\" paso=\"8\" sel=\"led-heatsink\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 6,
+      "title": "[Eje del rodillo tensor] Los largos de la varilla en la lista de compras no coincidían con el modelo",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/6",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "falla"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:34Z",
+      "updated_at": "2026-11-22T22:07:34Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasó.** La lista de compras pedía cortar la varilla de 8 mm en 2 tramos de 100 mm, 2 de 70, 1 de 65 y 1 de 40. El modelo mide otra cosa: 2 de 98,5 mm (tambores), 2 de 67,5 (guías), 1 de 60,5 (rodillo tensor) y 1 de 40 (pivote).\n\n**Por qué importa.** El eje del rodillo tensor no admite sobrante: abajo queda al ras del brazo I04, a 1,5 mm de la contracubierta, y arriba lo tapa el tapón I07. Con 65 mm habría rozado la contracubierta al girar el brazo.\n\n**Causa.** Los largos estaban escritos a mano en la lista y el modelo cambió después.\n\n**Qué se cambió en el modelo.** Los largos salen del ensamble (`shaftCuts`) y la lista dice, para cada tramo, qué punta manda y hacia dónde puede ir lo que sobre. El paso 1 incluye cortar la varilla y una prueba revisa que los seis tramos salgan de los 600 mm con repuesto. Sale con la siguiente publicación del sitio.\n\n**Si ya se cortó con las medidas viejas.** Los de 100 y 70 sirven tal cual (lo que sobra va arriba en los tambores y abajo de la cubierta en las guías) y el de 40 también. El de 65 hay que dejarlo en 60,5.\n\n**Falta.**\n- [ ] Cortar los seis tramos y confirmar que cada uno entra en un 608.\n\n---\n**Pieza:** Eje del rodillo tensor · Ø8 × 60,5 mm (`shaft-dancer`) · **Tipo:** Falla · **Paso del ensamble:** 1\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=shaft-dancer&ensamble=7&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"shaft-dancer\" tipo=\"falla\" paso=\"1\" sel=\"shaft-dancer\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 5,
+      "title": "[E05 Collar del motor] El motor no entra con la torre puesta: el conector no pasa por el collar",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/5",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "falla"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:33Z",
+      "updated_at": "2026-11-22T22:07:33Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasó.** Siguiendo los pasos, las torres (costados E04 con su collar E05) se encajaron en el piso en el paso 1. En el paso 2 el motor no bajó por el collar: el conector no pasa.\n\n**Causa.** El collar queda 21 mm arriba del piso y su hueco mide 42,6 mm. El conector del 17HS8401 está entre 4 y 10 mm de la base del motor y sobresale unos 6 mm del cuerpo de 42,3 mm. El orden de los pasos estaba mal: el motor tiene que estar en su lugar antes que la torre.\n\n**Cómo se resolvió en el taller (22-nov-2026).** Las torres ya no se pudieron sacar del piso (ver #4), así que Eric cortó en cada collar una muesca del tamaño del conector y el motor bajó por ahí. El conector quedó hacia el frente de la mesa, del lado abierto de la torre.\n\n**Qué se cambió en el modelo.** El paso 2 ahora para primero el motor, con el cople ya puesto a 10 mm de su cara y el conector al frente, y después baja la torre armada sobre él. E04 y E05 pasan del paso 1 al paso 2. Sale con la siguiente publicación del sitio.\n\n**Falta.**\n- [ ] Dibujar la muesca del conector en el collar E05 de los archivos de corte, para que el motor entre también con la torre ya puesta.\n- [ ] Subir aquí la foto de la muesca.\n\n---\n**Pieza:** E05 Collar del motor (`E05`) · **Tipo:** Falla · **Paso del ensamble:** 2\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=E05-1&ensamble=2&explosion=0.6)\n\n<!-- praxiboscopic pieza=\"E05\" tipo=\"falla\" paso=\"2\" sel=\"E05-1\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 4,
+      "title": "[E04 Costado de torre] Las pestañas de MDF entran demasiado apretadas: a martillo y ya no se desarman",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/4",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "falla"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:32Z",
+      "updated_at": "2026-11-22T22:07:32Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasó.** Las pestañas de los costados de las torres (E04) entraron muy apretadas en las ranuras del piso (E01): hubo que meterlas con martillo. Ya puestas no se pudieron separar, y por eso tampoco se pudo sacar la torre para meter el motor.\n\n**Causa probable.** Entre piezas de MDF las ranuras se dibujan a la medida nominal, sin holgura, y los archivos compensan un kerf de 0,2 mm para que encajen a presión. Si el kerf real de la máquina es menor, o el MDF mide más de 5,5 mm, el encaje queda con interferencia. Entre acrílicos sí hay 0,1 mm de holgura.\n\n**Preguntas.**\n- ¿Cuánto mide el MDF con vernier?\n- ¿Se cortaron y probaron primero las piezas de prueba E10 y E11? ¿En cuál ranura entraba bien la llave?\n- ¿El piso o algún costado se abrió o se marcó con el martillo?\n\n**Propuesta.** Agregar a `npm run fabricar` una holgura para los encajes de MDF con MDF (0,1 mm por lado para empezar) y dejar a presión solo lo que no se vuelve a desarmar. Decidir el valor con las piezas de prueba antes del siguiente corte.\n\n---\n**Pieza:** E04 Costado de torre (`E04`) · **Tipo:** Falla · **Paso del ensamble:** 2\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=E04-1&ensamble=2&explosion=0.6)\n\n<!-- praxiboscopic pieza=\"E04\" tipo=\"falla\" paso=\"2\" sel=\"E04-1\" -->\n",
+      "replies": [],
+      "photos": []
+    },
+    {
+      "number": 3,
+      "title": "[General] El modelo no decía dónde va lo que no se corta ni se imprime (pegamentos, cintas, cinchos)",
+      "state": "closed",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/3",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "mejora"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:30Z",
+      "updated_at": "2026-11-22T22:09:46Z",
+      "closed_at": "2026-11-22T22:09:46Z",
+      "comments": 1,
+      "body": "**Qué pasó.** El modelo solo mostraba lo cortado, lo impreso y lo comprado. No decía dónde va lo demás que hace falta para armar, como el pegamento.\n\n**Qué se hizo.** Desde ded31d2 cada paso del ensamble marca en color lo que no se corta ni se imprime y el panel dice dónde va cada cosa: epóxico, cianoacrilato, cola blanca, cinta de gel de la fuente, cinchos, rondanas M8, silicón y la liga de la lente. Con la mesa armada no se ven; aparecen al recorrer los pasos. El README del taller lista lo mismo en cada paso.\n\n---\n**Pieza:** La obra completa · **Tipo:** Mejora\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&ensamble=7&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"general\" tipo=\"mejora\" -->\n",
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-22T22:09:45Z",
+          "body": "Resuelto en ded31d2. Quedaron dos pendientes aparte: con qué se pega el LED al disipador (#7) y el silicón y la liga, que no están en la lista de compras (#8)."
+        }
+      ],
+      "photos": []
+    },
+    {
+      "number": 2,
+      "title": "[General] La vista explosionada dejaba piezas unidas y no mostraba lo que va dentro de otras",
+      "state": "closed",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/2",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "mejora"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:29Z",
+      "updated_at": "2026-11-22T22:09:44Z",
+      "closed_at": "2026-11-22T22:09:44Z",
+      "comments": 1,
+      "body": "**Qué pasó.** Al explotar la vista del ensamble muchas piezas seguían unidas, y no se veía dónde van las que entran dentro de otras, como los rodamientos.\n\n**Causa.** Todas las piezas de un mismo paso se movían juntas, unos 7,5 mm por paso. Lo que va dentro de un tambor o de un rodillo no tenía movimiento propio. Además, las bridas A06 a A09 se dibujaban dos veces y la del rodillo tensor no giraba con él.\n\n**Qué se hizo.** Desde ded31d2 la explosión separa por capas: cada pieza se aparta de aquella en la que se apoya. Tambores, guías y rodillo tensor se desarman a lo largo de su eje en rondana, 608, bridas, cuerpo y tapón. También salen el eje del pivote, la tapa del imán, el imán, las espigas I16 y el brazo del F249. Las paredes y la tapa trasera salen de lado.\n\n---\n**Pieza:** La obra completa · **Tipo:** Mejora\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&ensamble=12&explosion=0.8)\n\n<!-- praxiboscopic pieza=\"general\" tipo=\"mejora\" -->\n",
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-22T22:09:43Z",
+          "body": "Resuelto en ded31d2. Para verlo: [paso 7 con la explosión a 0,8](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&ensamble=7&explosion=0.8); con ◀ ▶ se recorren los pasos."
+        }
+      ],
+      "photos": []
+    },
+    {
+      "number": 1,
+      "title": "[I01 Núcleo del tambor] Faltaron piezas impresas: llegó una copia de cada archivo",
+      "state": "open",
+      "html_url": "https://github.com/ericmargay/praxiboscopic/issues/1",
+      "user": {
+        "login": "ericmargay"
+      },
+      "labels": [
+        {
+          "name": "armado"
+        },
+        {
+          "name": "falla"
+        }
+      ],
+      "created_at": "2026-11-22T22:07:28Z",
+      "updated_at": "2026-11-22T22:07:28Z",
+      "closed_at": null,
+      "comments": 0,
+      "body": "**Qué pasó.** Al empezar a armar (17-nov-2026) faltaba al menos un núcleo de tambor. El servicio de impresión entregó una sola copia de cada STL, sin ver las cantidades de la tabla.\n\n**Causa.** Cada archivo traía una pieza y la cantidad solo estaba escrita en el README. Quien imprime carga los archivos y no lee la tabla.\n\n**Qué se hizo.** Desde ded31d2 cada STL trae todas las copias de su pieza, acomodadas en una cama de 220 mm, y el nombre dice cuántas trae (`I01-nucleo-tambor-2-piezas.stl`): 28 piezas en 16 archivos. El texto para el taller pide imprimir cada archivo una sola vez y contar 28 piezas al entregar. `npm run fabricar -- --faltan=I01:1,I08:3` arma un ZIP con solo lo que falta.\n\n**Falta.**\n- [ ] Contar lo que llegó y confirmar qué falta. El ZIP de reposición supone que llegó una de cada: 12 piezas en 7 archivos (I01 ×1, I02 ×1, I07 ×2, I08 ×3, I09 ×1, I10 ×1, I16 ×3).\n- [ ] Mandar a imprimir la reposición: https://ericmargay.github.io/praxiboscopic/fabricacion/tambores/mesa-tambores-reposicion.zip\n\n---\n**Pieza:** I01 Núcleo del tambor (`I01`) · **Tipo:** Falla · **Paso del ensamble:** 6\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/?demo=tambores&section=mechanical&sel=I01-1&ensamble=6&explosion=0.6)\n\n<!-- praxiboscopic pieza=\"I01\" tipo=\"falla\" paso=\"6\" sel=\"I01-1\" -->\n",
+      "replies": [],
+      "photos": []
+    }
+  ],
+  "photos": []
+}

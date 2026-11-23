@@ -115,3 +115,48 @@
 .sim-side .asm-supplies { list-style: none; margin: 4px 0 6px; padding: 0; }
 .sim-side .asm-supplies li { display: grid; grid-template-columns: 12px 1fr; gap: 6px; align-items: baseline; margin: 3px 0; }
 .sim-side .asm-supplies i { width: 10px; height: 10px; border-radius: 50%; background: var(--sup); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); transform: translateY(1px); }
+
+/* comentarios sobre las piezas: issues de GitHub (ADR-0014) */
+.fb h4 { display: flex; align-items: center; gap: 6px; }
+.fb-chip { display: inline-block; padding: 1px 7px; border-radius: 999px; font: 600 10.5px/1.5 var(--sans); letter-spacing: .02em; text-transform: none; border: 1px solid transparent; background: var(--bg-3); color: var(--text-2); white-space: nowrap; }
+.fb-chip.k-falla { background: color-mix(in srgb, var(--err) 11%, var(--panel)); color: var(--err); }
+.fb-chip.k-mejora { background: var(--accent-soft); color: var(--accent); }
+.fb-chip.k-pregunta { background: color-mix(in srgb, var(--accent-2) 13%, var(--panel)); color: var(--accent-2); }
+.fb-chip.s-open { background: var(--accent); color: #fff; }
+.fb-chip.s-closed { background: color-mix(in srgb, var(--ok) 13%, var(--panel)); color: var(--ok); }
+button.fb-chip { cursor: pointer; opacity: .55; }
+button.fb-chip[aria-pressed="true"] { opacity: 1; border-color: currentColor; }
+.fb-item { display: grid; gap: 2px; margin: 5px 0; padding: 6px 8px; border: 1px solid var(--bg-3); border-left: 3px solid var(--accent); border-radius: 7px; font-size: 12.5px; background: var(--panel); }
+.fb-item.closed { border-left-color: var(--ok); }
+.fb-h { display: flex; align-items: center; gap: 5px; }
+.fb-n { margin-left: auto; font-size: 11.5px; text-decoration: none; font-variant-numeric: tabular-nums; }
+.fb-t { font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.fb-go, .fb-link { border: 0; background: transparent; padding: 0; color: var(--accent-2); cursor: pointer; text-align: left; font-size: 11.5px; }
+.fb-go:hover, .fb-link:hover { text-decoration: underline; }
+.fb-where { font-size: 11.5px; color: var(--text-3); }
+.fb-more summary, .fb-compose summary { cursor: pointer; font-size: 11.5px; color: var(--accent-2); }
+.fb-text { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.45; }
+.fb-reply { margin: 6px 0; padding-left: 8px; border-left: 2px solid var(--accent-soft); }
+.fb-compose { margin: 6px 0 2px; }
+.fb-compose[open] summary { margin-bottom: 6px; }
+.fb-kinds { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.fb-input { width: 100%; resize: vertical; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); font-size: 12.5px; line-height: 1.4; }
+.fb-input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.fb-foot { margin: 6px 0; }
+.fb-step { margin-top: 6px; }
+.sb-row .fb-badge { margin-left: auto; flex: none; min-width: 16px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font: 700 10px/16px var(--sans); text-align: center; }
+/* dentro de un grupo del panel lateral, estos desplegables no son encabezados de grupo */
+.group .fb-more > summary, .group .fb-compose > summary { display: list-item; padding: 0; font-weight: 400; color: var(--accent-2); }
+.group .fb-more > summary::before, .group .fb-compose > summary::before { content: none; }
+.group .fb-more > summary, .group .fb-compose > summary { list-style: disclosure-closed inside; }
+.group .fb-more[open] > summary, .group .fb-compose[open] > summary { list-style-type: disclosure-open; }
+
+/* prueba al terminar un paso del ensamble: abre el visor de conexiones (ADR-0015) */
+.sim-side .asm-bench { margin: 8px 0; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 6px; background: var(--accent-soft); }
+.sim-side .asm-bench .btn { text-decoration: none; }
+.sim-side .asm-bench .hint { margin: 6px 0 0; color: var(--text-2); }
+/* fotos de la bitácora junto a su comentario (ADR-0016) */
+.fb-photos { display: flex; flex-wrap: wrap; gap: 4px; margin: 5px 0 3px; }
+.fb-photo { display: block; line-height: 0; }
+.fb-photo img { width: 76px; height: 57px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); background: var(--bg-3); }
+.fb-photo:hover img { border-color: var(--accent); }

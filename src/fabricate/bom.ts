@@ -13,7 +13,7 @@ import { mediumById } from '../optics/medium';
 import { opticsReport } from '../optics/projector';
 import { tilePlan } from '../film/print';
 import { buildAssembly, buildReelsAssembly } from '../mech/assembly';
-import { buildReelsStructure, REELS_FEET, SHEET_MATERIALS } from '../mech/structure';
+import { buildReelsStructure, REELS_FEET, SHEET_MATERIALS, shaftCuts, shaftCutsText } from '../mech/structure';
 import { reelsPrintedParts } from './printed';
 import { laserQuantities, printQuantities } from './quantities';
 
@@ -253,9 +253,11 @@ function addReelsMechanics(p: Project, d: Derived, r: ReelsDerived, add: Add): v
     { id: `bearing-${bearing.id}`, name: REELS_PRICES.bearings.label, category: 'mechanical', qty: Math.ceil(REELS_BEARINGS / 10), process: 'buy', dimsMm: { x: bearing.odMm, y: bearing.odMm, z: bearing.widthMm }, massG: bearing.massG, supplier: offerSupplier('bearings') },
     { why: `Se usan ${REELS_BEARINGS}: dos por tambor (en la cubierta y en la placa de su torre), dos por guía, dos en el rodillo del brazo tensor y dos en el pivote (contracubierta y copa). Los que sobran quedan de repuesto`, forWhat: 'Tambores, guías y brazo tensor', alternative: 'Un paquete de 16 o 20 si sale más barato por pieza; bujes de bronce 8 × 12 × 8 (más fricción)', evidence: REELS_PRICES.bearings.evidence, evidenceDate: REELS_PRICES.bearings.date, need: 'requerido' },
   );
+  const cuts = shaftCuts(asm);
+  const cutsMm = cuts.reduce((acc, c) => acc + c.qty * c.mm, 0);
   add(
     { id: 'shaft-8mm', name: REELS_PRICES.shaftRod.label, category: 'mechanical', qty: 1, process: 'buy', dimsMm: { x: 8, y: 8, z: 600 }, supplier: offerSupplier('shaftRod') },
-    { why: 'Seis tramos con segueta: 2 de 100 mm (tambores, pegados al núcleo; bajan al cople), 2 de 70 mm (guías, pegados a la cubierta), 1 de 65 mm (rodillo tensor) y 1 de 40 mm (pivote). Suman 445 mm. Antes de cortar, probar que entre en un 608 y en el cople. Sin cromo se oxida: limpiarla con un poco de aceite y limar un bisel en cada punta', forWhat: 'Tambores, guías y brazo tensor', alternative: 'Eje lineal cromado de Ø8, más duro: se corta con disco, no con segueta', evidence: REELS_PRICES.shaftRod.evidence, evidenceDate: REELS_PRICES.shaftRod.date, need: 'requerido' },
+    { why: `Seis tramos con segueta: ${shaftCutsText(cuts)}. Suman ${cutsMm.toString().replace('.', ',')} mm y sobran unos ${Math.floor((600 - cutsMm - 6 * 1.5) / 10) * 10} de repuesto. Cada tramo se corta 1 mm largo y se lima a la medida, a escuadra. ${cuts.map((c) => `${c.name[0].toUpperCase()}${c.name.slice(1)}: ${c.fit}`).join('. ')}. Antes de cortar, probar que la varilla entre en un 608 y en el cople. Sin cromo se oxida: limpiarla con un poco de aceite y limar un bisel en cada punta`, forWhat: 'Tambores, guías y brazo tensor', alternative: 'Eje lineal cromado de Ø8, más duro: se corta con disco, no con segueta', evidence: REELS_PRICES.shaftRod.evidence, evidenceDate: REELS_PRICES.shaftRod.date, need: 'requerido' },
   );
   add(
     { id: 'coupling-5-8', name: UNIT.coupling.label, category: 'mechanical', qty: 2, process: 'buy', supplier: unit('coupling') },
@@ -391,7 +393,8 @@ function addOpticsAndControl(p: Project, d: Derived, add: Add): void {
       { why: 'Limita el pulso: (24 V − unos 12 V) / 3,3 Ω ≈ 3,6 A. Empieza con más ohms y baja midiendo', forWhat: 'Driver del LED', alternative: 'Cemento 5 W de 2,2 Ω en serie', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
-      { id: 'small-resistors', name: UNIT.resistors.label, category: 'electronic', qty: 6, process: 'buy', supplier: unit('resistors') },
+      // una de 1 kΩ por transistor (dos por motor) y una de repuesto; la mesa de dos tambores lleva cuatro
+      { id: 'small-resistors', name: UNIT.resistors.label.replace('3 × 1 kΩ', `${reels ? 5 : 3} × 1 kΩ`), category: 'electronic', qty: reels ? 8 : 6, process: 'buy', supplier: unit('resistors') },
       { why: `1 kΩ en las bases de los ${UNIT_EST.npn.sku}, 10 Ω entre el IR2101 y la compuerta, 10 kΩ de compuerta a tierra y en LIN. Las de 1/2 W son un poco más grandes y entran igual en la protoboard`, forWhat: 'Driver del LED y señales', alternative: 'Las mismas en 1/4 W, si hay todos los valores', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
     );
     add(
@@ -459,7 +462,7 @@ function addOpticsAndControl(p: Project, d: Derived, add: Add): void {
     );
   add(
     { id: 'buck-lm2596', name: `${UNIT.buck.label} (uno a 5 V y otro a 12 V)`, category: 'electronic', qty: 2, process: 'buy', supplier: unit('buck') },
-    { why: '5 V para ESP32, sensor y señales; 12 V para el IR2101', forWhat: 'Alimentación', alternative: 'MP1584EN', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
+    { why: '5 V para el ESP32 y las entradas de los drivers; 12 V para el IR2101. El sensor de marcas va a los 3,3 V del ESP32', forWhat: 'Alimentación', alternative: 'MP1584EN', evidence: 'read', evidenceDate: CART_DATE, need: 'requerido' },
   );
   add(
     { id: 'ac-cable', name: UNIT.cable.label, category: 'wiring', qty: 1, process: 'buy', supplier: unit('cable') },

@@ -26,8 +26,11 @@ Actualizado: 5/11/2026. Puente entre sesiones: la siguiente arranca leyendo este
 | Lista de compras en su página | Implementado (`compras.html`): totales por proveedor, renglones por tipo con miniatura 3D, detalle con la pieza en 3D a escala, precios en UNIT, Amazon y MercadoLibre, qué revisar antes de pagar, renglones fuera de la compra y comprados guardados en el navegador, CSV e impresión. Enlaza al simulador (`?bom=`) y el simulador a ella | `src/compras/*`, `capturas/compras.png` |
 | Dos tambores con la mano (ADR-0011) | Implementado: recorrido abierto entre dos tambores con radio que crece al enrollar, colas transparentes, brazo tensor y AS5600; programa del ESP32 (`ReelController`: dos sensores de mano, filtro, espera, rampa de 2 m/s², frenado antes del final, paro con un fotograma centrado, dos manos, invitar, regresar sola); destello de 0,1 mm / v y cuadro fijo a 200 Hz; mesa de 394 × 268 mm con la electrónica dentro y a la vista (ADR-0012); escena 3D con tambores que giran y se llenan, tapas, sensores, conos y la mano del visitante; laboratorio con la planta de los tambores; lista de compras propia (`compras.html?demo=tambores`, `docs/COMPRAS-TAMBORES.md`) | `src/mech/reels.ts`, `reels.test.ts`, `capturas/tambores*.png` |
 | Mesa de dos tambores sin tornillos (ADR-0012) | Implementado: la estructura se calcula desde el ensamble (`buildReelsStructure`): piso y cubierta doble de MDF de 5,5 mm y paredes de acrílico transparente de 3 mm atrapadas en ranuras del MDF (una prueba recorre las aristas: ninguna pieza se encima y entre acrílicos solo queda su holgura de 0,1 mm), tapa trasera de acrílico con cuñas, cuatro patas de hule bajo el piso (sin marcarlas: el láser marca la cara de adentro), torres de los motores, marco y topes de la fuente, tapas y bridas de acrílico, ventana de acrílico negro y piezas de prueba. 16 piezas impresas en PETG modeladas con manifold-3d y revisadas con `checkPrint`. `npm run fabricar` escribe DXF R12, SVG y PDF 1:1 por hoja, los STL, el README con los textos para los talleres y un ZIP en `public/fabricacion/tambores/`. Cantidades de taller (`quantities.ts`); los costos estimados, en privado (`private/costos/`). En el simulador, *Ensamble sin tornillos* tiene 12 pasos con explosión (`?ensamble=N&explosion=x`). La página de compras tiene la pestaña *Taller* | `src/mech/structure.ts`, `src/fabricate/printed.ts`, `src/fabricate/quantities.ts`, `src/fabricate/shops.ts`, `scripts/fabricar.mjs`, `structure.test.ts`, `printed.test.ts`, `capturas/tambores-ensamble*.png` |
+| Comentarios sobre las piezas (ADR-0014) | Implementado: con una pieza seleccionada, *Comentar esta pieza* abre un issue de GitHub ya escrito (pieza, tipo, paso del ensamble y enlace a la vista). El visor lee los issues con la API pública y los muestra sobre su pieza: panel de la pieza, insignia en el navegador, paso del ensamble y grupo *Comentarios* del panel lateral, con sus respuestas. Sin servidor: el hilo vive en GitHub | `src/feedback/issues.ts`, `src/ui/sim/feedback.ts`, `issues.test.ts`, `capturas/tambores-comentarios.png` |
+| Conexiones y prueba de la electrónica (ADR-0015) | Implementado: `electronica.html`, abierto desde el paso 2 del ensamble. Diez pasos para cablear en banco y probar por partes (fuente, reguladores, ESP32, cada motor, sensores I2C, sensor de marcas, driver del LED y LED), con cada pieza en su agujero de la protoboard y cada cable de punta a punta. El banco en 3D usa las piezas del catálogo; cada pieza muestra sus datos eléctricos y con qué se une cada pin. Una prueba compara el montaje con el esquema, con los rieles de la protoboard enteros o partidos. Programa de prueba para el ESP32 que compila con `arduino-cli`. Sin probar todavía en la mesa real | `src/elec/wiring.ts`, `bench.ts`, `page.ts`, `wiring.test.ts`, `public/electronica/prueba-banco/` |
+| Bitácora en el repositorio (ADR-0016) | Implementado, sin estrenar en GitHub: `bitacora/bitacora.json` guarda cada issue con sus respuestas y las fotos de `bitacora/fotos/` (ligadas por el número de su nombre). Lo escribe `npm run bitacora` y una acción de GitHub después de cada push, que además pone cada foto nueva en su issue. El visor lee primero ese archivo y encima lo que diga GitHub; muestra las fotos junto al comentario | `scripts/bitacora.mjs`, `.github/workflows/bitacora.yml`, `src/feedback/issues.ts`, `issues.test.ts` |
 | Espacio interior del loop | Implementado: `interiorClearance` mide fondo y ancho reales dentro del loop y `deriveProject` marca error si la linterna o el tambor no caben | `src/mech/path.ts`, `project.test.ts` |
-| Pruebas y capturas | 130 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
+| Pruebas y capturas | 149 pruebas en verde; `npm run captura` produce las vistas sin errores de consola | `npm test`, `capturas/report.json` |
 
 ## Decisiones tomadas (ADR en docs/adr)
 
@@ -70,6 +73,34 @@ explica dónde va cada uno y da cuántas piezas entran de cada código.
 Las bridas A06–A09 se dibujaban dos veces y la del rodillo tensor no giraba con él; ahora van dentro de su tambor o
 rodillo.
 
+**Motor antes que su torre y largos de la varilla (22-nov-2026):** al armar, Eric encontró que el motor no entra en la
+torre ya puesta. El collar E05 queda 21 mm arriba del piso y el conector del motor, a 4–10 mm, sobresale 6 mm del
+cuerpo, así que no pasa por el hueco de 42,6 mm. El paso 2 ahora para el motor primero, con el cople ya puesto a 10 mm
+de su cara y el conector al frente, y baja la torre armada sobre él (E04 y E05 pasan al paso 2). Los largos de la
+varilla salen del ensamble (`shaftCuts`): 2 × 98,5, 2 × 67,5, 60,5 y 40 mm. La lista decía 100, 70, 65 y 40, y el del
+rodillo tensor de 65 habría rozado la contracubierta. El paso 1 incluye cortar la varilla.
+
+**Comentarios como issues (22-nov-2026, ADR-0014):** Eric pidió comentar las piezas desde el visor y que eso abra un
+issue en GitHub, para documentar qué falla al armar y cómo se resuelve. Los issues #1 a #8 de `ericmargay/praxiboscopic`
+recogen lo del armado hasta hoy: impresas que faltaron (#1), explosión (#2, cerrado), consumibles (#3, cerrado), encajes
+de MDF muy apretados (#4), el motor que no entra con la torre puesta (#5), largos de la varilla (#6), LED al disipador
+(#7) y silicón y liga fuera de la lista (#8). En el taller, las torres entraron a martillo y ya no salieron, así que
+Eric cortó una muesca en cada collar E05 para pasar el conector. Falta dibujar esa muesca en los archivos de corte y
+decidir la holgura de los encajes de MDF con MDF.
+
+**Conexiones y prueba de la electrónica (22-nov-2026, ADR-0015):** con los motores en sus torres, Eric pidió probar la
+electrónica antes de seguir y un visor con los pasos de las conexiones. `electronica.html` trae diez pasos, cada uno
+con su prueba, y el programa `prueba-banco.ino` para el ESP32. Al escribir el circuito pin por pin cambió: el sensor de
+marcas F249 va a 3,3 V (a 5 V su salida dañaría el GPIO34), los 12 V ya no comparten riel con los 5 V, y la lista de
+compras lleva cinco resistencias de 1 kΩ en lugar de tres (la mesa usa cuatro). Queda por ver en banco si el fusible
+rápido de 500 mA aguanta la carga de los tres capacitores al encender. Nada de esto se ha probado en la mesa real.
+
+**Bitácora en el repositorio (22-nov-2026, ADR-0016):** Eric pidió un archivo de base de datos compartido en el
+repositorio, que se actualice con cada push, y subir ahí las fotos de los issues. `bitacora/bitacora.json` lo escribe
+`scripts/bitacora.mjs`; la acción `.github/workflows/bitacora.yml` lo corre en GitHub y pone cada foto nueva en su
+issue. La acción todavía no ha corrido: lo hará cuando se suba este trabajo. Los avisos de issues solo la disparan
+desde `master`, y el trabajo sigue en `pelicula-laminada`.
+
 **La película sigue laminada (5-nov-2026, ADR-0013):** Eric preguntó por una laca en aerosol en lugar del laminado en
 frío. Se investigó con fuentes y se descartó. Corre o vela la tinta inkjet, no pega bien al PET sin lijar, se pega a sí
 misma en el tambor (blocking), deja piel de naranja y polvo que se ven a 19× y no une los empalmes. Queda solo para
@@ -96,7 +127,9 @@ loop · 0004 caché incremental por hash · 0005 modelo de exposición · 0006 L
 0007 ensamble compacto y electrónica dentro y encima de la obra · 0008 película de 10 s en festón y video como fuente ·
 0009 la tinta no toca nada: recorrido convexo y video de 5 s a 24 fps · 0010 película laminada: la tinta va cubierta y
 vuelve el festón · 0011 dos tambores: la película va y viene con la mano · 0012 la mesa de dos tambores se corta con
-láser y se arma sin tornillos · 0013 la película sigue laminada: la laca en aerosol no la sustituye.
+láser y se arma sin tornillos · 0013 la película sigue laminada: la laca en aerosol no la sustituye · 0014 los
+comentarios sobre las piezas son issues de GitHub · 0015 la electrónica se cablea y se prueba en banco, con un visor
+de conexiones · 0016 la bitácora es un archivo del repositorio que se reescribe con cada push.
 
 ## Qué está a medias
 

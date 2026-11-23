@@ -15,5 +15,8 @@
 | [0011](0011-dos-tambores-con-la-mano.md) | Dos tambores: la película va y viene con la mano del visitante | se construye (5-nov-2026) |
 | [0012](0012-estructura-de-corte-laser-sin-tornillos.md) | La mesa de dos tambores se corta con láser y se arma sin tornillos, con paredes de acrílico | se construye (5-nov-2026) |
 | [0013](0013-pelicula-laminada-no-laca-en-aerosol.md) | La película sigue laminada: la laca en aerosol no la sustituye | propuesta (5-nov-2026) |
+| [0014](0014-comentarios-del-visor-como-issues.md) | Los comentarios sobre las piezas del visor son issues de GitHub | pedida por Eric el 22-nov-2026 |
+| [0015](0015-visor-de-conexiones-de-la-electronica.md) | La electrónica se cablea y se prueba en banco, con un visor de conexiones | pedida por Eric el 22-nov-2026 |
+| [0016](0016-bitacora-en-el-repositorio.md) | La bitácora es un archivo del repositorio que se reescribe con cada push | pedida por Eric el 22-nov-2026 |
 
 Pendientes de firma de Eric. Formato corto: contexto, decisión, consecuencias.

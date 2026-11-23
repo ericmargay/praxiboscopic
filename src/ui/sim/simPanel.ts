@@ -18,6 +18,7 @@ import { assemblySteps, buildReelsStructure, type AssemblyStep } from '../../mec
 import { reelsPrintedParts } from '../../fabricate/printed';
 import { pieceQty, stepPartsText } from '../../fabricate/shops';
 import { supplyColor } from '../../three/mechScene';
+import { createFeedback, type FeedbackView } from './feedback';
 import { autoSync } from '../../mech/sync';
 import type { DrumStrobe, LedStrobe } from '../../mech/strobe';
 import type { OpticsSpec } from '../../optics/projector';
@@ -50,6 +51,19 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
   let asmStep: number | null = urlParams.has('ensamble') ? Math.max(1, Number(urlParams.get('ensamble')) || 1) : null;
   let asmExplode = Math.max(0, Math.min(1, Number(urlParams.get('explosion') ?? 0) || 0));
   let asmTimer = 0;
+  // comentarios sobre las piezas: issues de GitHub de la obra (ADR-0014)
+  const feedback = createFeedback(() => {
+    sideKey = '';
+    if (active) buildSide();
+    renderBrowser();
+    renderProps();
+  });
+  const feedbackView = (): FeedbackView => {
+    const query: Record<string, string> = {};
+    for (const k of ['demo', 'video', 'segundos', 'fps', 'pelicula']) if (urlParams.has(k)) query[k] = urlParams.get(k)!;
+    if (!query.demo && !query.video && ctx.derived().reels) query.demo = 'tambores';
+    return { step: asmStep, explode: asmExplode, query };
+  };
 
   // --- barra del visor: vistas estándar y herramientas -------------------------------------------------------------
   const views: { id: ViewId; label: string; title: string }[] = [
@@ -148,7 +162,9 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
         e.stopPropagation();
         scene?.setVisible(n.id, !n.visible);
       };
+      const open = feedback.count(n);
       r.append(eye, el('span', { class: 'nm', text: n.name }));
+      if (open) r.append(el('span', { class: 'fb-badge', text: String(open), title: `${open} ${open === 1 ? 'comentario abierto' : 'comentarios abiertos'}` }));
       r.onclick = () => scene?.select(n.id);
       r.ondblclick = () => scene?.select(n.id, true);
       const kids = byParent.get(n.id) ?? [];
@@ -222,7 +238,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     const list = (items: string[]) => el('ul', { class: 'sp-ul' }, ...items.map((t) => el('li', { text: t })));
     const [w, dd, h] = det.modelMm;
     const real = spec?.realMm ?? (n.kind === 'roller' ? [2 * d.pathSpec.rollerRadiusMm + 4, 2 * d.pathSpec.rollerRadiusMm + 4, p.film.stripWidthMm + 11.6] as [number, number, number] : undefined);
-    const body: Node[] = [];
+    const body: Node[] = [feedback.section(n, feedbackView)];
     body.push(sec('Medidas', dl([
       ['Catálogo', real ? `${real.map(mm).join(' × ')} mm${spec?.approx ? ' (aprox.)' : ''}` : undefined],
       ['Modelo 3D', `${mm(w)} × ${mm(dd)} × ${mm(h)} mm${n.kind === 'nema17' ? ' (con eje y conector)' : ''}`],
@@ -295,7 +311,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
     // la vista «Manos» solo tiene sentido con los dos tambores
     if (handsViewBtn) handsViewBtn.style.display = d.reels ? '' : 'none';
     if (d.reels) return buildReelsSide(p, d);
-    const k = JSON.stringify({ t: p.transport, path: p.path.rollerRadiusMm, aspect: p.pathAspect, layout: p.pathLayout, festoon: p.festoon, lam: p.film.laminate ?? null, auto: p.autoPath, gate: p.path.gateMm, kind: p.strobeKind, drum: p.drum, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps });
+    const k = JSON.stringify({ t: p.transport, path: p.path.rollerRadiusMm, aspect: p.pathAspect, layout: p.pathLayout, festoon: p.festoon, lam: p.film.laminate ?? null, auto: p.autoPath, gate: p.path.gateMm, kind: p.strobeKind, drum: p.drum, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps, fb: feedback.version() });
     if (k === sideKey) {
       updateReadouts();
       return;
@@ -409,6 +425,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
         (readouts.torque = readout('Par: necesario / disponible', '')).root,
         (readouts.gate = readout('En la ventana', '')).root,
       ]),
+      feedbackGroup(),
       group('Avisos', [warningsList(d.warnings)]),
     );
     updateReadouts();
@@ -431,7 +448,9 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
 
   /** ensamble paso a paso de la mesa de dos tambores: lo que se arma, en qué orden y con qué piezas (ADR-0012) */
   function assemblyGroup(): HTMLElement {
-    const steps = assemblySteps();
+    // con el ensamble, los textos llevan los largos de la varilla y del cople
+    const dd = ctx.derived();
+    const steps = dd.reels ? buildReelsStructure(ctx.project, dd).steps : assemblySteps();
     const n = steps.length;
     const stopPlay = () => {
       if (asmTimer) window.clearInterval(asmTimer);
@@ -496,16 +515,25 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
         scene?.setAssembly(asmStep, asmExplode);
       }, help: 'Separa todo por capas: lo que va dentro de otra pieza (rodamientos, bridas, ejes, tapones, espigas) sale por su eje' }).root,
       cur
-        ? el('div', { class: 'asm-step' }, el('b', { text: `${cur.n}. ${cur.title}` }), el('ol', {}, ...cur.text.map((t) => el('li', { text: t }))), el('p', { class: 'hint', text: `Entran: ${stepPartsText(cur.parts, qty).replaceAll(', ', ' · ')}` }), ...supplyList(cur))
+        ? el('div', { class: 'asm-step' }, el('b', { text: `${cur.n}. ${cur.title}` }), el('ol', {}, ...cur.text.map((t) => el('li', { text: t }))), el('p', { class: 'hint', text: `Entran: ${stepPartsText(cur.parts, qty).replaceAll(', ', ' · ')}` }), ...supplyList(cur), cur.bench ? el('div', { class: 'asm-bench' }, el('a', { class: 'btn btn-primary', href: cur.bench.page, target: '_blank', rel: 'noopener', text: `${cur.bench.label} ↗`, title: 'Abre el visor de conexiones en otra pestaña' }), el('p', { class: 'hint', text: cur.bench.why })) : null, feedback.stepList(cur.n))
         : el('p', { class: 'hint', text: steps.map((q) => `${q.n}. ${q.title}`).join(' · ') }),
       el('p', { class: 'hint' }, 'Archivos y textos para el taller: ', el('a', { href: 'compras.html?demo=tambores#fabricacion', target: '_blank', text: 'corte láser e impresión 3D' })),
     ]);
   }
 
+  /** comentarios abiertos por pieza; recuerda si quien mira lo dejó plegado */
+  let feedbackOpen: boolean | null = null;
+  function feedbackGroup(): HTMLElement {
+    const g = feedback.overview(scene?.parts() ?? [], feedbackView, (id) => scene?.select(id, true)) as HTMLDetailsElement;
+    if (feedbackOpen !== null) g.open = feedbackOpen;
+    g.addEventListener('toggle', () => (feedbackOpen = g.open));
+    return g;
+  }
+
   function buildReelsSide(p: Project, d: ReturnType<AppContext['derived']>): void {
     const r = d.reels!;
     const c = r.spec.control;
-    const k = JSON.stringify({ reels: r.spec, t: p.transport, lam: p.film.laminate ?? null, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps, kind: p.strobeKind });
+    const k = JSON.stringify({ reels: r.spec, t: p.transport, lam: p.film.laminate ?? null, led: p.led, o: p.optics, fps: p.targetFps, ts: p.ui.timeScale, playing: p.ui.playing, w: d.warnings.length, af: p.animation.fps, kind: p.strobeKind, fb: feedback.version() });
     if (k === sideKey) {
       updateReelReadouts();
       return;
@@ -543,6 +571,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
         numberControl({ label: 'Escala de tiempo', value: p.ui.timeScale, min: 0.01, max: 2, step: 0.01, onChange: (v) => ctx.store.update((q) => ({ ...q, ui: { ...q.ui, timeScale: v } })), help: '0,05 = cámara lenta para ver cada destello' }).root,
       ]),
       assemblyGroup(),
+      feedbackGroup(),
       group('Manos del visitante', [
         el('p', { class: 'hint', text: 'La mano sobre un tambor jala la película hacia él, más rápido entre más cerca; al retirarla, frena y se queda en un cuadro. Las teclas 1 y 2 ponen la mano mientras las mantienes presionadas.' }),
         ...handRow(0),
@@ -696,6 +725,7 @@ export function mountSimPanel(ctx: AppContext, sim: SimulationRunner, root: HTML
       const fromBom = urlBom ? scene.parts().find((n) => n.bomId === urlBom)?.id : undefined;
       if (urlSel || fromBom) scene.select((urlSel ?? fromBom)!, true);
       if (asmStep !== null || asmExplode > 0) scene.setAssembly(asmStep ?? assemblySteps().length, asmExplode);
+      feedback.load();
     }
     const now = performance.now();
     if (now - lastHud > 250) {
