@@ -17,10 +17,11 @@
 
 - Sigue sin haber servidor ni cuentas nuevas: todo vive en el repositorio y en sus issues.
 - La acción hace commits en la rama donde se hizo el push. Antes del siguiente push hay que traerlos (`git pull --rebase`); si se corre `npm run bitacora` antes de hacer commit, la acción no encuentra nada que cambiar.
-- Los avisos de issues solo disparan la acción desde la rama principal del repositorio (`master`). Mientras el trabajo siga en otra rama, la bitácora se actualiza solo con los push.
+- Los avisos de issues solo disparan la acción desde la rama principal del repositorio (`master`). Por eso el trabajo pasó a `master` el 22-nov-2026: ahí se hacen los push y ahí caen las fotos que se suben desde la web.
 - El sitio busca la bitácora en la rama desde la que se compiló. Si el trabajo cambia de rama, hay que volver a publicar.
 - El repositorio es público: lo que entra a la bitácora y a `fotos/` lo ve cualquiera. Sin costos estimados, datos personales ni tickets.
 - Las fotos pesan en la historia del repositorio para siempre: conviene subirlas reducidas. Las HEIC del iPhone no se ven en el navegador y el script las deja fuera.
-- La acción no se ha probado en GitHub todavía: corre por primera vez cuando este trabajo se suba.
+- Estrenada el 22-nov-2026: corrió con el primer push a `master` y otra vez al responder y cerrar issues, y guardó el archivo con el commit «Bitácora: comentarios y fotos al día». Falta estrenar las fotos.
+- Cuando llegan varios avisos seguidos, GitHub cancela las corridas que quedaron en espera y deja la última. En la pestaña *Actions* se ven como «cancelled»: no son fallas.
 
 Código: `scripts/bitacora.mjs`, `.github/workflows/bitacora.yml`, `src/feedback/issues.ts` (lectura y mezcla, con pruebas) y `src/ui/sim/feedback.ts` (interfaz).
