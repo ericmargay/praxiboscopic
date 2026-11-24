@@ -2,7 +2,7 @@
   "version": 1,
   "about": "Bitácora de Praxiboscopic: comentarios (issues de GitHub), respuestas y fotos. Lo genera scripts/bitacora.mjs; no se edita a mano.",
   "repo": "ericmargay/praxiboscopic",
-  "updatedAt": "2026-11-23T23:22:13Z",
+  "updatedAt": "2026-11-24T21:07:07Z",
   "issues": [
     {
       "number": 15,
@@ -55,7 +55,7 @@
     {
       "number": 13,
       "title": "[Fuente Mean Well LRS-150-24] La fuente del pedido trae selector de 115 / 230 V: va en 115 V",
-      "state": "open",
+      "state": "closed",
       "html_url": "https://github.com/ericmargay/praxiboscopic/issues/13",
       "user": {
         "login": "ericmargay"
@@ -69,11 +69,19 @@
         }
       ],
       "created_at": "2026-11-23T22:47:27Z",
-      "updated_at": "2026-11-23T22:47:27Z",
-      "closed_at": null,
-      "comments": 0,
+      "updated_at": "2026-11-24T21:07:07Z",
+      "closed_at": "2026-11-24T21:07:07Z",
+      "comments": 1,
       "body": "**Qué pasa.** La lista de compras y el visor decían LRS-150F-24, que tiene entrada automática. El pedido de UNIT que revisamos el 23-nov-2026 dice LRS-150-24. Es la misma caja, con los mismos bornes y la misma salida de 24 V y 6,5 A, pero la entrada se elige con un interruptor: 115 V (acepta de 85 a 132 V) o 230 V (de 170 a 264 V). Los datos son de la hoja de datos de Mean Well.\n\n**Antes de enchufarla.**\n- [ ] Leer la etiqueta de la fuente: LRS-150-24 o LRS-150F-24.\n- [ ] Si es la LRS-150-24, dejar en 115 V el selector de su costado, con la fuente desenchufada. Si es la LRS-150F-24, no trae selector.\n\nCon el selector en 230 V y la toma de 127 V la fuente queda por debajo de su entrada mínima: puede no arrancar, o dar 24 V sola y caerse al conectarle los motores.\n\n**Qué se hizo.** La lista, la ficha de la fuente y el paso 1 de las conexiones ya lo dicen en el modelo. Sale con la siguiente publicación del sitio.\n\n---\n**Pieza:** Fuente Mean Well LRS-150-24 (`psu`) · **Tipo:** Nota · **Paso de las conexiones:** 1\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=1&sel=psu)\n\n<!-- praxiboscopic pieza=\"psu\" tipo=\"nota\" vista=\"electronica\" paso=\"1\" sel=\"psu\" -->\n",
-      "replies": [],
+      "replies": [
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-24T21:07:06Z",
+          "body": "La fuente que llegó es la **LRS-150F-24**: lo dice su etiqueta (foto del 24-nov-2026), con entrada de 100 a 240 V. Es la de entrada automática y **no trae selector**: no hay nada que mover antes de enchufarla.\n\nEn la captura del pedido se leía «LRS-150-24» y por eso se abrió esta nota. El visor de conexiones y la lista de compras se quedan con la LRS-150F-24."
+        }
+      ],
       "photos": []
     },
     {
