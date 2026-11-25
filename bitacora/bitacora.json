@@ -2,7 +2,7 @@
   "version": 1,
   "about": "Bitácora de Praxiboscopic: comentarios (issues de GitHub), respuestas y fotos. Lo genera scripts/bitacora.mjs; no se edita a mano.",
   "repo": "ericmargay/praxiboscopic",
-  "updatedAt": "2026-11-24T21:50:51Z",
+  "updatedAt": "2026-11-25T00:01:03Z",
   "issues": [
     {
       "number": 15,
@@ -53,9 +53,9 @@
         }
       ],
       "created_at": "2026-11-23T22:47:29Z",
-      "updated_at": "2026-11-24T21:50:51Z",
+      "updated_at": "2026-11-25T00:01:03Z",
       "closed_at": null,
-      "comments": 1,
+      "comments": 2,
       "body": "**Qué pasa.** En el pedido de UNIT que revisamos el 23-nov-2026 no aparecen los transistores 2N3904. La lista pide cinco: dos por driver y uno de repuesto. Sin ellos las señales de 3,3 V del ESP32 no llegan a las entradas de 5 V de los DM542, así que la prueba se detiene en el paso 4, el del motor 1.\n\n**Falta.**\n- [ ] Pedir cinco 2N3904 en TO-92, de patitas. El S8050 de UNIT es de montaje superficial y no entra en la protoboard.\n- [ ] En el mismo pedido, las dos resistencias de 1 kΩ del issue #9 y un paquete de jumpers macho-hembra de 30 cm: el montaje usa 25.\n\n---\n**Pieza:** Q1 · transistor 2N3904 (`npn-0`) · **Tipo:** Nota · **Paso de las conexiones:** 4\n[Ver en el visor](https://ericmargay.github.io/praxiboscopic/electronica.html?paso=4&sel=npn-0)\n\n<!-- praxiboscopic pieza=\"npn-0\" tipo=\"nota\" vista=\"electronica\" paso=\"4\" sel=\"npn-0\" -->\n",
       "replies": [
         {
@@ -64,6 +64,13 @@
           },
           "created_at": "2026-11-24T21:50:51Z",
           "body": "Steren no vende el 2N3904 (su catálogo, 24-nov-2026). Lo que sí tiene y sirve igual para esta etapa:\n\n- **2N4401**: mismas patas que el 2N3904 (E-B-C con la cara plana al frente), así que va en la protoboard tal como está en el visor.\n- **MPS2222A**: también E-B-C.\n- El BC547 funciona, pero trae las patas al revés (C-B-E): habría que girarlo.\n\nSe compran 5 (cuatro y uno de repuesto), junto con las resistencias de 1 kΩ que faltan (#9)."
+        },
+        {
+          "user": {
+            "login": "ericmargay"
+          },
+          "created_at": "2026-11-25T00:01:03Z",
+          "body": "Conseguidos el 24-nov-2026 en Steren: transistores **2N4401**. Tienen las mismas patas que el 2N3904 (E-B-C con la cara plana al frente) y van en los mismos agujeros de la protoboard.\n\nCon la próxima publicación, el visor y la lista de compras los nombran así, y el visor suma un montaje aparte para probar los dos motores con la LILYGO T7-S3 (ADR-0018).\n\nSiguen pendientes de este issue las dos resistencias de 1 kΩ (#9) y los jumpers macho-hembra."
         }
       ],
       "photos": []
